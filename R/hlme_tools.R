@@ -1,6 +1,3 @@
-PRED_FIXED <- "__PRED_FIXED"
-PRED_RAND <- "__PRED_RAND"
-
 # initialization ----
 
 #' Prepare the hlme_controls
@@ -49,7 +46,11 @@ hlme_ctrls <- function(
   # initialization with maxiter = 0
   maxiter_backup <- hlme_controls$maxiter
   hlme_controls$maxiter <- 1
-  random_hlme <- do.call(lcmm::hlme, hlme_controls)
+  # needed to use "hlme" (quoted) in do.call
+  # so the summary(model) is not polluted with the definition of hlme
+  # and if I do not put library here, devtool::check raises an error...
+  library(lcmm)
+  random_hlme <- do.call(hlme, hlme_controls)
   random_hlme$best[["intercept"]] <- 0. # "$" does not work (conversion to list)
   random_hlme$call$maxiter <- maxiter_backup
   return(random_hlme)
@@ -85,6 +86,7 @@ hlme_ctrls <- function(
 # prediction ----
 
 .predict_random_hlme <- function(random_hlme, data) {
+  PRED_RAND <- "__PRED_RAND" # temporary column to compute the predictions
   stopifnot(class(random_hlme) == "hlme")
   var.time <- random_hlme$var.time
   subject <- colnames(random_hlme$pred)[1]

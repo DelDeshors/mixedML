@@ -98,6 +98,7 @@ repos:
     -   id: parsable-R
     -   id: no-browser-statement
     -   id: no-print-statement
+        exclude: renv/activate.R
     -   id: no-debug-statement
     -   id: deps-in-desc
     -   id: pkgdown
@@ -106,6 +107,7 @@ repos:
     hooks:
     -   id: check-added-large-files
         args: ['--maxkb=200']
+        exclude: renv.lock
     -   id: file-contents-sorter
         files: '^\.Rbuildignore$'
     -   id: end-of-file-fixer

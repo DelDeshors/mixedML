@@ -50,7 +50,7 @@ hlme_ctrls <- function(
   # so the summary(model) is not polluted with the definition of hlme
   # and if I do not put library here, devtool::check raises an error...
   library(lcmm)
-  random_hlme <- do.call(hlme, hlme_controls)
+  random_hlme <- do.call("hlme", hlme_controls)
   random_hlme$best[["intercept"]] <- 0. # "$" does not work (conversion to list)
   random_hlme$call$maxiter <- maxiter_backup
   return(random_hlme)

@@ -32,4 +32,5 @@ Imports:
     stats,
     vctrs,
     devtools,
-    htmltools
+    htmltools,
+    precommit

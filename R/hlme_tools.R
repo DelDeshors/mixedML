@@ -25,6 +25,17 @@ hlme_ctrls <- function(
   return(as.list(environment()))
 }
 
+
+#' Function to plot something
+#'
+#' @import lcmm
+#'
+#' @param random_spec random_spec
+#' @param data data
+#' @param subject subject
+#' @param var.time var.time
+#' @param hlme_controls hlme_controls
+#' @return description
 .initiate_random_hlme <- function(
   random_spec,
   data,
@@ -46,10 +57,6 @@ hlme_ctrls <- function(
   # initialization with maxiter = 0
   maxiter_backup <- hlme_controls$maxiter
   hlme_controls$maxiter <- 1
-  # needed to use "hlme" (quoted) in do.call
-  # so the summary(model) is not polluted with the definition of hlme
-  # and if I do not put library here, devtool::check raises an error...
-  library(lcmm)
   random_hlme <- do.call("hlme", hlme_controls)
   random_hlme$best[["intercept"]] <- 0. # "$" does not work (conversion to list)
   random_hlme$call$maxiter <- maxiter_backup

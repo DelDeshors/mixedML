@@ -63,19 +63,19 @@ ensemble_ctrls <- function(
   return(as.list(environment()))
 }
 
-
+# nolint start
 #' Prepare the fit_controls
 #'
 #' Please see the
-#' [documentation][1]
+#' [documentation](https://reservoirpy.readthedocs.io/en/latest/api/generated/reservoirpy.nodes.ESN.html#reservoirpy.nodes.ESN.fit)
 #' of ReservoirPy
-#' [1] https://reservoirpy.readthedocs.io/en/latest/api/generated/reservoirpy.nodes.ESN.html#reservoirpy.nodes.ESN.fit
 #' @param warmup Number of timesteps to consider as warmup and discard at the beginning. Defalut: 0
 #' of each timeseries before training.
 #' @param stateful If True, Node state will be updated by this operation. Default: TRUE
 #' @param reset If True, Nodes states will be reset to zero before this operation. Default: FALSE
 #' @return fit_controls
 #' @export
+# nolint end
 fit_ctrls <- function(warmup = 0, stateful = TRUE, reset = FALSE) {
   warmup <- .fix_integer(warmup)
   stopifnot(is.single.integer(warmup))
@@ -84,15 +84,17 @@ fit_ctrls <- function(warmup = 0, stateful = TRUE, reset = FALSE) {
   return(as.list(environment()))
 }
 
-
+# nolint start
 #' Prepare the predict_controls
 #'
-#' Please see the [documentation][1] of ReservoirPy
-#' [1] https://reservoirpy.readthedocs.io/en/latest/api/generated/reservoirpy.nodes.ESN.html#reservoirpy.nodes.ESN.run
+#' Please see the
+#' [documentation](https://reservoirpy.readthedocs.io/en/latest/api/generated/reservoirpy.nodes.ESN.html#reservoirpy.nodes.ESN.run)
+#' of ReservoirPy
 #' @param stateful If True, Node state will be updated by this operation.
 #' @param reset If True, Nodes states will be reset to zero before this operation.
 #' @return predict_controls
 #' @export
+# nolint end
 predict_ctrls <- function(stateful = TRUE, reset = FALSE) {
   stopifnot(is.logical(stateful))
   stopifnot(is.logical(reset))

@@ -7,6 +7,7 @@ repos:
     -   id: check-yaml
     -   id: end-of-file-fixer
     -   id: trailing-whitespace
+        exclude: README.md
     -   id: check-added-large-files
     -   id: check-executables-have-shebangs
     -   id: mixed-line-ending

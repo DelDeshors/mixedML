@@ -1,17 +1,12 @@
 ---
 title: "Presentation of the mixedML package"
-output:
-  pdf_document: default
-  html_document: rmarkdown::html_vignette
-knit: (function(inputFile, encoding, output_dir){
+knit: (function(input, encoding, output_dir) {
   rmarkdown::render(
-  inputFile,
-  encoding = encoding,
-  output_dir = ".",
-  output_format = "pdf_document"
+    input,
+    output_format=rmarkdown::github_document(),
+    output_file='README.md',
+    output_dir=here::here()
   )})
-# rmarkdown::render(input = "vignettes/my-vignette.Rmd", output_dir = "vignettes", output_format = "pdf_document")
-#
 vignette: >
   %\VignetteIndexEntry{my-vignette}
   %\VignetteEngine{knitr::rmarkdown}
@@ -26,7 +21,7 @@ knitr::opts_chunk$set(
 ```
 
 ```{r, include = FALSE}
-devtools::load_all(".")
+devtools::load_all()
 ```
 
 ```{r, include=FALSE}

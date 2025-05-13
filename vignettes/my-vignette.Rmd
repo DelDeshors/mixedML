@@ -3,9 +3,9 @@ title: "Presentation of the mixedML package"
 knit: (function(input, encoding, output_dir) {
   rmarkdown::render(
     input,
-    output_format=rmarkdown::github_document(),
+    output_format=rmarkdown::github_document(toc=true, number_sections=TRUE),
     output_file='README.md',
-    output_dir=here::here()
+    output_folder='..'
   )})
 vignette: >
   %\VignetteIndexEntry{my-vignette}

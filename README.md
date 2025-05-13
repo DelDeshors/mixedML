@@ -1,5 +1,5 @@
-Presentation of the mixedML package
-================
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
 
 # Introduction
 
@@ -677,4 +677,4 @@ summary(model$random_model)
 plot_conv(model)
 ```
 
-![](/home/francois/Documents/SISTM/mixedML/README_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+<img src="man/figures/README-unnamed-chunk-20-1.png" width="100%" />

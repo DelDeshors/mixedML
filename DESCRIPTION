@@ -22,7 +22,8 @@ Suggests:
     testthat (>= 3.0.0),
     devtools,
     vctrs,
-    htmltools
+    htmltools,
+    air
 Config/testthat/edition: 3
 Depends:
     R (>= 3.5)

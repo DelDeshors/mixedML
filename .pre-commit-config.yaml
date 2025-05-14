@@ -1,19 +1,79 @@
 # All available hooks: https://pre-commit.com/hooks.html
 # R specific hooks: https://github.com/lorenzwalthert/precommit
 repos:
+# officials hooks mixed with R precommit modifications
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v2.3.0
     hooks:
     -   id: check-yaml
     -   id: end-of-file-fixer
+        exclude: '\.Rd'
     -   id: trailing-whitespace
-        exclude: README.md
+        exclude: README.md  # auto-generated
     -   id: check-added-large-files
+        args: ['--maxkb=200']
+        exclude: renv.lock
     -   id: check-executables-have-shebangs
     -   id: mixed-line-ending
         args: [--fix=lf]
     -   id: no-commit-to-branch
         args: [--branch, staging, --branch, main]
+    -   id: file-contents-sorter
+        files: '^\.Rbuildignore$'
+# local R air formating hooks
+-   repo: local
+    hooks:
+    -   id: airformat
+        name: airformat
+        entry: air format
+        language: system
+        types: [r]
+        pass_filenames: true
+# local R testing
+-   repo: local
+    hooks:
+    -   id: Rtesting
+        name: Rtesting
+        entry: Rscript tests/precommit_testthat.R
+        language: system
+        pass_filenames: false
+        always_run: true
+#  R precommit hooks
+-   repo: https://github.com/lorenzwalthert/precommit    #  R precommit hooks
+    rev: v0.4.3.9009
+    hooks:
+    -   id: roxygenize
+        additional_dependencies:
+        - lcmm
+        - reticulate
+        - devtools
+        - htmltools
+    # codemeta must be above use-tidy-description when both are used
+    # -   id: codemeta-description-updated
+    -   id: use-tidy-description
+    -   id: lintr
+    -   id: readme-rmd-rendered
+    -   id: parsable-R
+    -   id: no-browser-statement
+    -   id: no-print-statement
+        exclude: renv/activate.R
+    -   id: no-debug-statement
+    -   id: deps-in-desc
+    -   id: pkgdown
+-   repo: https://github.com/pre-commit-ci/pre-commit-ci-config
+    rev: v1.6.1
+    hooks:
+    # Only required when https://pre-commit.ci is used for config validation
+    -   id: check-pre-commit-ci-config
+-   repo: local
+    hooks:
+    -   id: forbid-to-commit
+        name: Don't commit common R artifacts
+        entry: Cannot commit .Rhistory, .RData, .Rds or .rds.
+        language: fail
+        files: '\.(Rhistory|RData|Rds|rds)$'
+        # `exclude: <regex>` to allow committing specific files
+ # Python local hooks
 -   repo: local
     hooks:
     -   id: black
@@ -40,93 +100,7 @@ repos:
         types: [python]
         require_serial: true
         pass_filenames: false
-################
--   repo: local
-    hooks:
-    -   id: airformat
-        name: airformat
-        entry: air format
-        language: system
-        types: [r]
-        require_serial: true
-        pass_filenames: true
--   repo: https://github.com/lorenzwalthert/precommit
-    rev: v0.4.3.9009
-    hooks:
-    # -   id: style-files
-    #     args: [--style_pkg=styler, --style_fun=tidyverse_style]
-    -   id: roxygenize
-        additional_dependencies:
-        - lcmm
-        - reticulate
-        - devtools
-        - htmltools
-    # codemeta must be above use-tidy-description when both are used
-    # -   id: codemeta-description-updated
-    -   id: use-tidy-description
-    #~ -   id: spell-check
-        #~ exclude: >
-          #~ (?x)^(
-          #~ .*\.[rR]|
-          #~ .*\.feather|
-          #~ .*\.jpeg|
-          #~ .*\.pdf|
-          #~ .*\.png|
-          #~ .*\.py|
-          #~ .*\.RData|
-          #~ .*\.rds|
-          #~ .*\.Rds|
-          #~ .*\.Rproj|
-          #~ .*\.sh|
-          #~ (.*/|)\.gitignore|
-          #~ (.*/|)\.gitlab-ci\.yml|
-          #~ (.*/|)\.lintr|
-          #~ (.*/|)\.pre-commit-.*|
-          #~ (.*/|)\.Rbuildignore|
-          #~ (.*/|)\.Renviron|
-          #~ (.*/|)\.Rprofile|
-          #~ (.*/|)\.travis\.yml|
-          #~ (.*/|)appveyor\.yml|
-          #~ (.*/|)NAMESPACE|
-          #~ (.*/|)renv/settings\.dcf|
-          #~ (.*/|)renv\.lock|
-          #~ (.*/|)WORDLIST|
-          #~ \.github/workflows/.*|
-          #~ data/.*|
-          #~ )$
-    -   id: lintr
-    -   id: readme-rmd-rendered
-    -   id: parsable-R
-    -   id: no-browser-statement
-    -   id: no-print-statement
-        exclude: renv/activate.R
-    -   id: no-debug-statement
-    -   id: deps-in-desc
-    -   id: pkgdown
--   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v1.2.3
-    hooks:
-    -   id: check-added-large-files
-        args: ['--maxkb=200']
-        exclude: renv.lock
-    -   id: file-contents-sorter
-        files: '^\.Rbuildignore$'
-    -   id: end-of-file-fixer
-        exclude: '\.Rd'
--   repo: https://github.com/pre-commit-ci/pre-commit-ci-config
-    rev: v1.6.1
-    hooks:
-    # Only required when https://pre-commit.ci is used for config validation
-    -   id: check-pre-commit-ci-config
--   repo: local
-    hooks:
-    -   id: forbid-to-commit
-        name: Don't commit common R artifacts
-        entry: Cannot commit .Rhistory, .RData, .Rds or .rds.
-        language: fail
-        files: '\.(Rhistory|RData|Rds|rds)$'
-        # `exclude: <regex>` to allow committing specific files
-
+        always_run: true
 ci:
     autoupdate_schedule: monthly
     skip: [pkgdown]

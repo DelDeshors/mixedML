@@ -136,8 +136,8 @@ predict_ctrls <- function(stateful = TRUE, reset = FALSE) {
   # so that is the method used so far
   fixed_spec <- .get_r_attr_from_py_obj(model, "fixed_spec")
   subject <- .get_r_attr_from_py_obj(model, "subject")
-  left <- .get_left_side_string(fixed_spec)
-  data[left] <- data[left] - pred_rand
+  target_name <- .get_left_side_string(fixed_spec)
+  data[target_name] <- data[target_name] - pred_rand
   data_reshaped <- .reshape_for_rnn(fixed_spec, data, subject)
   #
   controls <- c(

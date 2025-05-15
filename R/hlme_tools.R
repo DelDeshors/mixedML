@@ -80,8 +80,8 @@ hlme_ctrls <- function(
   # BUT for linear models, fitting "f(X)+offset" on Y is equivalent
   # to fitting f(X) on "Y-offset"
   # so that is the method used so far
-  left <- .get_left_side_string(random_hlme$call$fixed)
-  data[left] <- data[left] - pred_fixed
+  target_name <- .get_left_side_string(random_hlme$call$fixed)
+  data[target_name] <- data[target_name] - pred_fixed
   random_hlme <- stats::update(random_hlme, data = data, B = random_hlme$best)
   stopifnot(random_hlme$best["intercept"] == 0.)
   return(list(

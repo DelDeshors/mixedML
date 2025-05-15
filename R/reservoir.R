@@ -103,7 +103,7 @@ predict_ctrls <- function(stateful = TRUE, reset = FALSE) {
 
 
 # recipes  ----
-.initiate_ens <- function(
+.initiate_esn <- function(
   fixed_spec,
   subject,
   esn_controls = esn_ctrls(),

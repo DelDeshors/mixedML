@@ -11,7 +11,7 @@ data_comp$Y <- data_comp$Y + rnorm(length(data_comp$Y), 1, 2)
 pred_rand <- rnorm(nrow(data))
 
 .get_test_model <- function() {
-  return(.initiate_ens(
+  return(.initiate_esn(
     fixed_spec = spec_formula,
     subject = "ID",
     esn_controls = esn_ctrls(

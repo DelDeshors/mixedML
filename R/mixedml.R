@@ -116,7 +116,7 @@ reservoir_mixedml <- function(
     time,
     hlme_controls
   )
-  fixed_model <- .initiate_ens(
+  fixed_model <- .initiate_esn(
     fixed_spec,
     subject,
     esn_controls,

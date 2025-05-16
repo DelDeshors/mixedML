@@ -14,7 +14,7 @@ MIXEDML_CLASS <- "MixedML_Model"
 #' @export
 mixedml_ctrls <- function(patience = 2, conv_ratio_thresh = 0.01) {
   patience <- .fix_integer(patience)
-  stopifnot(is.single.integer(patience) & 0 < patience)
+  stopifnot(is.single.integer(patience) & 0 <= patience)
   stopifnot(
     is.single.numeric(conv_ratio_thresh) &
       0 < conv_ratio_thresh &

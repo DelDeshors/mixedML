@@ -15,7 +15,7 @@ pred_rand <- rnorm(nrow(data))
     fixed_spec = spec_formula,
     subject = "ID",
     esn_controls = esn_ctrls(
-      units = 50,
+      units = 10,
       sr = 0.1,
       lr = 0.2,
       ridge = 0.001

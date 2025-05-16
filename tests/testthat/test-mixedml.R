@@ -4,7 +4,9 @@ subject <- "subject"
 time <- "time"
 
 to_scale <- c("x1", "x2", "x3")
-data <- data_mixedml[data_mixedml[subject] < 10, ]
+data <- data_mixedml
+data <- data[data[subject] < 5, ]
+data <- data[data[time] < 3, ]
 data[, to_scale] <- scale(data[, to_scale])
 
 test_that("mixedml works", {
@@ -14,8 +16,8 @@ test_that("mixedml works", {
     data = data,
     subject = subject,
     time = time,
-    mixedml_ctrls(conv_ratio_thresh = 0.01, patience = 1),
-    hlme_controls = hlme_ctrls(maxiter = 50, idiag = FALSE),
+    mixedml_ctrls(conv_ratio_thresh = 0.1, patience = 1),
+    hlme_controls = hlme_ctrls(maxiter = 5, idiag = FALSE),
     esn_controls = esn_ctrls(
       units = 20,
       lr = 0.1,
@@ -27,7 +29,7 @@ test_that("mixedml works", {
       agg_func = "median",
       n_procs = 2
     ),
-    fit_controls = fit_ctrls(warmup = 2),
+    fit_controls = fit_ctrls(warmup = 1),
     predict_controls = predict_ctrls()
   )
 

@@ -5,7 +5,7 @@ import logging as log
 from joblib import Parallel, delayed, cpu_count  # type: ignore
 from numpy import mean, median, ndarray
 from reservoirpy import Model, Node  # type: ignore
-from reservoirpy.nodes import ESN  # type: ignore
+from reservoirpy.nodes import ESN, Reservoir  # type: ignore
 from reservoirpy import verbosity  # type: ignore
 from reservoirpy.type import Data  # type: ignore
 
@@ -67,6 +67,8 @@ class ReservoirEnsemble:
         self.model_list = model_list
         self._model_names = [m.name for m in model_list]
         self._nodes_names = [m.node_names for m in model_list]
+        if n_procs is None:
+            n_procs = len(model_list)
         self._nprocs = min(n_procs, len(model_list), cpu_count() - 1)
         if self._nprocs != n_procs:
             log.info("n_procs has been corrected to %d", self._nprocs)
@@ -99,24 +101,34 @@ class ReservoirEnsemble:
         for model in self.model_list:
             _fix_copy_name(model)
 
+    def _reset_states(self):
+        # this is a temporary tricks, please see: https://github.com/reservoirpy/reservoirpy/issues/193
+        for m in self.model_list:
+            for r in m.nodes:
+                if isinstance(r, Reservoir):
+                    r.reset()
+
     def fit(self, X: Data, y: Data, fit_controls={}) -> None:
+        self._reset_states()
         self.model_list = self._pool(
             delayed(_fit_single)(m, X, y, fit_controls) for m in self.model_list
         )
         self._fix_copy_names()
 
     def predict(self, X: Data, predict_controls={}) -> list[Data]:
+        self._reset_states()
         model_preds = self._pool(
             delayed(_predict_single)(m, X, predict_controls) for m in self.model_list
         )
 
-        test1 = all(isinstance(mpred, list) for mpred in model_preds)
-        test2 = all(isinstance(mpred, ndarray) for mpred in model_preds)
-        assert test1 or test2
+        def uniformize(mpred) -> list:
+            if isinstance(mpred, list):
+                return mpred
+            if isinstance(mpred, ndarray):
+                return [mpred]
+            raise TypeError
 
-        model_preds = [
-            mpred if isinstance(mpred, list) else [mpred] for mpred in model_preds
-        ]
+        model_preds = [uniformize(mpred) for mpred in model_preds]
         # list(Models) > list(Series) > array(Timesteps x Features)
         mod1_pred = model_preds[0]
         N_series = len(mod1_pred)

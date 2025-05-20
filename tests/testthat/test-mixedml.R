@@ -29,8 +29,7 @@ test_that("mixedml works", {
       agg_func = "median",
       n_procs = 2
     ),
-    fit_controls = fit_ctrls(warmup = 1),
-    predict_controls = predict_ctrls()
+    fit_controls = fit_ctrls(warmup = 1)
   )
 
   expect_named(

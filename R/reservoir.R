@@ -71,33 +71,14 @@ ensemble_ctrls <- function(
 #' of ReservoirPy
 #' @param warmup Number of timesteps to consider as warmup and discard at the beginning. Defalut: 0
 #' of each timeseries before training.
-#' @param stateful If True, Node state will be updated by this operation. Default: TRUE
-#' @param reset If True, Nodes states will be reset to zero before this operation. Default: FALSE
+#'
 #' @return fit_controls
 #' @export
 # nolint end
-fit_ctrls <- function(warmup = 0, stateful = TRUE, reset = FALSE) {
+fit_ctrls <- function(warmup = 0) {
   warmup <- .fix_integer(warmup)
   stopifnot(is.single.integer(warmup))
-  stopifnot(is.logical(stateful))
-  stopifnot(is.logical(reset))
-  return(as.list(environment()))
-}
-
-# nolint start
-#' Prepare the predict_controls
-#'
-#' Please see the
-#' [documentation](https://reservoirpy.readthedocs.io/en/latest/api/generated/reservoirpy.nodes.ESN.html#reservoirpy.nodes.ESN.run)
-#' of ReservoirPy
-#' @param stateful If True, Node state will be updated by this operation.
-#' @param reset If True, Nodes states will be reset to zero before this operation.
-#' @return predict_controls
-#' @export
-# nolint end
-predict_ctrls <- function(stateful = TRUE, reset = FALSE) {
-  stopifnot(is.logical(stateful))
-  stopifnot(is.logical(reset))
+  stopifnot(warmup >= 0)
   return(as.list(environment()))
 }
 
@@ -108,14 +89,17 @@ predict_ctrls <- function(stateful = TRUE, reset = FALSE) {
   subject,
   esn_controls = esn_ctrls(),
   ensemble_controls = ensemble_ctrls(),
-  fit_controls = fit_ctrls(),
-  predict_controls = predict_ctrls()
+  fit_controls = fit_ctrls()
 ) {
   retipy <- .load_package()
   .check_controls_with_function(esn_controls, esn_ctrls)
   .check_controls_with_function(ensemble_controls, ensemble_ctrls)
   .check_controls_with_function(fit_controls, fit_ctrls)
-  .check_controls_with_function(predict_controls, predict_ctrls)
+
+  # enforcing "stateful=TRUE" and "reset=TRUE"
+  enforcement <- list(stateful = TRUE, reset = TRUE)
+  fit_controls <- c(fit_controls, enforcement)
+  predict_controls <- enforcement
 
   controls <- c(list(esn_controls = esn_controls), ensemble_controls)
   model <- do.call(retipy$get_esn_ensemble, controls)

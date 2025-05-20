@@ -14,8 +14,7 @@ reservoir_mixedml(
   hlme_controls = hlme_ctrls(),
   esn_controls = esn_controls(),
   ensemble_controls = ensemble_controls(),
-  fit_controls = fit_controls(),
-  predict_controls = predict_controls()
+  fit_controls = fit_controls()
 )
 }
 \arguments{
@@ -41,8 +40,6 @@ By default, an intercept is included. If no intercept, -1 should be the first te
 \item{ensemble_controls}{controls specific to the Ensemble model}
 
 \item{fit_controls}{controls specific to the ESN models fit}
-
-\item{predict_controls}{controls specific to the ESN models prediction}
 }
 \value{
 fitted MixedML model

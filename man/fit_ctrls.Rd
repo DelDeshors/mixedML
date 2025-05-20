@@ -4,15 +4,11 @@
 \alias{fit_ctrls}
 \title{Prepare the fit_controls}
 \usage{
-fit_ctrls(warmup = 0, stateful = TRUE, reset = FALSE)
+fit_ctrls(warmup = 0)
 }
 \arguments{
 \item{warmup}{Number of timesteps to consider as warmup and discard at the beginning. Defalut: 0
 of each timeseries before training.}
-
-\item{stateful}{If True, Node state will be updated by this operation. Default: TRUE}
-
-\item{reset}{If True, Nodes states will be reset to zero before this operation. Default: FALSE}
 }
 \value{
 fit_controls

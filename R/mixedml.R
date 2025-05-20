@@ -35,8 +35,7 @@ mixedml_ctrls <- function(patience = 2, conv_ratio_thresh = 0.01) {
   hlme_controls,
   esn_controls,
   ensemble_controls,
-  fit_controls,
-  predict_controls
+  fit_controls
 ) {
   stopifnot(rlang::is_bare_formula(fixed_spec))
   stopifnot(rlang::is_bare_formula(random_spec))
@@ -53,7 +52,6 @@ mixedml_ctrls <- function(patience = 2, conv_ratio_thresh = 0.01) {
   .check_controls_with_function(esn_controls, esn_ctrls)
   .check_controls_with_function(ensemble_controls, ensemble_ctrls)
   .check_controls_with_function(fit_controls, fit_ctrls)
-  .check_controls_with_function(predict_controls, predict_ctrls)
   .check_sorted_data(data, subject, time)
   return()
 }
@@ -79,7 +77,6 @@ mixedml_ctrls <- function(patience = 2, conv_ratio_thresh = 0.01) {
 #' @param esn_controls controls specific to the ESN models
 #' @param ensemble_controls controls specific to the Ensemble model
 #' @param fit_controls controls specific to the ESN models fit
-#' @param predict_controls controls specific to the ESN models prediction
 #' @return fitted MixedML model
 #' @export
 reservoir_mixedml <- function(
@@ -92,8 +89,7 @@ reservoir_mixedml <- function(
   hlme_controls = hlme_ctrls(),
   esn_controls = esn_controls(),
   ensemble_controls = ensemble_controls(),
-  fit_controls = fit_controls(),
-  predict_controls = predict_controls()
+  fit_controls = fit_controls()
 ) {
   .test_reservoir_mixedml(
     fixed_spec,
@@ -105,8 +101,7 @@ reservoir_mixedml <- function(
     hlme_controls,
     esn_controls,
     ensemble_controls,
-    fit_controls,
-    predict_controls
+    fit_controls
   )
   #
   random_model <- .initiate_random_hlme(
@@ -121,8 +116,7 @@ reservoir_mixedml <- function(
     subject,
     esn_controls,
     ensemble_controls,
-    fit_controls,
-    predict_controls
+    fit_controls
   )
   conv_ratio_thresh <- mixedml_controls[["conv_ratio_thresh"]]
   patience <- mixedml_controls[["patience"]]

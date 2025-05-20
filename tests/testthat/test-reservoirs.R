@@ -25,15 +25,13 @@ pred_rand <- rnorm(nrow(data))
       agg_func = "median",
       n_procs = 2L
     ),
-    fit_controls = fit_ctrls(warmup = 2),
-    predict_controls = predict_ctrls()
+    fit_controls = fit_ctrls(warmup = 2)
   ))
 }
 
 
 test_that("esn works", {
   model <- .get_test_model()
-
   fit_result <- .fit_reservoir(
     model,
     data,

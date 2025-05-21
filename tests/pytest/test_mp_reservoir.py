@@ -5,7 +5,6 @@ from reservoirpy.datasets import mackey_glass, japanese_vowels  # type: ignore
 
 
 from inst.python.reservoir_ensemble import (
-    get_esn_ensemble,
     JoblibReservoirEnsemble,
     RayReservoirEnsemble,
 )
@@ -17,7 +16,7 @@ Xarr, yarr = data[:50], data[1:51]
 
 Xlst, Ylst, _, _ = japanese_vowels(repeat_targets=True)
 
-
+seed_list = [1, 2, 3]
 esn_controls = {"units": 5, "ridge": 1e-5}
 n_procs = 5
 agg_func = "median"
@@ -35,10 +34,13 @@ def pred_same_shape(a, b) -> bool:
 
 
 def train_fit_joblib_reservoir_ensemble(n_procs, X, y):
-    model1 = Reservoir(units=5) >> Ridge(ridge=1e-5)
-    model2 = Reservoir(units=6) >> Ridge(ridge=1e-5)
     resmod = JoblibReservoirEnsemble(
-        model_list=[model1, model2], n_procs=n_procs, agg_func="mean"
+        seed_list=seed_list,
+        esn_controls=esn_controls,
+        fit_controls=fit_controls,
+        predict_controls=predict_controls,
+        n_procs=n_procs,
+        agg_func="mean",
     )
     resmod.fit(X, y)
     ypred = resmod.predict(X)
@@ -51,14 +53,7 @@ def test_joblib_reservoir_ensemble():
     train_fit_joblib_reservoir_ensemble(10, Xlst, Ylst)
 
 
-def test_get_ens():
-    resmod = get_esn_ensemble(esn_controls, seed_list, agg_func, n_procs)
-    assert isinstance(resmod, JoblibReservoirEnsemble) or isinstance(
-        resmod, RayReservoirEnsemble
-    )
-
-
-def _test_ray_reservoir_workers():
+def test_ray_reservoir_workers():
 
     model = RayReservoirEnsemble(
         Xlst,

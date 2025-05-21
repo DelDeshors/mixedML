@@ -101,13 +101,18 @@ fit_ctrls <- function(warmup = 0) {
   fit_controls <- c(fit_controls, enforcement)
   predict_controls <- enforcement
 
-  controls <- c(list(esn_controls = esn_controls), ensemble_controls)
-  model <- do.call(retipy$get_esn_ensemble, controls)
+  controls <- c(
+    ensemble_controls,
+    list(
+      esn_controls = esn_controls,
+      fit_controls = fit_controls,
+      predict_controls = predict_controls
+    )
+  )
+  model <- do.call(retipy$JoblibReservoirEnsemble, controls)
   # Adding the remaining attributes to the model so we can use them for fit and predict
   .set_r_attr_to_py_obj(model, "fixed_spec", fixed_spec)
   .set_r_attr_to_py_obj(model, "subject", subject)
-  .set_r_attr_to_py_obj(model, "fit_controls", fit_controls)
-  .set_r_attr_to_py_obj(model, "predict_controls", predict_controls)
   return(model)
 }
 
@@ -124,10 +129,7 @@ fit_ctrls <- function(warmup = 0) {
   data[target_name] <- data[target_name] - pred_rand
   data_reshaped <- .reshape_for_rnn(fixed_spec, data, subject)
   #
-  controls <- c(
-    data_reshaped,
-    list(fit_controls = .get_r_attr_from_py_obj(model, "fit_controls"))
-  )
+  controls <- data_reshaped
   do.call(model$fit, controls)
   pred_fixed <- .predict_reservoir(model, data, subject, data_reshaped)
   return(list("model" = model, "pred_fixed" = pred_fixed))
@@ -149,10 +151,7 @@ fit_ctrls <- function(warmup = 0) {
     stopifnot(setequal(names(data_reshaped), c("X", "y")))
   }
   #
-  controls <- c(
-    data_reshaped["X"],
-    list(predict_controls = .get_r_attr_from_py_obj(model, "predict_controls"))
-  )
+  controls <- data_reshaped["X"]
   pred_fixed <- do.call(model$predict, controls)
   pred_fixed <- .reshape_pred_of_rnn(pred_fixed, data, subject)
   return(pred_fixed)

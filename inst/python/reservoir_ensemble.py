@@ -37,12 +37,12 @@ class _CommonReservoirEnsemble(ABC):
 
     @staticmethod
     def _correct_n_procs(
-        seeds_or_models_list: Union[list[int], list[Model]],
+        seed_list: list[int],
         n_procs: Optional[int] = None,
     ) -> int:
         if n_procs is None:
-            n_procs = len(seeds_or_models_list)
-        _nprocs = min(n_procs, len(seeds_or_models_list), cpu_count() - 1)
+            n_procs = len(seed_list)
+        _nprocs = min(n_procs, len(seed_list), cpu_count() - 1)
         if _nprocs != n_procs:
             log.info("n_procs has been corrected to %d", _nprocs)
         return _nprocs
@@ -103,23 +103,28 @@ class JoblibReservoirEnsemble(_CommonReservoirEnsemble):
 
     def __init__(
         self,
-        model_list: list[Model],
+        seed_list: list[int],
+        esn_controls: dict[str, Any],
+        fit_controls: dict[str, Any],
+        predict_controls: dict[str, Any],
         agg_func: Literal["mean", "median"],
         n_procs: Optional[int] = None,
     ):
         self.agg_func = agg_func
-        self.model_list = model_list
-        self._model_names = [m.name for m in model_list]
-        self._nodes_names = [m.node_names for m in model_list]
-        self._nprocs = self._correct_n_procs(model_list, n_procs)
-        self.pool_open()
+        self.model_list = [ESN(**dict(**esn_controls, seed=s)) for s in seed_list]
+        self._model_names = [m.name for m in self.model_list]
+        self._nodes_names = [m.node_names for m in self.model_list]
+        _nprocs = self._correct_n_procs(seed_list, n_procs)
+        self.pool_open(_nprocs)
+        self.fit_controls = fit_controls
+        self.predict_controls = predict_controls
 
-    def pool_open(self):
+    def pool_open(self, n_procs: int):
         # https://joblib.readthedocs.io/en/stable/parallel.html
         # backend="loky" does not work when using reticulate
         # it seems quite hard to understand why, and the fact that another
         # backend works suggest that it is not a coding problem
-        self._pool = Parallel(n_jobs=self._nprocs, backend="multiprocessing")
+        self._pool = Parallel(n_jobs=n_procs, backend="multiprocessing")
 
     def pool_close(self):
         self._pool.close()
@@ -139,30 +144,18 @@ class JoblibReservoirEnsemble(_CommonReservoirEnsemble):
         for model in self.model_list:
             _fix_copy_name(model)
 
-    def fit(self, X: Data, y: Data, fit_controls={}) -> None:
+    def fit(self, X: Data, y: Data) -> None:
         self.model_list = self._pool(
-            delayed(_fit_single)(m, X, y, fit_controls) for m in self.model_list
+            delayed(_fit_single)(m, X, y, self.fit_controls) for m in self.model_list
         )
         self._fix_copy_names()
 
-    def predict(self, X: Data, predict_controls={}) -> list[Data]:
+    def predict(self, X: Data) -> list[Data]:
         models_preds = self._pool(
-            delayed(_predict_single)(m, X, predict_controls) for m in self.model_list
+            delayed(_predict_single)(m, X, self.predict_controls)
+            for m in self.model_list
         )
         return self._convert_predict_output(models_preds)
-
-
-def get_esn_ensemble(
-    esn_controls: dict[str, Any],
-    seed_list: list[int],
-    agg_func: Literal["mean", "median"],
-    n_procs: Optional[int] = None,
-):
-    return JoblibReservoirEnsemble(
-        model_list=[ESN(**dict(**esn_controls, seed=s)) for s in seed_list],
-        agg_func=agg_func,
-        n_procs=n_procs,
-    )
 
 
 # %% ray implementation
@@ -175,9 +168,9 @@ class _ESN_Workers:
         self,
         X_fit: Data,
         seed: int,
-        esn_controls: dict,
-        fit_controls: dict,
-        predict_controls: dict,
+        esn_controls: dict[str, Any],
+        fit_controls: dict[str, Any],
+        predict_controls: dict[str, Any],
     ):
         self.model = ESN(**dict(**esn_controls, seed=seed))
         self.X_fit = X_fit
@@ -199,9 +192,9 @@ class RayReservoirEnsemble(_CommonReservoirEnsemble):
         self,
         X_fit: Data,
         seed_list: list[int],
-        esn_controls: dict,
-        fit_controls: dict,
-        predict_controls: dict,
+        esn_controls: dict[str, Any],
+        fit_controls: dict[str, Any],
+        predict_controls: dict[str, Any],
         agg_func: Literal["mean", "median"],
         n_procs: Optional[int] = None,
     ):

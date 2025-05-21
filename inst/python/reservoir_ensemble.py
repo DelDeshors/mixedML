@@ -1,17 +1,78 @@
 # -*- coding: utf-8 -*-
 from typing import Literal, Optional, Any, Union
 import logging as log
+from abc import ABC, abstractproperty
 
-from joblib import Parallel, delayed, cpu_count  # type: ignore
+
 from numpy import mean, median, ndarray
 from reservoirpy import Model, Node  # type: ignore
-from reservoirpy.nodes import ESN, Reservoir  # type: ignore
+from reservoirpy.nodes import ESN  # type: ignore
 from reservoirpy import verbosity  # type: ignore
 from reservoirpy.type import Data  # type: ignore
+import ray
+from joblib import Parallel, delayed, cpu_count  # type: ignore
 
 verbosity(0)
 
 
+# %% common (joblib/ray) implementation
+
+
+class _CommonReservoirEnsemble(ABC):
+
+    @property
+    def agg_func(self):
+        return self._agg_func
+
+    @agg_func.setter
+    def agg_func(self, value):
+        agg_funcs = {
+            "mean": lambda x: mean(x, axis=0),
+            "median": lambda x: median(x, axis=0),
+        }
+        try:
+            self._agg_func = agg_funcs[value]
+        except KeyError:
+            raise ValueError(f"agg_func must be one of {agg_funcs.keys()}")
+
+    @staticmethod
+    def _correct_n_procs(
+        seeds_or_models_list: Union[list[int], list[Model]],
+        n_procs: Optional[int] = None,
+    ) -> int:
+        if n_procs is None:
+            n_procs = len(seeds_or_models_list)
+        _nprocs = min(n_procs, len(seeds_or_models_list), cpu_count() - 1)
+        if _nprocs != n_procs:
+            log.info("n_procs has been corrected to %d", _nprocs)
+        return _nprocs
+
+    def _convert_predict_output(self, models_preds: list[Data]) -> list[Data]:
+
+        def uniformize(mpred: Data) -> list[ndarray]:
+            if isinstance(mpred, list):
+                return mpred
+            if isinstance(mpred, ndarray):
+                return [mpred]
+            raise TypeError
+
+        models_preds = [uniformize(mpred) for mpred in models_preds]
+        # list(Models) > list(Series) > array(Timesteps x Features)
+        mod1_pred = models_preds[0]
+        N_series = len(mod1_pred)
+
+        agg_pred = [
+            self.agg_func([mpred[serie] for mpred in models_preds])
+            for serie in range(N_series)
+        ]
+
+        if len(agg_pred) == 1:
+            agg_pred = agg_pred[0]
+
+        return agg_pred
+
+
+# %% joblib implementation
 def _remove_copy_suffix(obj: Union[Model, Node]) -> None:
     copysuffix = "-(copy)"
     lcopysuffix = len(copysuffix)
@@ -38,24 +99,7 @@ def _fit_single(model: Model, X: Data, y: Data, fit_controls: dict[str, Any]) ->
     return model
 
 
-def get_esn_ensemble(
-    esn_controls: dict[str, Any],
-    seed_list: list[int],
-    agg_func: Literal["mean", "median"],
-    n_procs: Optional[int] = None,
-):
-    return ReservoirEnsemble(
-        model_list=[ESN(**dict(**esn_controls, seed=s)) for s in seed_list],
-        agg_func=agg_func,
-        n_procs=n_procs,
-    )
-
-
-class ReservoirEnsemble:
-    # VotingRegressor has been considered, but:
-    #  1. reservoirs uses "run" instead of "predict"
-    #  2. reservoirs uses options for "fit" (like warmups)
-    # … so at least here we're sure it's controlled
+class JoblibReservoirEnsemble(_CommonReservoirEnsemble):
 
     def __init__(
         self,
@@ -63,16 +107,11 @@ class ReservoirEnsemble:
         agg_func: Literal["mean", "median"],
         n_procs: Optional[int] = None,
     ):
-        self.agg_func = self._get_agg_func(agg_func)
+        self.agg_func = agg_func
         self.model_list = model_list
         self._model_names = [m.name for m in model_list]
         self._nodes_names = [m.node_names for m in model_list]
-        if n_procs is None:
-            n_procs = len(model_list)
-        self._nprocs = min(n_procs, len(model_list), cpu_count() - 1)
-        if self._nprocs != n_procs:
-            log.info("n_procs has been corrected to %d", self._nprocs)
-
+        self._nprocs = self._correct_n_procs(model_list, n_procs)
         self.pool_open()
 
     def pool_open(self):
@@ -91,7 +130,6 @@ class ReservoirEnsemble:
             "mean": lambda x: mean(x, axis=0),
             "median": lambda x: median(x, axis=0),
         }
-
         try:
             return agg_funcs[agg_func]
         except KeyError:
@@ -101,44 +139,88 @@ class ReservoirEnsemble:
         for model in self.model_list:
             _fix_copy_name(model)
 
-    def _reset_states(self):
-        # this is a temporary tricks, please see: https://github.com/reservoirpy/reservoirpy/issues/193
-        for m in self.model_list:
-            for r in m.nodes:
-                if isinstance(r, Reservoir):
-                    r.reset()
-
     def fit(self, X: Data, y: Data, fit_controls={}) -> None:
-        self._reset_states()
         self.model_list = self._pool(
             delayed(_fit_single)(m, X, y, fit_controls) for m in self.model_list
         )
         self._fix_copy_names()
 
     def predict(self, X: Data, predict_controls={}) -> list[Data]:
-        self._reset_states()
-        model_preds = self._pool(
+        models_preds = self._pool(
             delayed(_predict_single)(m, X, predict_controls) for m in self.model_list
         )
+        return self._convert_predict_output(models_preds)
 
-        def uniformize(mpred) -> list:
-            if isinstance(mpred, list):
-                return mpred
-            if isinstance(mpred, ndarray):
-                return [mpred]
-            raise TypeError
 
-        model_preds = [uniformize(mpred) for mpred in model_preds]
-        # list(Models) > list(Series) > array(Timesteps x Features)
-        mod1_pred = model_preds[0]
-        N_series = len(mod1_pred)
+def get_esn_ensemble(
+    esn_controls: dict[str, Any],
+    seed_list: list[int],
+    agg_func: Literal["mean", "median"],
+    n_procs: Optional[int] = None,
+):
+    return JoblibReservoirEnsemble(
+        model_list=[ESN(**dict(**esn_controls, seed=s)) for s in seed_list],
+        agg_func=agg_func,
+        n_procs=n_procs,
+    )
 
-        agg_pred = [
-            self.agg_func([mpred[serie] for mpred in model_preds])
-            for serie in range(N_series)
+
+# %% ray implementation
+
+
+@ray.remote
+class _ESN_Workers:
+
+    def __init__(
+        self,
+        X_fit: Data,
+        seed: int,
+        esn_controls: dict,
+        fit_controls: dict,
+        predict_controls: dict,
+    ):
+        self.model = ESN(**dict(**esn_controls, seed=seed))
+        self.X_fit = X_fit
+        self.fit_controls = fit_controls
+        self.predict_controls = predict_controls
+
+    def fit(self, y: Data) -> None:
+        self.model.fit(self.X_fit, y, **self.fit_controls)
+
+    def predict(self, X_pred: Data = None) -> Data:
+        if X_pred is None:
+            X_pred = self.X_fit
+        return self.model.run(X_pred, **self.predict_controls)
+
+
+class RayReservoirEnsemble(_CommonReservoirEnsemble):
+
+    def __init__(
+        self,
+        X_fit: Data,
+        seed_list: list[int],
+        esn_controls: dict,
+        fit_controls: dict,
+        predict_controls: dict,
+        agg_func: Literal["mean", "median"],
+        n_procs: Optional[int] = None,
+    ):
+        self.agg_func = agg_func
+        _nprocs = self._correct_n_procs(seed_list, n_procs)
+        ray.init(num_cpus=_nprocs)
+        self.workers_list = [
+            _ESN_Workers.remote(  # type:ignore
+                X_fit, s, esn_controls, fit_controls, predict_controls
+            )
+            for s in seed_list
         ]
 
-        if len(agg_pred) == 1:
-            agg_pred = agg_pred[0]
+    def fit(self, y: Data) -> None:
+        futures = [w.fit.remote(y) for w in self.workers_list]
+        _ = ray.get(futures)
 
-        return agg_pred
+    def predict(self, X: Data = None) -> list[Data]:
+
+        futures = [w.predict.remote(X) for w in self.workers_list]
+        models_preds = ray.get(futures)
+        return self._convert_predict_output(models_preds)

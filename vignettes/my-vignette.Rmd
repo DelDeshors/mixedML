@@ -128,27 +128,21 @@ print_help("ensemble_ctrls")
 print_help("fit_ctrls")
 ```
 
-## `predict_controls`
-
-```{r, echo=FALSE}
-print_help("predict_ctrls")
-```
 
 # Example
 
 ```{r}
 model <- reservoir_mixedml(
-  fixed_spec = Y ~ X1 + X2 + X3,
-  random_spec = Y ~ X1 + X2 + X3,
-  data = lcmm::data_hlme,
-  subject = "ID",
-  time = "Time",
+  fixed_spec = y_mixed ~ x1 + x2 + x3 + x8,
+  random_spec = y_mixed ~ x1 + x2 + x3 + x8,
+  data = data_mixedml[data_mixedml["subject"] < 10, ],
+  subject = "subject",
+  time = "time",
   mixedml_controls = mixedml_ctrls(),
-  hlme_controls = hlme_ctrls(nproc = 2, maxiter = 5000, idiag = TRUE),
-  esn_controls = esn_ctrls(units = 5, ridge = 1e-5),
-  ensemble_controls = ensemble_ctrls(seed_list = c(1, 2, 3, 4, 5), n_procs = 5),
-  fit_controls = fit_ctrls(),
-  predict_controls = predict_ctrls()
+  hlme_controls = hlme_ctrls(nproc = 5, maxiter = 10, idiag = TRUE),
+  esn_controls = esn_ctrls(units = 20, ridge = 1e-5),
+  ensemble_controls = ensemble_ctrls(seed_list = c(1, 2, 3)),
+  fit_controls = fit_ctrls(warmup = 2)
 )
 ```
 
@@ -158,4 +152,10 @@ summary(model$random_model)
 
 ```{r}
 plot_conv(model)
+```
+
+
+
+```{r}
+plot_last_iter(model, subject_nb_or_list = 5)
 ```

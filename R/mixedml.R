@@ -1,4 +1,4 @@
-# https://github.com/reservoirpy/reservoirR/blob/main/tests/testthat/tests.R
+library(ggplot2)
 
 # initialization ----
 
@@ -13,8 +13,8 @@ MIXEDML_CLASS <- "MixedML_Model"
 #' @return mixedml_controls
 #' @export
 mixedml_ctrls <- function(patience = 2, conv_ratio_thresh = 0.01) {
-  patience <- .fix_integer(patience)
   stopifnot(is.single.integer(patience) & 0 <= patience)
+  patience <- as.integer(patience)
   stopifnot(
     is.single.numeric(conv_ratio_thresh) &
       0 < conv_ratio_thresh &
@@ -145,6 +145,12 @@ reservoir_mixedml <- function(
 
     if (mse < (1 - conv_ratio_thresh) * mse_min) {
       count_conv <- 0
+      best <- list(
+        "pred_fixed" = pred_fixed,
+        "pred_rand" = pred_rand,
+        "fixed_model" = fixed_model,
+        "random_model" = random_model
+      )
     } else {
       count_conv <- count_conv + 1
       if (count_conv > patience) {
@@ -157,23 +163,23 @@ reservoir_mixedml <- function(
     istep <- istep + 1
   }
 
-  output <- (list(
-    "subject" = subject,
-    "time" = time,
-    "fixed_spec" = fixed_spec,
-    "random_spec" = random_spec,
-    "fixed_model" = fixed_model,
-    "random_model" = random_model,
-    "mse_list" = mse_list,
-    "residuals" = residuals,
-    "call" = match.call()
-  ))
+  output <- c(
+    list(
+      "data" = data,
+      "subject" = subject,
+      "time" = time,
+      "fixed_spec" = fixed_spec,
+      "random_spec" = random_spec,
+      "mse_list" = mse_list,
+      "call" = match.call()
+    ),
+    best
+  )
   class(output) <- MIXEDML_CLASS
   return(output)
 }
 
 # prediction ----
-
 .test_predict <- function(model, data) {
   stopifnot(inherits(model, MIXEDML_CLASS))
   stopifnot(names(data) == names(model$random_model$data))
@@ -210,12 +216,66 @@ predict <- function(model, data) {
 #' @return Convergence plot
 #' @export
 plot_conv <- function(model, ylog = TRUE) {
+  stopifnot(inherits(model, MIXEDML_CLASS))
+  stopifnot(is.logical(ylog))
   return(plot(
     seq_along(model$mse_list),
     model$mse_list,
     type = "o",
-    xlab = model$time,
+    xlab = "iterations",
     ylab = "MSE",
     ylog = ylog
   ))
+}
+
+
+#' Plot the prediction of a MixedML model
+#'
+#' @param model Trained MixedML model.
+#' @param subject_nb_or_list Number of subjects to plot (randomly selected) or
+#' list of subjects to plot.
+#' @param ylog Plot the y-value with a log scale. Default: TRUE.
+#' @return Prediction plot of the model.
+#' @export
+plot_last_iter <- function(model, subject_nb_or_list, ylog = FALSE) {
+  stopifnot(inherits(model, MIXEDML_CLASS))
+  stopifnot(
+    is.single.integer(subject_nb_or_list) | is.vector(subject_nb_or_list)
+  )
+  stopifnot(is.logical(ylog))
+  #
+  subject <- model$subject
+  time <- model$time
+  target <- .get_left_side_string(as.formula(model$fixed_spec))
+  #
+  data_true <- model$data
+  data_true[[subject]] <- as.factor(data_true[[subject]])
+  data_pred <- data_true
+  data_pred[target] <- model$pred_fixed + model$pred_rand
+  #
+  if (is.single.integer(subject_nb_or_list)) {
+    subject_nb_or_list <- sample(
+      unique(data_true[[subject]]),
+      subject_nb_or_list
+    )
+    message("Subjects selected randomly: use set.seed to change the selection.")
+  } else {
+    stopifnot(all(subject_nb_or_list %in% data_true[[subject]]))
+  }
+  #
+  idx_keep <- data_true[[subject]] %in% subject_nb_or_list
+  data_true <- data_true[idx_keep, ]
+  data_pred <- data_pred[idx_keep, ]
+  return(
+    ggplot(
+      mapping = aes_string(
+        x = time,
+        y = target,
+        group = subject,
+        color = subject
+      )
+    ) +
+      geom_line(data = data_true, linetype = 1) +
+      geom_line(data = data_pred, linetype = 2)
+  )
 }

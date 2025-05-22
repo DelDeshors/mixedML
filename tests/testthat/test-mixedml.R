@@ -35,15 +35,17 @@ test_that("mixedml works", {
   expect_named(
     mixed_ml_model,
     c(
+      "data",
       "subject",
       "time",
       "fixed_spec",
       "random_spec",
-      "fixed_model",
-      "random_model",
       "mse_list",
-      "residuals",
-      "call"
+      "call",
+      "pred_fixed",
+      "pred_rand",
+      "fixed_model",
+      "random_model"
     )
   )
 

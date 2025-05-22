@@ -70,6 +70,10 @@
   }
 }
 
+warning("Redifining is.integer so is.integer(1) is True.")
+is.integer <- function(x) {
+  return(is.numeric(x) & (x == round(x)))
+}
 
 is.single.integer <- function(x) {
   return(is.integer(x) & length(x) == 1)
@@ -81,15 +85,6 @@ is.single.numeric <- function(x) {
 
 is.named.vector <- function(x) {
   return(is.vector(x) & ((length(x) == 0) | is.character(names(x))))
-}
-
-.fix_integer <- function(value) {
-  if (is.numeric(value)) {
-    if (all(round(value) == value)) {
-      value <- as.integer(value)
-    }
-  }
-  return(value)
 }
 
 

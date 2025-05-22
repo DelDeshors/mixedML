@@ -32,8 +32,8 @@ esn_ctrls <- function(
   ridge = 0.0,
   feedback = FALSE
 ) {
-  units <- .fix_integer(units)
   stopifnot(is.single.integer(units))
+  units <- as.integer(units)
   stopifnot(is.single.numeric(lr))
   stopifnot(is.single.numeric(sr))
   stopifnot(is.single.numeric(ridge))
@@ -55,11 +55,11 @@ ensemble_ctrls <- function(
   agg_func = "median",
   n_procs = 1
 ) {
-  seed_list <- .fix_integer(seed_list)
-  n_procs <- .fix_integer(n_procs)
   stopifnot(is.integer(seed_list))
+  seed_list <- as.integer(seed_list)
   stopifnot(is.character(agg_func))
   stopifnot(is.single.integer(n_procs))
+  n_procs <- as.integer(n_procs)
   return(as.list(environment()))
 }
 
@@ -76,9 +76,8 @@ ensemble_ctrls <- function(
 #' @export
 # nolint end
 fit_ctrls <- function(warmup = 0) {
-  warmup <- .fix_integer(warmup)
-  stopifnot(is.single.integer(warmup))
-  stopifnot(warmup >= 0)
+  stopifnot(is.single.integer(warmup) & (warmup >= 0))
+  warmup <- as.integer(warmup)
   return(as.list(environment()))
 }
 

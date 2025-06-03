@@ -1,4 +1,21 @@
 
+- [1 Introduction](#1-introduction)
+- [2 General MixedML use](#2-general-mixedml-use)
+  - [2.1 General principle](#21-general-principle)
+  - [2.2 Controls](#22-controls)
+    - [2.2.1 `mixedml_controls`](#221-mixedml_controls)
+    - [2.2.2 `hlme_controls`](#222-hlme_controls)
+  - [2.3 Functions](#23-functions)
+    - [2.3.1 `predict`](#231-predict)
+    - [2.3.2 `plot_conv`](#232-plot_conv)
+- [3 Implementations](#3-implementations)
+  - [3.1 MixedML with Reservoir
+    Computing](#31-mixedml-with-reservoir-computing)
+    - [3.1.1 `esn_controls`](#311-esn_controls)
+    - [3.1.2 `ensemble_controls`](#312-ensemble_controls)
+  - [3.2 `fit_controls`](#32-fit_controls)
+- [4 Example](#4-example)
+
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 # 1 Introduction

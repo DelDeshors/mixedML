@@ -96,7 +96,7 @@ repos:
         name: Rtesting
         entry: Rscript tests/precommit_testthat.R
         language: system
-        files: .*\.(R|Rmd|rda)
+        files: .*\.(?:R|Rmd|rda|py)
         pass_filenames: false
 -   repo: local
     hooks:
@@ -105,7 +105,7 @@ repos:
         stages: [pre-merge-commit]
         entry: Rscript tests/precommit_vignette.R
         language: system
-        files: .*\.(R|Rmd|rda)
+        files: .*\.(?:R|Rmd|rda)
         pass_filenames: false
 # Python testing
 -   repo: local
@@ -117,7 +117,6 @@ repos:
         types: [python]
         require_serial: true
         pass_filenames: false
-        always_run: true
 ci:
     autoupdate_schedule: monthly
     skip: [pkgdown]

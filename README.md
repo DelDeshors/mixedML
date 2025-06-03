@@ -76,19 +76,17 @@ the control names: the `some_name_ctrls` function is used to define
 
 ### 2.2.1 `mixedml_controls`
 
-# 3 Prepare the mixedml_controls
-
-## 3.1 Description
+**Description**
 
 Prepare the mixedml_controls
 
-## 3.2 Usage
+**Usage**
 
 ``` r
 mixedml_ctrls(patience = 2, conv_ratio_thresh = 0.01)
 ```
 
-## 3.3 Arguments
+**Arguments**
 
 - `patience`: Number of iterations without improvement before the
   training is stopped. Default: 2
@@ -96,27 +94,25 @@ mixedml_ctrls(patience = 2, conv_ratio_thresh = 0.01)
   improvement. `conv_ratio_thresh=0.01` means an improvement of at least
   1% of the MSE is necessary. Default: 0.01
 
-## 3.4 Value
+**Value**
 
 mixedml_controls
 
-### 3.4.1 `hlme_controls`
+### 2.2.2 `hlme_controls`
 
-# 4 Prepare the hlme_controls
-
-## 4.1 Description
+**Description**
 
 Please see the
 [documentation](https://cecileproust-lima.github.io/lcmm/reference/hlme.html)of
 the `hlme` function of the `lcmm` package.
 
-## 4.2 Usage
+**Usage**
 
 ``` r
 hlme_ctrls(cor = NULL, idiag = FALSE, maxiter = 500, nproc = 1)
 ```
 
-## 4.3 Arguments
+**Arguments**
 
 - `cor`: brownian motion or autoregressive process modeling the
   correlation between the observations. “BM” or “AR” should be
@@ -130,81 +126,75 @@ hlme_ctrls(cor = NULL, idiag = FALSE, maxiter = 500, nproc = 1)
 - `nproc`: the number cores for parallel computation. Default to 1
   (sequential mode).
 
-## 4.4 Value
+**Value**
 
 hlme_controls
 
-## 4.5 Functions
+## 2.3 Functions
 
 The function `predict` and `plot_conv` are common to all the MixedML
 models
 
-### 4.5.1 `predict`
+### 2.3.1 `predict`
 
-# 5 Predict using a fitted model and new data
-
-## 5.1 Description
+**Description**
 
 Predict using a fitted model and new data
 
-## 5.2 Usage
+**Usage**
 
 ``` r
 predict(model, data)
 ```
 
-## 5.3 Arguments
+**Arguments**
 
 - `model`: Trained MixedML model
 - `data`: New data (same format as the one used for training)
 
-## 5.4 Value
+**Value**
 
 prediction
 
-### 5.4.1 `plot_conv`
+### 2.3.2 `plot_conv`
 
-# 6 Plot the (MSE) convergence of the MixedML training
-
-## 6.1 Description
+**Description**
 
 Plot the (MSE) convergence of the MixedML training
 
-## 6.2 Usage
+**Usage**
 
 ``` r
 plot_conv(model, ylog = TRUE)
 ```
 
-## 6.3 Arguments
+**Arguments**
 
 - `model`: Trained MixedML model
 - `ylog`: Plot the y-value with a log scale. Default: TRUE.
 
-## 6.4 Value
+**Value**
 
 Convergence plot
 
-# 7 Implementations
+# 3 Implementations
 
 So far, a hybrid model based on Reservoir Computing is available. They
 are implemented by interfacing the
 [reservoirpy](https://github.com/reservoirpy/reservoirpy) Python package
 with R using [reticulate](https://github.com/rstudio/reticulate).
 
-## 7.1 MixedML with Reservoir Computing
+## 3.1 MixedML with Reservoir Computing
 
 The function `reservoir_mixedml` is used to define and fit a MixedML
 model which uses an Reservoir Computing to fit the fixed effect.
 
-# 8 MixedML model with Reservoir Computing
-
-## 8.1 Description
+**Description**
 
 Generate and fit a MixedML model using an Ensemble of Echo State
 Networks (Reservoir+Ridge Regression) to fit the fixed effects.
 
-## 8.2 Usage
+**Usage**
 
 ``` r
 reservoir_mixedml(
@@ -221,7 +211,7 @@ reservoir_mixedml(
 )
 ```
 
-## 8.3 Arguments
+**Arguments**
 
 - `fixed_spec`: two-sided linear formula object for the fixed-effects.
   The response outcome is on the left of ~ and the covariates are
@@ -242,7 +232,7 @@ reservoir_mixedml(
 - `ensemble_controls`: controls specific to the Ensemble model
 - `fit_controls`: controls specific to the ESN models fit
 
-## 8.4 Value
+**Value**
 
 fitted MixedML model
 
@@ -254,11 +244,9 @@ reduces the impact of the Reservoir initialization on the results.
 
 Four controls are used to define the RC model’s behavior.
 
-### 8.4.1 `esn_controls`
+### 3.1.1 `esn_controls`
 
-# 9 Prepare the esn_controls
-
-## 9.1 Description
+**Description**
 
 Please see the documentation of ReservoirPy for:
 
@@ -266,13 +254,13 @@ Please see the documentation of ReservoirPy for:
 - [Ridge
   Regression](https://reservoirpy.readthedocs.io/en/latest/api/generated/reservoirpy.nodes.Ridge.html)
 
-## 9.2 Usage
+**Usage**
 
 ``` r
 esn_ctrls(units = 100, lr = 1, sr = 0.1, ridge = 0, feedback = FALSE)
 ```
 
-## 9.3 Arguments
+**Arguments**
 
 - `units`: Number of reservoir units.
 - `lr`: Neurons leak rate. Must be in $[0,1]$.
@@ -280,25 +268,23 @@ esn_ctrls(units = 100, lr = 1, sr = 0.1, ridge = 0, feedback = FALSE)
 - `ridge`: Regularization parameter $\lambda$.
 - `feedback`: Is readout connected to reservoir through feedback?
 
-## 9.4 Value
+**Value**
 
 esn_controls
 
-### 9.4.1 `ensemble_controls`
+### 3.1.2 `ensemble_controls`
 
-# 10 Prepare the ensemble_controls
-
-## 10.1 Description
+**Description**
 
 Prepare the ensemble_controls
 
-## 10.2 Usage
+**Usage**
 
 ``` r
 ensemble_ctrls(seed_list = c(1, 2, 3), agg_func = "median", n_procs = 1)
 ```
 
-## 10.3 Arguments
+**Arguments**
 
 - `seed_list`: List of seeds used to generate the Reservoir. Default:
   c(1, 2, 3)
@@ -307,36 +293,34 @@ ensemble_ctrls(seed_list = c(1, 2, 3), agg_func = "median", n_procs = 1)
 - `n_procs`: Number of processor to use. 1 means no multiprocessing.
   Default: 1.
 
-## 10.4 Value
+**Value**
 
 ensemble_controls
 
-## 10.5 `fit_controls`
+## 3.2 `fit_controls`
 
-# 11 Prepare the fit_controls
-
-## 11.1 Description
+**Description**
 
 Please see the
 [documentation](https://reservoirpy.readthedocs.io/en/latest/api/generated/reservoirpy.nodes.ESN.html#reservoirpy.nodes.ESN.fit)of
 ReservoirPy
 
-## 11.2 Usage
+**Usage**
 
 ``` r
 fit_ctrls(warmup = 0)
 ```
 
-## 11.3 Arguments
+**Arguments**
 
 - `warmup`: Number of timesteps to consider as warmup and discard at the
   beginning. Defalut: 0 of each timeseries before training.
 
-## 11.4 Value
+**Value**
 
 fit_controls
 
-# 12 Example
+# 4 Example
 
 ``` r
 model <- reservoir_mixedml(

@@ -1,9 +1,10 @@
 # All available hooks: https://pre-commit.com/hooks.html
 # R specific hooks: https://github.com/lorenzwalthert/precommit
+fail_fast: true
 repos:
 # officials hooks mixed with R precommit modifications
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.3.0
+    rev: v5.0.0
     hooks:
     -   id: check-yaml
     -   id: end-of-file-fixer
@@ -36,22 +37,23 @@ repos:
         name: Rtesting
         entry: Rscript tests/precommit_testthat.R
         language: system
+        files: .*\.(R|Rmd|rda)
         pass_filenames: false
-        always_run: true
 -   repo: local
     hooks:
     -   id: vignette
         name: vignette
-        stages: [merge-commit]
+        stages: [pre-merge-commit]
         entry: Rscript tests/precommit_vignette.R
         language: system
+        files: .*\.(R|Rmd|rda)
         pass_filenames: false
-        always_run: true
 #  R precommit hooks
 -   repo: https://github.com/lorenzwalthert/precommit    #  R precommit hooks
     rev: v0.4.3.9009
     hooks:
     -   id: roxygenize
+        stages: [pre-merge-commit]
         additional_dependencies:
         - lcmm
         - reticulate
@@ -59,7 +61,7 @@ repos:
         - htmltools
         - ggplot2
     # codemeta must be above use-tidy-description when both are used
-    # -   id: codemeta-description-updated
+    -   id: codemeta-description-updated
     -   id: use-tidy-description
     -   id: lintr
     # -   id: readme-rmd-rendered  # automated with vignette
@@ -111,6 +113,10 @@ repos:
         require_serial: true
         pass_filenames: false
         always_run: true
+-   repo: https://github.com/pycqa/flake8
+    rev: 7.0.0
+    hooks:
+    -   id: flake8
 ci:
     autoupdate_schedule: monthly
     skip: [pkgdown]

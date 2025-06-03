@@ -21,7 +21,7 @@ repos:
         args: [--branch, staging, --branch, main]
     -   id: file-contents-sorter
         files: '^\.Rbuildignore$'
-# local R air formating hooks
+# R formating
 -   repo: local
     hooks:
     -   id: airformat
@@ -30,24 +30,6 @@ repos:
         language: system
         types: [r]
         pass_filenames: true
-# local R testing
--   repo: local
-    hooks:
-    -   id: Rtesting
-        name: Rtesting
-        entry: Rscript tests/precommit_testthat.R
-        language: system
-        files: .*\.(R|Rmd|rda)
-        pass_filenames: false
--   repo: local
-    hooks:
-    -   id: vignette
-        name: vignette
-        stages: [pre-merge-commit]
-        entry: Rscript tests/precommit_vignette.R
-        language: system
-        files: .*\.(R|Rmd|rda)
-        pass_filenames: false
 #  R precommit hooks
 -   repo: https://github.com/lorenzwalthert/precommit    #  R precommit hooks
     rev: v0.4.3.9009
@@ -85,7 +67,7 @@ repos:
         language: fail
         files: '\.(Rhistory|RData|Rds|rds)$'
         # `exclude: <regex>` to allow committing specific files
- # Python local hooks
+ # Python formating
 -   repo: local
     hooks:
     -   id: black
@@ -103,6 +85,29 @@ repos:
         types: [python]
         require_serial: true
         pass_filenames: false
+-   repo: https://github.com/pycqa/flake8
+    rev: 7.0.0
+    hooks:
+    -   id: flake8
+# R testing
+-   repo: local
+    hooks:
+    -   id: Rtesting
+        name: Rtesting
+        entry: Rscript tests/precommit_testthat.R
+        language: system
+        files: .*\.(R|Rmd|rda)
+        pass_filenames: false
+-   repo: local
+    hooks:
+    -   id: vignette
+        name: vignette
+        stages: [pre-merge-commit]
+        entry: Rscript tests/precommit_vignette.R
+        language: system
+        files: .*\.(R|Rmd|rda)
+        pass_filenames: false
+# Python testing
 -   repo: local
     hooks:
     -   id: pytest
@@ -113,10 +118,6 @@ repos:
         require_serial: true
         pass_filenames: false
         always_run: true
--   repo: https://github.com/pycqa/flake8
-    rev: 7.0.0
-    hooks:
-    -   id: flake8
 ci:
     autoupdate_schedule: monthly
     skip: [pkgdown]

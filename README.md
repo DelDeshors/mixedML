@@ -4,24 +4,40 @@
 # 1 Introduction
 
 This package provides functions to train hybrid mixed effects models.
-These models combine: - a Machine Leaning (ML) model to estimates the
-fixed effects; - a Mixed Effects model (from
-[lcmm](https://github.com/CecileProust-Lima/lcmm/)) to estimate the
-random effects.
+Such models are a variation of linear mixed effects models, used for
+Gaussian longitudinal data, whose formulation is:
 
-Using ML models allows to use highly non-linear modelization of the
-fixed effects, as well as complex time interactions when using Recurrent
-Neural Networks.
+$Y_{ij} = X_{ij} \beta +  Z_{ij} u_i + w_{ij} + \varepsilon_{ij}$
 
-The method used is model agnostic, so any kind of ML model can be
-implement.
+… where $i$ is the subject, $j$ is the occasion, and $w_i$ comes from a
+zero-mean Gaussian stochastic process (such as Brownian motion),
 
-So far, a hybrid model based on Reservoir Computing is available. They
-are implemented by interfacing the
-[reservoirpy](https://github.com/reservoirpy/reservoirpy) Python package
-with R using [reticulate](https://github.com/rstudio/reticulate).
+For such hybrid models:
 
-# 2 MixedML use
+- a Machine Leaning (ML) model is used to estimates the fixed effects;
+- a Mixed Effects model (`hlme` from [lcmm
+  package](https://cecileproust-lima.github.io/lcmm/articles/lcmm.html))
+  is used to estimate the random effects.
+
+That is, the formulation becomes:
+
+$Y_{ij} = f_{ML}(X_{ij}) +  Z_{ij} u_i + w_{ij} + \varepsilon_{ij}$
+
+… where $f_{ML}(X_{ij})$ is the output from a ML model trained to
+predict the fixed effects.
+
+Using ML models to estimates the fixed effects have tow main advantages
+comparing to linear models:
+
+- they can handle highly non-linear relations, and do so with simple
+  inputs (instead of being highly dependent of the specification);
+- they can handle complex time interactions, in the case of Recurrent
+  Neural Networks;
+
+However, some ML models have a “black box” effect, as one cannot use its
+estimated parameters to understand the relations within the data.
+
+# 2 General MixedML use
 
 ## 2.1 General principle
 
@@ -60,700 +76,138 @@ the control names: the `some_name_ctrls` function is used to define
 
 ### 2.2.1 `mixedml_controls`
 
-\<!DOCTYPE html\>
-<html>
+# 3 Prepare the mixedml_controls
 
-<head>
-
-<title>
-
-R: Prepare the mixedml_controls
-</title>
-
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/katex.min.css">
-<script type="text/javascript">
-const macros = { "\\R": "\\textsf{R}", "\\code": "\\texttt"};
-function processMathHTML() {
-    var l = document.getElementsByClassName('reqn');
-    for (let e of l) { katex.render(e.textContent, e, { throwOnError: false, macros }); }
-    return;
-}</script>
-
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/katex.min.js"
-    onload="processMathHTML();"></script>
-
-<link rel="stylesheet" type="text/css" href="R.css" />
-</head>
-
-<body>
-
-<div class="container">
-
-<main>
-
-<table style="width: 100%;">
-
-<tr>
-
-<td>
-
-mixedml_ctrls
-</td>
-
-<td style="text-align: right;">
-
-R Documentation
-</td>
-
-</tr>
-
-</table>
-
-<h2>
+## 3.1 Description
 
 Prepare the mixedml_controls
-</h2>
 
-<h3>
+## 3.2 Usage
 
-Description
-</h3>
+``` r
+mixedml_ctrls(patience = 2, conv_ratio_thresh = 0.01)
+```
 
-<p>
+## 3.3 Arguments
 
-Prepare the mixedml_controls
-</p>
+- `patience`: Number of iterations without improvement before the
+  training is stopped. Default: 2
+- `conv_ratio_thresh`: Ratio of improvement of the MSE to consider an
+  improvement. `conv_ratio_thresh=0.01` means an improvement of at least
+  1% of the MSE is necessary. Default: 0.01
 
-<h3>
-
-Usage
-</h3>
-
-<pre><code class='language-R'>mixedml_ctrls(patience = 2, conv_ratio_thresh = 0.01)
-</code></pre>
-
-<h3>
-
-Arguments
-</h3>
-
-<table role="presentation">
-
-<tr>
-
-<td>
-
-<code id="patience">patience</code>
-</td>
-
-<td>
-
-<p>
-
-Number of iterations without improvement before the training is stopped.
-Default: 2
-</p>
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>
-
-<code id="conv_ratio_thresh">conv_ratio_thresh</code>
-</td>
-
-<td>
-
-<p>
-
-Ratio of improvement of the MSE to consider an improvement.
-<code>conv_ratio_thresh=0.01</code> means an improvement of at least 1%
-of the MSE is necessary. Default: 0.01
-</p>
-
-</td>
-
-</tr>
-
-</table>
-
-<h3>
-
-Value
-</h3>
-
-<p>
+## 3.4 Value
 
 mixedml_controls
-</p>
 
-</main>
+### 3.4.1 `hlme_controls`
 
-</div>
+# 4 Prepare the hlme_controls
 
-</body>
-
-</html>
-
-### 2.2.2 `hlme_controls`
-
-\<!DOCTYPE html\>
-<html>
-
-<head>
-
-<title>
-
-R: Prepare the hlme_controls
-</title>
-
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/katex.min.css">
-<script type="text/javascript">
-const macros = { "\\R": "\\textsf{R}", "\\code": "\\texttt"};
-function processMathHTML() {
-    var l = document.getElementsByClassName('reqn');
-    for (let e of l) { katex.render(e.textContent, e, { throwOnError: false, macros }); }
-    return;
-}</script>
-
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/katex.min.js"
-    onload="processMathHTML();"></script>
-
-<link rel="stylesheet" type="text/css" href="R.css" />
-</head>
-
-<body>
-
-<div class="container">
-
-<main>
-
-<table style="width: 100%;">
-
-<tr>
-
-<td>
-
-hlme_ctrls
-</td>
-
-<td style="text-align: right;">
-
-R Documentation
-</td>
-
-</tr>
-
-</table>
-
-<h2>
-
-Prepare the hlme_controls
-</h2>
-
-<h3>
-
-Description
-</h3>
-
-<p>
+## 4.1 Description
 
 Please see the
-<a href="https://cecileproust-lima.github.io/lcmm/reference/hlme.html">documentation</a>
-of the <code>hlme</code> function of the <code>lcmm</code> package.
-</p>
+[documentation](https://cecileproust-lima.github.io/lcmm/reference/hlme.html)of
+the `hlme` function of the `lcmm` package.
 
-<h3>
+## 4.2 Usage
 
-Usage
-</h3>
+``` r
+hlme_ctrls(cor = NULL, idiag = FALSE, maxiter = 500, nproc = 1)
+```
 
-<pre><code class='language-R'>hlme_ctrls(cor = NULL, idiag = FALSE, maxiter = 500, nproc = 1)
-</code></pre>
+## 4.3 Arguments
 
-<h3>
+- `cor`: brownian motion or autoregressive process modeling the
+  correlation between the observations. “BM” or “AR” should be
+  specified, followed by the time variable between brackets.
+- `idiag`: logical for the structure of the variance-covariance matrix
+  of the random-effects. If FALSE, a non structured matrix of
+  variance-covariance is considered (by default). If TRUE a diagonal
+  matrix of variance-covariance is considered.
+- `maxiter`: maximum number of iterations for the Marquardt iterative
+  algorithm.
+- `nproc`: the number cores for parallel computation. Default to 1
+  (sequential mode).
 
-Arguments
-</h3>
-
-<table role="presentation">
-
-<tr>
-
-<td>
-
-<code id="cor">cor</code>
-</td>
-
-<td>
-
-<p>
-
-brownian motion or autoregressive process modeling the correlation
-between the observations. "BM" or "AR" should be specified, followed by
-the time variable between brackets.
-</p>
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>
-
-<code id="idiag">idiag</code>
-</td>
-
-<td>
-
-<p>
-
-logical for the structure of the variance-covariance matrix of the
-random-effects. If FALSE, a non structured matrix of variance-covariance
-is considered (by default). If TRUE a diagonal matrix of
-variance-covariance is considered.
-</p>
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>
-
-<code id="maxiter">maxiter</code>
-</td>
-
-<td>
-
-<p>
-
-maximum number of iterations for the Marquardt iterative algorithm.
-</p>
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>
-
-<code id="nproc">nproc</code>
-</td>
-
-<td>
-
-<p>
-
-the number cores for parallel computation. Default to 1 (sequential
-mode).
-</p>
-
-</td>
-
-</tr>
-
-</table>
-
-<h3>
-
-Value
-</h3>
-
-<p>
+## 4.4 Value
 
 hlme_controls
-</p>
 
-</main>
-
-</div>
-
-</body>
-
-</html>
-
-## 2.3 Functions
+## 4.5 Functions
 
 The function `predict` and `plot_conv` are common to all the MixedML
 models
 
-### 2.3.1 `predict`
+### 4.5.1 `predict`
 
-\<!DOCTYPE html\>
-<html>
+# 5 Predict using a fitted model and new data
 
-<head>
-
-<title>
-
-R: Predict using a fitted model and new data
-</title>
-
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/katex.min.css">
-<script type="text/javascript">
-const macros = { "\\R": "\\textsf{R}", "\\code": "\\texttt"};
-function processMathHTML() {
-    var l = document.getElementsByClassName('reqn');
-    for (let e of l) { katex.render(e.textContent, e, { throwOnError: false, macros }); }
-    return;
-}</script>
-
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/katex.min.js"
-    onload="processMathHTML();"></script>
-
-<link rel="stylesheet" type="text/css" href="R.css" />
-</head>
-
-<body>
-
-<div class="container">
-
-<main>
-
-<table style="width: 100%;">
-
-<tr>
-
-<td>
-
-predict
-</td>
-
-<td style="text-align: right;">
-
-R Documentation
-</td>
-
-</tr>
-
-</table>
-
-<h2>
+## 5.1 Description
 
 Predict using a fitted model and new data
-</h2>
 
-<h3>
+## 5.2 Usage
 
-Description
-</h3>
+``` r
+predict(model, data)
+```
 
-<p>
+## 5.3 Arguments
 
-Predict using a fitted model and new data
-</p>
+- `model`: Trained MixedML model
+- `data`: New data (same format as the one used for training)
 
-<h3>
-
-Usage
-</h3>
-
-<pre><code class='language-R'>predict(model, data)
-</code></pre>
-
-<h3>
-
-Arguments
-</h3>
-
-<table role="presentation">
-
-<tr>
-
-<td>
-
-<code id="model">model</code>
-</td>
-
-<td>
-
-<p>
-
-Trained MixedML model
-</p>
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>
-
-<code id="data">data</code>
-</td>
-
-<td>
-
-<p>
-
-New data (same format as the one used for training)
-</p>
-
-</td>
-
-</tr>
-
-</table>
-
-<h3>
-
-Value
-</h3>
-
-<p>
+## 5.4 Value
 
 prediction
-</p>
 
-</main>
+### 5.4.1 `plot_conv`
 
-</div>
+# 6 Plot the (MSE) convergence of the MixedML training
 
-</body>
-
-</html>
-
-### 2.3.2 `plot_conv`
-
-\<!DOCTYPE html\>
-<html>
-
-<head>
-
-<title>
-
-R: Plot the (MSE) convergence of the MixedML training
-</title>
-
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/katex.min.css">
-<script type="text/javascript">
-const macros = { "\\R": "\\textsf{R}", "\\code": "\\texttt"};
-function processMathHTML() {
-    var l = document.getElementsByClassName('reqn');
-    for (let e of l) { katex.render(e.textContent, e, { throwOnError: false, macros }); }
-    return;
-}</script>
-
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/katex.min.js"
-    onload="processMathHTML();"></script>
-
-<link rel="stylesheet" type="text/css" href="R.css" />
-</head>
-
-<body>
-
-<div class="container">
-
-<main>
-
-<table style="width: 100%;">
-
-<tr>
-
-<td>
-
-plot_conv
-</td>
-
-<td style="text-align: right;">
-
-R Documentation
-</td>
-
-</tr>
-
-</table>
-
-<h2>
+## 6.1 Description
 
 Plot the (MSE) convergence of the MixedML training
-</h2>
 
-<h3>
+## 6.2 Usage
 
-Description
-</h3>
+``` r
+plot_conv(model, ylog = TRUE)
+```
 
-<p>
+## 6.3 Arguments
 
-Plot the (MSE) convergence of the MixedML training
-</p>
+- `model`: Trained MixedML model
+- `ylog`: Plot the y-value with a log scale. Default: TRUE.
 
-<h3>
-
-Usage
-</h3>
-
-<pre><code class='language-R'>plot_conv(model, ylog = TRUE)
-</code></pre>
-
-<h3>
-
-Arguments
-</h3>
-
-<table role="presentation">
-
-<tr>
-
-<td>
-
-<code id="model">model</code>
-</td>
-
-<td>
-
-<p>
-
-Trained MixedML model
-</p>
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>
-
-<code id="ylog">ylog</code>
-</td>
-
-<td>
-
-<p>
-
-Plot the y-value with a log scale. Default: TRUE.
-</p>
-
-</td>
-
-</tr>
-
-</table>
-
-<h3>
-
-Value
-</h3>
-
-<p>
+## 6.4 Value
 
 Convergence plot
-</p>
 
-</main>
+# 7 Implementations
 
-</div>
+So far, a hybrid model based on Reservoir Computing is available. They
+are implemented by interfacing the
+[reservoirpy](https://github.com/reservoirpy/reservoirpy) Python package
+with R using [reticulate](https://github.com/rstudio/reticulate).
 
-</body>
-
-</html>
-
-# 3 MixedML with Reservoir Computing
+## 7.1 MixedML with Reservoir Computing
 
 The function `reservoir_mixedml` is used to define and fit a MixedML
 model which uses an Reservoir Computing to fit the fixed effect.
 
-\<!DOCTYPE html\>
-<html>
+# 8 MixedML model with Reservoir Computing
 
-<head>
-
-<title>
-
-R: MixedML model with Reservoir Computing
-</title>
-
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/katex.min.css">
-<script type="text/javascript">
-const macros = { "\\R": "\\textsf{R}", "\\code": "\\texttt"};
-function processMathHTML() {
-    var l = document.getElementsByClassName('reqn');
-    for (let e of l) { katex.render(e.textContent, e, { throwOnError: false, macros }); }
-    return;
-}</script>
-
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/katex.min.js"
-    onload="processMathHTML();"></script>
-
-<link rel="stylesheet" type="text/css" href="R.css" />
-</head>
-
-<body>
-
-<div class="container">
-
-<main>
-
-<table style="width: 100%;">
-
-<tr>
-
-<td>
-
-reservoir_mixedml
-</td>
-
-<td style="text-align: right;">
-
-R Documentation
-</td>
-
-</tr>
-
-</table>
-
-<h2>
-
-MixedML model with Reservoir Computing
-</h2>
-
-<h3>
-
-Description
-</h3>
-
-<p>
+## 8.1 Description
 
 Generate and fit a MixedML model using an Ensemble of Echo State
 Networks (Reservoir+Ridge Regression) to fit the fixed effects.
-</p>
 
-<h3>
+## 8.2 Usage
 
-Usage
-</h3>
-
-<pre><code class='language-R'>reservoir_mixedml(
+``` r
+reservoir_mixedml(
   fixed_spec,
   random_spec,
   data,
@@ -763,242 +217,34 @@ Usage
   hlme_controls = hlme_ctrls(),
   esn_controls = esn_controls(),
   ensemble_controls = ensemble_controls(),
-  fit_controls = fit_controls(),
-  predict_controls = predict_controls()
+  fit_controls = fit_controls()
 )
-</code></pre>
-
-<h3>
-
-Arguments
-</h3>
-
-<table role="presentation">
-
-<tr>
-
-<td>
-
-<code id="fixed_spec">fixed_spec</code>
-</td>
-
-<td>
-
-<p>
-
-two-sided linear formula object for the fixed-effects. The response
-outcome is on the left of ~ and the covariates are separated by + on the
-right of ~.
-</p>
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>
-
-<code id="random_spec">random_spec</code>
-</td>
-
-<td>
-
-<p>
-
-two-sided formula for the random-effects in the linear mixed model. The
-response outcome is on the left of ~ and the covariates are separated
-by + on the right of ~. By default, an intercept is included. If no
-intercept, -1 should be the first term included.
-</p>
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>
-
-<code id="data">data</code>
-</td>
-
-<td>
-
-<p>
-
-dataframe containing the variables named in <code>fixed_spec</code>,
-<code>random_spec</code>, <code>subject</code> and <code>time</code>.
-</p>
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>
-
-<code id="subject">subject</code>
-</td>
-
-<td>
-
-<p>
-
-name of the covariate representing the grouping structure, given as a
-string/character.
-</p>
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>
-
-<code id="time">time</code>
-</td>
-
-<td>
-
-<p>
-
-name of the time variable, given as a string/character.
-</p>
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>
-
-<code id="mixedml_controls">mixedml_controls</code>
-</td>
-
-<td>
-
-<p>
-
-controls specific to the MixedML model
-</p>
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>
-
-<code id="hlme_controls">hlme_controls</code>
-</td>
-
-<td>
-
-<p>
-
-controls specific to the HLME model
-</p>
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>
-
-<code id="esn_controls">esn_controls</code>
-</td>
-
-<td>
-
-<p>
-
-controls specific to the ESN models
-</p>
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>
-
-<code id="ensemble_controls">ensemble_controls</code>
-</td>
-
-<td>
-
-<p>
-
-controls specific to the Ensemble model
-</p>
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>
-
-<code id="fit_controls">fit_controls</code>
-</td>
-
-<td>
-
-<p>
-
-controls specific to the ESN models fit
-</p>
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>
-
-<code id="predict_controls">predict_controls</code>
-</td>
-
-<td>
-
-<p>
-
-controls specific to the ESN models prediction
-</p>
-
-</td>
-
-</tr>
-
-</table>
-
-<h3>
-
-Value
-</h3>
-
-<p>
+```
+
+## 8.3 Arguments
+
+- `fixed_spec`: two-sided linear formula object for the fixed-effects.
+  The response outcome is on the left of ~ and the covariates are
+  separated by + on the right of ~.
+- `random_spec`: two-sided formula for the random-effects in the linear
+  mixed model. The response outcome is on the left of ~ and the
+  covariates are separated by + on the right of ~. By default, an
+  intercept is included. If no intercept, -1 should be the first term
+  included.
+- `data`: dataframe containing the variables named in `fixed_spec`,
+  `random_spec`, `subject` and `time`.
+- `subject`: name of the covariate representing the grouping structure,
+  given as a string/character.
+- `time`: name of the time variable, given as a string/character.
+- `mixedml_controls`: controls specific to the MixedML model
+- `hlme_controls`: controls specific to the HLME model
+- `esn_controls`: controls specific to the ESN models
+- `ensemble_controls`: controls specific to the Ensemble model
+- `fit_controls`: controls specific to the ESN models fit
+
+## 8.4 Value
 
 fitted MixedML model
-</p>
-
-</main>
-
-</div>
-
-</body>
-
-</html>
 
 Reservoir Computing is implemented using an ensemble of Echo State
 Network (Reservoir + Ridge readout), whose Reservoirs are initialized
@@ -1008,723 +254,120 @@ reduces the impact of the Reservoir initialization on the results.
 
 Four controls are used to define the RC model’s behavior.
 
-## 3.1 `esn_controls`
+### 8.4.1 `esn_controls`
 
-\<!DOCTYPE html\>
-<html>
+# 9 Prepare the esn_controls
 
-<head>
-
-<title>
-
-R: Prepare the esn_controls
-</title>
-
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/katex.min.css">
-<script type="text/javascript">
-const macros = { "\\R": "\\textsf{R}", "\\code": "\\texttt"};
-function processMathHTML() {
-    var l = document.getElementsByClassName('reqn');
-    for (let e of l) { katex.render(e.textContent, e, { throwOnError: false, macros }); }
-    return;
-}</script>
-
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/katex.min.js"
-    onload="processMathHTML();"></script>
-
-<link rel="stylesheet" type="text/css" href="R.css" />
-</head>
-
-<body>
-
-<div class="container">
-
-<main>
-
-<table style="width: 100%;">
-
-<tr>
-
-<td>
-
-esn_ctrls
-</td>
-
-<td style="text-align: right;">
-
-R Documentation
-</td>
-
-</tr>
-
-</table>
-
-<h2>
-
-Prepare the esn_controls
-</h2>
-
-<h3>
-
-Description
-</h3>
-
-<p>
+## 9.1 Description
 
 Please see the documentation of ReservoirPy for:
-</p>
 
-<ul>
+- [Reservoir](https://reservoirpy.readthedocs.io/en/latest/api/generated/reservoirpy.nodes.Reservoir.html)
+- [Ridge
+  Regression](https://reservoirpy.readthedocs.io/en/latest/api/generated/reservoirpy.nodes.Ridge.html)
 
-<li>
+## 9.2 Usage
 
-<p>
+``` r
+esn_ctrls(units = 100, lr = 1, sr = 0.1, ridge = 0, feedback = FALSE)
+```
 
-<a href="https://reservoirpy.readthedocs.io/en/latest/api/generated/reservoirpy.nodes.Reservoir.html">Reservoir</a>
-</p>
+## 9.3 Arguments
 
-</li>
+- `units`: Number of reservoir units.
+- `lr`: Neurons leak rate. Must be in $[0,1]$.
+- `sr`: Spectral radius of recurrent weight matrix.
+- `ridge`: Regularization parameter $\lambda$.
+- `feedback`: Is readout connected to reservoir through feedback?
 
-<li>
-
-<p>
-
-<a href="https://reservoirpy.readthedocs.io/en/latest/api/generated/reservoirpy.nodes.Ridge.html">Ridge
-Regression</a>
-</p>
-
-</li>
-
-</ul>
-
-<h3>
-
-Usage
-</h3>
-
-<pre><code class='language-R'>esn_ctrls(units = 100, lr = 1, sr = 0.1, ridge = 0, feedback = FALSE)
-</code></pre>
-
-<h3>
-
-Arguments
-</h3>
-
-<table role="presentation">
-
-<tr>
-
-<td>
-
-<code id="units">units</code>
-</td>
-
-<td>
-
-<p>
-
-Number of reservoir units.
-</p>
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>
-
-<code id="lr">lr</code>
-</td>
-
-<td>
-
-<p>
-
-Neurons leak rate. Must be in <code class="reqn">\[0,1\]</code>.
-</p>
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>
-
-<code id="sr">sr</code>
-</td>
-
-<td>
-
-<p>
-
-Spectral radius of recurrent weight matrix.
-</p>
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>
-
-<code id="ridge">ridge</code>
-</td>
-
-<td>
-
-<p>
-
-Regularization parameter <code class="reqn"></code>.
-</p>
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>
-
-<code id="feedback">feedback</code>
-</td>
-
-<td>
-
-<p>
-
-Is readout connected to reservoir through feedback?
-</p>
-
-</td>
-
-</tr>
-
-</table>
-
-<h3>
-
-Value
-</h3>
-
-<p>
+## 9.4 Value
 
 esn_controls
-</p>
 
-</main>
+### 9.4.1 `ensemble_controls`
 
-</div>
+# 10 Prepare the ensemble_controls
 
-</body>
-
-</html>
-
-## 3.2 `ensemble_controls`
-
-\<!DOCTYPE html\>
-<html>
-
-<head>
-
-<title>
-
-R: Prepare the ensemble_controls
-</title>
-
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/katex.min.css">
-<script type="text/javascript">
-const macros = { "\\R": "\\textsf{R}", "\\code": "\\texttt"};
-function processMathHTML() {
-    var l = document.getElementsByClassName('reqn');
-    for (let e of l) { katex.render(e.textContent, e, { throwOnError: false, macros }); }
-    return;
-}</script>
-
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/katex.min.js"
-    onload="processMathHTML();"></script>
-
-<link rel="stylesheet" type="text/css" href="R.css" />
-</head>
-
-<body>
-
-<div class="container">
-
-<main>
-
-<table style="width: 100%;">
-
-<tr>
-
-<td>
-
-ensemble_ctrls
-</td>
-
-<td style="text-align: right;">
-
-R Documentation
-</td>
-
-</tr>
-
-</table>
-
-<h2>
+## 10.1 Description
 
 Prepare the ensemble_controls
-</h2>
 
-<h3>
+## 10.2 Usage
 
-Description
-</h3>
+``` r
+ensemble_ctrls(seed_list = c(1, 2, 3), agg_func = "median", n_procs = 1)
+```
 
-<p>
+## 10.3 Arguments
 
-Prepare the ensemble_controls
-</p>
+- `seed_list`: List of seeds used to generate the Reservoir. Default:
+  c(1, 2, 3)
+- `agg_func`: Function used to aggregate the predictions of each ESN.
+  “mean” or “median”. Default: “median”
+- `n_procs`: Number of processor to use. 1 means no multiprocessing.
+  Default: 1.
 
-<h3>
-
-Usage
-</h3>
-
-<pre><code class='language-R'>ensemble_ctrls(seed_list = c(1, 2, 3), agg_func = "median", n_procs = 1)
-</code></pre>
-
-<h3>
-
-Arguments
-</h3>
-
-<table role="presentation">
-
-<tr>
-
-<td>
-
-<code id="seed_list">seed_list</code>
-</td>
-
-<td>
-
-<p>
-
-List of seeds used to generate the Reservoir. Default: c(1, 2, 3)
-</p>
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>
-
-<code id="agg_func">agg_func</code>
-</td>
-
-<td>
-
-<p>
-
-Function used to aggregate the predictions of each ESN. "mean" or
-"median". Default: "median"
-</p>
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>
-
-<code id="n_procs">n_procs</code>
-</td>
-
-<td>
-
-<p>
-
-Number of processor to use. 1 means no multiprocessing. Default: 1.
-</p>
-
-</td>
-
-</tr>
-
-</table>
-
-<h3>
-
-Value
-</h3>
-
-<p>
+## 10.4 Value
 
 ensemble_controls
-</p>
 
-</main>
+## 10.5 `fit_controls`
 
-</div>
+# 11 Prepare the fit_controls
 
-</body>
-
-</html>
-
-## 3.3 `fit_controls`
-
-\<!DOCTYPE html\>
-<html>
-
-<head>
-
-<title>
-
-R: Prepare the fit_controls
-</title>
-
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/katex.min.css">
-<script type="text/javascript">
-const macros = { "\\R": "\\textsf{R}", "\\code": "\\texttt"};
-function processMathHTML() {
-    var l = document.getElementsByClassName('reqn');
-    for (let e of l) { katex.render(e.textContent, e, { throwOnError: false, macros }); }
-    return;
-}</script>
-
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/katex.min.js"
-    onload="processMathHTML();"></script>
-
-<link rel="stylesheet" type="text/css" href="R.css" />
-</head>
-
-<body>
-
-<div class="container">
-
-<main>
-
-<table style="width: 100%;">
-
-<tr>
-
-<td>
-
-fit_ctrls
-</td>
-
-<td style="text-align: right;">
-
-R Documentation
-</td>
-
-</tr>
-
-</table>
-
-<h2>
-
-Prepare the fit_controls
-</h2>
-
-<h3>
-
-Description
-</h3>
-
-<p>
+## 11.1 Description
 
 Please see the
-<a href="https://reservoirpy.readthedocs.io/en/latest/api/generated/reservoirpy.nodes.ESN.html#reservoirpy.nodes.ESN.fit">documentation</a>
-of ReservoirPy
-</p>
+[documentation](https://reservoirpy.readthedocs.io/en/latest/api/generated/reservoirpy.nodes.ESN.html#reservoirpy.nodes.ESN.fit)of
+ReservoirPy
 
-<h3>
+## 11.2 Usage
 
-Usage
-</h3>
+``` r
+fit_ctrls(warmup = 0)
+```
 
-<pre><code class='language-R'>fit_ctrls(warmup = 0, stateful = TRUE, reset = FALSE)
-</code></pre>
+## 11.3 Arguments
 
-<h3>
+- `warmup`: Number of timesteps to consider as warmup and discard at the
+  beginning. Defalut: 0 of each timeseries before training.
 
-Arguments
-</h3>
-
-<table role="presentation">
-
-<tr>
-
-<td>
-
-<code id="warmup">warmup</code>
-</td>
-
-<td>
-
-<p>
-
-Number of timesteps to consider as warmup and discard at the beginning.
-Defalut: 0 of each timeseries before training.
-</p>
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>
-
-<code id="stateful">stateful</code>
-</td>
-
-<td>
-
-<p>
-
-If True, Node state will be updated by this operation. Default: TRUE
-</p>
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>
-
-<code id="reset">reset</code>
-</td>
-
-<td>
-
-<p>
-
-If True, Nodes states will be reset to zero before this operation.
-Default: FALSE
-</p>
-
-</td>
-
-</tr>
-
-</table>
-
-<h3>
-
-Value
-</h3>
-
-<p>
+## 11.4 Value
 
 fit_controls
-</p>
 
-</main>
-
-</div>
-
-</body>
-
-</html>
-
-## 3.4 `predict_controls`
-
-\<!DOCTYPE html\>
-<html>
-
-<head>
-
-<title>
-
-R: Prepare the predict_controls
-</title>
-
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/katex.min.css">
-<script type="text/javascript">
-const macros = { "\\R": "\\textsf{R}", "\\code": "\\texttt"};
-function processMathHTML() {
-    var l = document.getElementsByClassName('reqn');
-    for (let e of l) { katex.render(e.textContent, e, { throwOnError: false, macros }); }
-    return;
-}</script>
-
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/katex.min.js"
-    onload="processMathHTML();"></script>
-
-<link rel="stylesheet" type="text/css" href="R.css" />
-</head>
-
-<body>
-
-<div class="container">
-
-<main>
-
-<table style="width: 100%;">
-
-<tr>
-
-<td>
-
-predict_ctrls
-</td>
-
-<td style="text-align: right;">
-
-R Documentation
-</td>
-
-</tr>
-
-</table>
-
-<h2>
-
-Prepare the predict_controls
-</h2>
-
-<h3>
-
-Description
-</h3>
-
-<p>
-
-Please see the
-<a href="https://reservoirpy.readthedocs.io/en/latest/api/generated/reservoirpy.nodes.ESN.html#reservoirpy.nodes.ESN.run">documentation</a>
-of ReservoirPy
-</p>
-
-<h3>
-
-Usage
-</h3>
-
-<pre><code class='language-R'>predict_ctrls(stateful = TRUE, reset = FALSE)
-</code></pre>
-
-<h3>
-
-Arguments
-</h3>
-
-<table role="presentation">
-
-<tr>
-
-<td>
-
-<code id="stateful">stateful</code>
-</td>
-
-<td>
-
-<p>
-
-If True, Node state will be updated by this operation.
-</p>
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>
-
-<code id="reset">reset</code>
-</td>
-
-<td>
-
-<p>
-
-If True, Nodes states will be reset to zero before this operation.
-</p>
-
-</td>
-
-</tr>
-
-</table>
-
-<h3>
-
-Value
-</h3>
-
-<p>
-
-predict_controls
-</p>
-
-</main>
-
-</div>
-
-</body>
-
-</html>
-
-# 4 Example
+# 12 Example
 
 ``` r
 model <- reservoir_mixedml(
-  fixed_spec = Y ~ X1 + X2 + X3,
-  random_spec = Y ~ X1 + X2 + X3,
-  data = lcmm::data_hlme,
-  subject = "ID",
-  time = "Time",
+  fixed_spec = y_mixed ~ x1 + x2 + x3 + x8,
+  random_spec = y_mixed ~ x1 + x2 + x3 + x8,
+  data = data_mixedml[data_mixedml["subject"] < 10, ],
+  subject = "subject",
+  time = "time",
   mixedml_controls = mixedml_ctrls(),
-  hlme_controls = hlme_ctrls(nproc = 2, maxiter = 5000, idiag = TRUE),
-  esn_controls = esn_ctrls(units = 5, ridge = 1e-5),
-  ensemble_controls = ensemble_ctrls(seed_list = c(1, 2, 3, 4, 5), n_procs = 5),
-  fit_controls = fit_ctrls(),
-  predict_controls = predict_ctrls()
+  hlme_controls = hlme_ctrls(nproc = 5, maxiter = 10, idiag = TRUE),
+  esn_controls = esn_ctrls(units = 20, ridge = 1e-5),
+  ensemble_controls = ensemble_ctrls(seed_list = c(1, 2, 3)),
+  fit_controls = fit_ctrls(warmup = 2)
 )
 #> conda environment "01" activated!
 #> step#0
 #>  fitting fixed effects...
 #>  fitting random effects...
-#>  MSE = 5.469
+#>  MSE = 0.4412
 #> step#1
 #>  fitting fixed effects...
 #>  fitting random effects...
-#>  MSE = 5.47
+#>  MSE = 0.4411
 #> step#2
 #>  fitting fixed effects...
 #>  fitting random effects...
-#>  MSE = 5.469
+#>  MSE = 0.4372
 #> step#3
 #>  fitting fixed effects...
 #>  fitting random effects...
-#>  MSE = 5.468
+#>  MSE = 0.4422
 ```
 
 ``` r
@@ -1732,48 +375,49 @@ summary(model$random_model)
 #> Heterogenous linear mixed model 
 #>      fitted by maximum likelihood method 
 #>  
-#> hlme(fixed = Y ~ 1, random = ~X1 + X2 + X3, subject = "ID", idiag = TRUE, 
-#>     cor = NULL, data = data, maxiter = 5000, posfix = 1, var.time = "Time", 
-#>     nproc = 2)
+#> hlme(fixed = y_mixed ~ 1, random = ~x1 + x2 + x3 + x8, subject = "subject", 
+#>     idiag = TRUE, cor = NULL, data = data, maxiter = 10, posfix = 1, 
+#>     var.time = "time", nproc = 5)
 #>  
 #> Statistical Model: 
 #>      Dataset: data 
-#>      Number of subjects: 100 
-#>      Number of observations: 326 
+#>      Number of subjects: 9 
+#>      Number of observations: 234 
 #>      Number of latent classes: 1 
-#>      Number of parameters: 6  
-#>      Number of estimated parameters: 5  
+#>      Number of parameters: 7  
+#>      Number of estimated parameters: 6  
 #>  
 #> Iteration process: 
-#>      Convergence criteria satisfied 
-#>      Number of iterations:  2 
-#>      Convergence criteria: parameters= 1.4e-05 
-#>                          : likelihood= 9.3e-07 
-#>                          : second derivatives= 1.7e-11 
+#>      Maximum number of iteration reached without convergence 
+#>      Number of iterations:  10 
+#>      Convergence criteria: parameters= 110 
+#>                          : likelihood= 0.38 
+#>                          : second derivatives= 0.11 
 #>  
 #> Goodness-of-fit statistics: 
-#>      maximum log-likelihood: -951.02  
-#>      AIC: 1912.03  
-#>      BIC: 1925.06  
+#>      maximum log-likelihood: -375.23  
+#>      AIC: 762.46  
+#>      BIC: 763.64  
 #>  
 #>  
 #> Maximum Likelihood Estimates: 
 #>  
 #> Fixed effects in the longitudinal model:
 #> 
-#>               coef  Se Wald p-value
-#> intercept  0.00000*                
+#>                 coef  Se Wald p-value
+#> intercept    0.00000*                
 #> 
 #> 
 #> Variance-covariance matrix of the random-effects:
-#>           intercept       X1       X2 X3
-#> intercept  38.61825                     
-#> X1          0.00000 16.68124            
-#> X2          0.00000  0.00000 11.76276   
-#> X3          0.00000  0.00000  0.00000  0
+#>           intercept      x1       x2     x3      x8
+#> intercept  5799.386                                
+#> x1            0.000 1.67578                        
+#> x2            0.000 0.00000 60.31593               
+#> x3            0.000 0.00000  0.00000 782.29        
+#> x8            0.000 0.00000  0.00000   0.00 0.25508
 #> 
-#>                              coef      Se
-#> Residual standard error:  2.78031 0.13075
+#>                                coef Se
+#> Residual standard error:    0.71290   
 #> 
 #>  * coefficient fixed by the user 
 #> 
@@ -1781,6 +425,13 @@ summary(model$random_model)
 
 ``` r
 plot_conv(model)
+```
+
+<img src="man/figures/README-unnamed-chunk-19-1.png" width="100%" />
+
+``` r
+plot_last_iter(model, subject_nb_or_list = 5)
+#> Subjects selected randomly: use set.seed to change the selection.
 ```
 
 <img src="man/figures/README-unnamed-chunk-20-1.png" width="100%" />

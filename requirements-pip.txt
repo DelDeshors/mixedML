@@ -1,0 +1,2 @@
+reservoirpy==0.3.13
+ray==2.46.0

@@ -1,7 +1,11 @@
 ---
 title: "Presentation of the mixedML package"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth : 3
 vignette: >
-  %\VignetteIndexEntry{my-vignette}
+  %\VignetteIndexEntry{Presentation of the mixedML package}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -18,28 +22,52 @@ devtools::load_all()
 ```
 
 ```{r, include=FALSE}
+clean_help_md <- function(help_md) {
+  help_md <- gsub(pattern = "^# .*\n", replacement = "", help_md, perl = TRUE)
+  help_md <- gsub("## (.*)\n", "**\\1**\n", help_md, perl = TRUE)
+  return(help_md)
+}
+
+
 print_help <- function(function_name) {
   stopifnot(is.character(function_name))
   hpath <- as.character(help(function_name))[[3]]
-  character_vector_name <- "s"
-  tc <- textConnection(character_vector_name, "w", local = TRUE)
-  tools::Rd2HTML(hpath, out = tc)
-  html <- as.list(environment())[[character_vector_name]]
-  return(knitr::asis_output(htmltools::htmlPreserve(html)))
+  markdown_doc <- Rd2md::as_markdown(Rd2md::read_rdfile(hpath))
+  markdown_doc <- clean_help_md(markdown_doc)
+  knitr::asis_output(markdown_doc)
+  return()
 }
 ```
 
 # Introduction
 
-This package provides functions to train hybrid mixed effects models. These models combine: - a Machine Leaning (ML) model to estimates the fixed effects; - a Mixed Effects model (from [lcmm](https://github.com/CecileProust-Lima/lcmm/)) to estimate the random effects.
+This package provides functions to train hybrid mixed effects models. Such models are a variation of linear mixed effects models, used for Gaussian longitudinal data, whose formulation is:
 
-Using ML models allows to use highly non-linear modelization of the fixed effects, as well as complex time interactions when using Recurrent Neural Networks.
+$Y_{ij} = X_{ij} \beta +  Z_{ij} u_i + w_{ij} + \varepsilon_{ij}$
 
-The method used is model agnostic, so any kind of ML model can be implement.
+… where $i$ is the subject, $j$ is the occasion, and $w_i$ comes from a zero-mean Gaussian stochastic process (such as Brownian motion),
 
-So far, a hybrid model based on Reservoir Computing is available. They are implemented by interfacing the [reservoirpy](https://github.com/reservoirpy/reservoirpy) Python package with R using [reticulate](https://github.com/rstudio/reticulate).
 
-# MixedML use
+For such hybrid models:
+
+- a Machine Leaning (ML) model is used to estimates the fixed effects;
+- a Mixed Effects model (`hlme` from [lcmm package](https://cecileproust-lima.github.io/lcmm/articles/lcmm.html)) is used to estimate the random effects.
+
+That is, the formulation becomes:
+
+$Y_{ij} = f_{ML}(X_{ij}) +  Z_{ij} u_i + w_{ij} + \varepsilon_{ij}$
+
+… where $f_{ML}(X_{ij})$ is the output from a ML model trained to predict the fixed effects.
+
+
+Using ML models to estimates the fixed effects have tow main advantages comparing to linear models:
+
+- they can handle highly non-linear relations, and do so with simple inputs (instead of being highly dependent of the specification);
+- they can handle complex time interactions, in the case of Recurrent Neural Networks;
+
+However, some ML models have a "black box" effect, as one cannot use its estimated parameters to understand the relations within the data.
+
+# General MixedML use
 
 ## General principle
 
@@ -98,7 +126,12 @@ print_help("predict")
 print_help("plot_conv")
 ```
 
-# MixedML with Reservoir Computing
+# Implementations
+
+So far, a hybrid model based on Reservoir Computing is available. They are implemented by interfacing the [reservoirpy](https://github.com/reservoirpy/reservoirpy) Python package with R using [reticulate](https://github.com/rstudio/reticulate).
+
+
+## MixedML with Reservoir Computing
 
 The function `reservoir_mixedml` is used to define and fit a MixedML model which uses an Reservoir Computing to fit the fixed effect.
 
@@ -110,13 +143,13 @@ Reservoir Computing is implemented using an ensemble of Echo State Network (Rese
 
 Four controls are used to define the RC model's behavior.
 
-## `esn_controls`
+### `esn_controls`
 
 ```{r, echo=FALSE}
 print_help("esn_ctrls")
 ```
 
-## `ensemble_controls`
+### `ensemble_controls`
 
 ```{r, echo=FALSE}
 print_help("ensemble_ctrls")

@@ -33,4 +33,7 @@ Imports:
     reticulate,
     rlang,
     methods,
-    stats
+    stats,
+    Rd2md (>= 1.0.1)
+Remotes:
+    quantsch/rd2md

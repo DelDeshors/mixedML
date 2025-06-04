@@ -5,6 +5,8 @@ output:
     toc: true
     toc_depth : 3
     number_sections: true
+    includes:
+    css: vignette-style.css
 vignette: >
   %\VignetteIndexEntry{Presentation of the mixedML package}
   %\VignetteEngine{knitr::rmarkdown}
@@ -17,12 +19,6 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 ```
-
-<style>
-h1 {
-  margin-top: 2em;
-}
-</style>
 
 ```{r, include = FALSE}
 devtools::load_all()
@@ -161,7 +157,6 @@ print_help("ensemble_ctrls")
 print_help("fit_ctrls")
 ```
 
-
 # Example
 
 ```{r}
@@ -186,8 +181,6 @@ summary(model$random_model)
 ```{r}
 plot_conv(model)
 ```
-
-
 
 ```{r}
 plot_last_iter(model, subject_nb_or_list = 5)

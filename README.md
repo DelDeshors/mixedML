@@ -18,12 +18,6 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-<style>
-h1 {
-  margin-top: 2em;
-}
-</style>
-
 # 1 Introduction
 
 This package provides functions to train hybrid mixed effects models.

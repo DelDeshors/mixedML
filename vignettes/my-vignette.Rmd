@@ -28,6 +28,8 @@ devtools::load_all()
 clean_help_md <- function(help_md) {
   help_md <- gsub(pattern = "^# .*\n", replacement = "", help_md, perl = TRUE)
   help_md <- gsub("## (.*)\n", "**\\1**\n", help_md, perl = TRUE)
+  help_md <- gsub("\n+$", "", help_md, perl = TRUE)
+  return(help_md)
 }
 
 
@@ -36,7 +38,7 @@ print_help <- function(function_name) {
   hpath <- as.character(help(function_name))[[3]]
   markdown_doc <- Rd2md::as_markdown(Rd2md::read_rdfile(hpath))
   markdown_doc <- clean_help_md(markdown_doc)
-  knitr::asis_output(markdown_doc)
+  return(knitr::asis_output(markdown_doc))
 }
 ```
 
@@ -50,19 +52,77 @@ $$Y_{ij} = X_{ij} \beta +  Z_{ij} u_i + w_{ij} + \varepsilon_{ij}$$
 For such hybrid models:
 
 - a Machine Leaning (ML) model is used to estimates the fixed effects;
-- a Mixed Effects model (`hlme` from [lcmm package](https://cecileproust-lima.github.io/lcmm/articles/lcmm.html)) is used to estimate the random effects.
+- a Mixed Effects model (`hlme` from [lcmm package](https://cecileproust-lima.github.io/lcmm/articles/lcmm.html)) is constrained to estimate only random effects.
 
 That is, the formulation becomes:
 $$Y_{ij} = f_{ML}(X_{ij}) +  Z_{ij} u_i + w_{ij} + \varepsilon_{ij}$$
 … where $f_{ML}(X_{ij})$ is the output from a ML model trained to predict the fixed effects.
 
 <br><br>
-Using ML models to estimates the fixed effects have tow main advantages comparing to linear models:
+Using ML models to estimates the fixed effects has two main advantages comparing to linear models:
 
 - they can handle highly non-linear relations, and do so with simple inputs (instead of being highly dependent of the specification);
 - they can handle complex time interactions, in the case of Recurrent Neural Networks;
 
 However, some ML models have a "black box" effect, as one cannot use its estimated parameters to understand the relations within the data.
+
+# Method
+
+The method uses a iterative training of both fixed effects and random effects models. The pseudo-code is as follow (`fe`/`re` stands for fixed/random effects):
+```
+ml_model_fe <- initiate_ml_model_fe()
+hlme_model_re <- initiate_hlme_model_re()
+
+Yre <- 0.
+while not converged:
+  fit ml_model_fe on X and (Y - Yre)
+  Yfe <-  ml_model_fe(X)
+
+  fit hlme_model_re on X and (Y - Yfe)
+  Yre <-  hlme_model_re(X)
+  
+  converged <- criterion(Y, Yfe+Yre)
+```
+
+# Example dataset
+
+The dataset `data_mixedml` is proposed: it is a synthetic longitudinal dataset, containing data for 500 subjects on 26 regularly spaced time steps ($t \in [0,25]$).
+
+Here's a snippet:
+```{r}
+idx_print <- (data_mixedml[["subject"]] < 4) & (data_mixedml[["time"]] < 5)
+data_print <- data_mixedml[idx_print,]
+row.names(data_print) <- NULL
+print(data_print, digits = 2)
+```
+
+<br>
+The purely fixed effects response, $y_{fixed}$ is calculated as:
+$$y_{fixed} = \gamma_{0} + 
+\gamma_{1} \cdot  x_2 \cdot x_5 + 
+\gamma_{2} \cdot  x_4 \cdot x_7 +
+\gamma_{3} \cdot  x_6 \cdot x_8$$
+… where $\gamma_{0}= -0.9826036$, $\gamma_{1} = -0.4289147$, $\gamma_{2} = -0.0456483$ and $\gamma_{3} = -0.8542527$
+
+<br>
+The mixed effects response, $y_{mixed}$ is calculated for each individual $i$ as:
+$$y_{mixed,i} = \gamma_{0,i} + 
+\gamma_{1,i} \cdot  x_2 \cdot x_5 + 
+\gamma_{2,i} \cdot  x_4 \cdot x_7 +
+\gamma_{3,i} \cdot  x_6 \cdot x_8$$
+…where each $\gamma_{k,i}$ is draw from a normal distribution with:
+- for $\gamma_{0,i}$, a mean of $\gamma_{0}$ and a standard deviation of $0.5$,
+- for $\gamma_{1,i}$, a mean of $\gamma_{1}$ and a standard deviation of $0.5$,
+- for $\gamma_{2,i}$, a mean of $\gamma_{2}$ and a standard deviation of $0.05$,
+- for $\gamma_{3,i}$, a mean of $\gamma_{3}$ and a standard deviation of $0.1$.
+
+That is, one can train a MixedML model using $y_mixed$ then use $y_fixed$ to check how well both sub-model are fitted for their specific task.
+
+Let's defined sub-datasets for the next examples:
+```{r}
+data_1 <- data_mixedml[data_mixedml[["subject"]] %in% seq(01, 10), ]
+data_2 <- data_mixedml[data_mixedml[["subject"]] %in% seq(11, 12), ]
+```
 
 # General MixedML use
 
@@ -81,34 +141,57 @@ some_mixed_ml_model(
   mixedml_controls,
   # controls (extra-parameters) for the hlme model
   hlme_controls,
-  # controls (extra-parameters) for the ML model
+  # controls (extra-parameters) for the implemented ML model
   controls_1, controls_2, et_caetera
 )
 ```
 
-The `fixed_spec`, `random_spec`, `cor`, `data`, `subject` and `time` parameters are taken from the `hlme` function and can be seen in [the lcmm package documentation](https://cecileproust-lima.github.io/lcmm/reference/hlme.html)
+## Arguments
 
-## Controls
+The `fixed_spec`, `random_spec`, `cor`, `data`, `subject` and `time` are used by both sub-models and are taken from the `hlme` function which can be seen in [the lcmm package documentation](https://cecileproust-lima.github.io/lcmm/reference/hlme.html)
 
-Controls are defined using specific functions, whose names correspond to the control names: the `some_name_ctrls` function is used to define `some_name_controls` controls.
+Then several controls are defined, using specific functions whose names correspond to the control names. That is, the `some_name_ctrls(…)` function is used to define `some_name_controls` controls. Each control has its specific help.
 
-`mixedml_controls` and `hlme_controls` are common to all MixedML models.
-
-### `mixedml_controls`
-
-```{r, echo=FALSE}
-print_help("mixedml_ctrls")
+Here is an example using the `reservoir_mixedml` function (the resulting model will be used in the remaining sections):
+```{r}
+model_reservoir <- reservoir_mixedml(
+  fixed_spec = y_mixed ~ x1 + x2 + x3 + x8,
+  random_spec = y_mixed ~ x1 + x2 + x3 + x8,
+  data = data_1,
+  subject = "subject",
+  time = "time",
+  # parameters for MixedML method
+  mixedml_controls = mixedml_ctrls(),
+  # controls (extra-parameters) for the hlme model
+  hlme_controls = hlme_ctrls(nproc = 5, maxiter = 10, idiag = TRUE),
+  # controls (extra-parameters) for the ML model
+  esn_controls = esn_ctrls(units = 20, ridge = 1e-5),
+  ensemble_controls = ensemble_ctrls(seed_list = c(1, 2, 3)),
+  fit_controls = fit_ctrls(warmup = 2)
+)
 ```
 
-### `hlme_controls`
+## Attributes
 
-```{r, echo=FALSE}
-print_help("hlme_ctrls")
+Each sub-models are accessible from the fitted MixedML model:
+
+```{r}
+model_reservoir$random_model
+```
+
+```{r}
+# (this model uses reticulate so it not very convenient as an example…)
+model_reservoir$fixed_model
+```
+
+Also a `call` attribute exists, meaning one can trained the model with new inputs using `update` command:
+```{r, eval=TRUE}
+updated_model <- update(model_reservoir, data = data_2)
 ```
 
 ## Functions
 
-The function `predict` and `plot_conv` are common to all the MixedML models
+The function `predict`, `plot_conv` and `plot_last_iter` are common to all fitted MixedML models.
 
 ### `predict`
 
@@ -117,71 +200,20 @@ print_help("predict")
 ```
 
 ### `plot_conv`
-
 ```{r, echo=FALSE}
 print_help("plot_conv")
 ```
 
-# Implementations
+```{r}
+plot_conv(model = model_reservoir)
+```
 
-So far, a hybrid model based on Reservoir Computing is available. They are implemented by interfacing the [reservoirpy](https://github.com/reservoirpy/reservoirpy) Python package with R using [reticulate](https://github.com/rstudio/reticulate).
-
-
-## MixedML with Reservoir Computing
-
-The function `reservoir_mixedml` is used to define and fit a MixedML model which uses an Reservoir Computing to fit the fixed effect.
+### `plot_last_iter`
+```{r, echo=FALSE}
+print_help("plot_last_iter")
+```
 
 ```{r, echo=FALSE}
-print_help("reservoir_mixedml")
+plot_last_iter(model = model_reservoir, subject_nb_or_list = 3)
 ```
 
-Reservoir Computing is implemented using an ensemble of Echo State Network (Reservoir + Ridge readout), whose Reservoirs are initialized with different random seeds. The prediction of the ensemble model is calculated as the mean or median of all the ENS prediction, which reduces the impact of the Reservoir initialization on the results.
-
-Four controls are used to define the RC model's behavior.
-
-### `esn_controls`
-
-```{r, echo=FALSE}
-print_help("esn_ctrls")
-```
-
-### `ensemble_controls`
-
-```{r, echo=FALSE}
-print_help("ensemble_ctrls")
-```
-
-## `fit_controls`
-
-```{r, echo=FALSE}
-print_help("fit_ctrls")
-```
-
-# Example
-
-```{r}
-model <- reservoir_mixedml(
-  fixed_spec = y_mixed ~ x1 + x2 + x3 + x8,
-  random_spec = y_mixed ~ x1 + x2 + x3 + x8,
-  data = data_mixedml[data_mixedml["subject"] < 10, ],
-  subject = "subject",
-  time = "time",
-  mixedml_controls = mixedml_ctrls(),
-  hlme_controls = hlme_ctrls(nproc = 5, maxiter = 10, idiag = TRUE),
-  esn_controls = esn_ctrls(units = 20, ridge = 1e-5),
-  ensemble_controls = ensemble_ctrls(seed_list = c(1, 2, 3)),
-  fit_controls = fit_ctrls(warmup = 2)
-)
-```
-
-```{r}
-summary(model$random_model)
-```
-
-```{r}
-plot_conv(model)
-```
-
-```{r}
-plot_last_iter(model, subject_nb_or_list = 5)
-```

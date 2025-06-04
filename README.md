@@ -1,20 +1,15 @@
 
 - [1 Introduction](#1-introduction)
-- [2 General MixedML use](#2-general-mixedml-use)
-  - [2.1 General principle](#21-general-principle)
-  - [2.2 Controls](#22-controls)
-    - [2.2.1 `mixedml_controls`](#221-mixedml_controls)
-    - [2.2.2 `hlme_controls`](#222-hlme_controls)
-  - [2.3 Functions](#23-functions)
-    - [2.3.1 `predict`](#231-predict)
-    - [2.3.2 `plot_conv`](#232-plot_conv)
-- [3 Implementations](#3-implementations)
-  - [3.1 MixedML with Reservoir
-    Computing](#31-mixedml-with-reservoir-computing)
-    - [3.1.1 `esn_controls`](#311-esn_controls)
-    - [3.1.2 `ensemble_controls`](#312-ensemble_controls)
-  - [3.2 `fit_controls`](#32-fit_controls)
-- [4 Example](#4-example)
+- [2 Method](#2-method)
+- [3 Example dataset](#3-example-dataset)
+- [4 General MixedML use](#4-general-mixedml-use)
+  - [4.1 General principle](#41-general-principle)
+  - [4.2 Arguments](#42-arguments)
+  - [4.3 Attributes](#43-attributes)
+  - [4.4 Functions](#44-functions)
+    - [4.4.1 `predict`](#441-predict)
+    - [4.4.2 `plot_conv`](#442-plot_conv)
+    - [4.4.3 `plot_last_iter`](#443-plot_last_iter)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
@@ -32,14 +27,14 @@ zero-mean Gaussian stochastic process (such as Brownian motion).
 - a Machine Leaning (ML) model is used to estimates the fixed effects;
 - a Mixed Effects model (`hlme` from [lcmm
   package](https://cecileproust-lima.github.io/lcmm/articles/lcmm.html))
-  is used to estimate the random effects.
+  is constrained to estimate only random effects.
 
 That is, the formulation becomes:
 $$Y_{ij} = f_{ML}(X_{ij}) +  Z_{ij} u_i + w_{ij} + \varepsilon_{ij}$$ …
 where $f_{ML}(X_{ij})$ is the output from a ML model trained to predict
 the fixed effects.
 
-<br><br> Using ML models to estimates the fixed effects have tow main
+<br><br> Using ML models to estimates the fixed effects has two main
 advantages comparing to linear models:
 
 - they can handle highly non-linear relations, and do so with simple
@@ -50,9 +45,90 @@ advantages comparing to linear models:
 However, some ML models have a “black box” effect, as one cannot use its
 estimated parameters to understand the relations within the data.
 
-# 2 General MixedML use
+# 2 Method
 
-## 2.1 General principle
+The method uses a iterative training of both fixed effects and random
+effects models. The pseudo-code is as follow (`fe`/`re` stands for
+fixed/random effects):
+
+    ml_model_fe <- initiate_ml_model_fe()
+    hlme_model_re <- initiate_hlme_model_re()
+
+    Yre <- 0.
+    while not converged:
+      fit ml_model_fe on X and (Y - Yre)
+      Yfe <-  ml_model_fe(X)
+
+      fit hlme_model_re on X and (Y - Yfe)
+      Yre <-  hlme_model_re(X)
+      
+      converged <- criterion(Y, Yfe+Yre)
+
+# 3 Example dataset
+
+The dataset `data_mixedml` is proposed: it is a synthetic longitudinal
+dataset, containing data for 500 subjects on 26 regularly spaced time
+steps ($t \in [0,25]$).
+
+Here’s a snippet:
+
+``` r
+idx_print <- (data_mixedml[["subject"]] < 4) & (data_mixedml[["time"]] < 5)
+data_print <- data_mixedml[idx_print,]
+row.names(data_print) <- NULL
+print(data_print, digits = 2)
+#>    subject time   x1   x2  x3  x4       x5   x6    x7 x8 y_mixed y_fixed
+#> 1        1    0  2.9 -7.9 3.1 5.2 -0.99728 0.30 3.041  0  -7.022  -9.216
+#> 2        1    1  4.4 -7.4 3.1 5.1 -0.45795 0.34 3.340  0 -12.940 -13.169
+#> 3        1    2  5.8 -7.2 3.1 5.0 -0.16270 0.38 3.634  0 -16.502 -15.707
+#> 4        1    3  7.3 -7.0 3.1 5.0 -0.05143 0.42 3.916  0 -18.519 -17.307
+#> 5        1    4  8.7 -6.8 3.1 4.9 -0.01561 0.46 4.183  0 -19.883 -18.491
+#> 6        2    0  3.4 -7.6 2.2 4.4 -0.61726 0.60 2.490  1  -3.022  -6.521
+#> 7        2    1  4.5 -7.0 2.2 4.4 -0.44499 0.60 3.621  1  -8.225 -11.877
+#> 8        2    2  5.6 -6.6 2.2 4.3 -0.29761 0.61 4.365  1 -11.702 -15.412
+#> 9        2    3  6.7 -6.3 2.2 4.3 -0.18746 0.61 4.730  1 -13.594 -17.238
+#> 10       2    4  7.8 -6.1 2.2 4.3 -0.11315 0.61 4.883  1 -14.526 -18.070
+#> 11       3    0  3.4 -7.7 3.1 2.0 -1.37826 0.24 2.488  0   5.575   2.018
+#> 12       3    1  5.3 -7.7 3.1 2.1 -0.29379 0.24 0.950  0   0.416  -0.399
+#> 13       3    2  7.2 -7.7 3.1 2.2 -0.03868 0.24 0.262  0  -0.082  -0.322
+#> 14       3    3  9.1 -7.7 3.1 2.3 -0.00467 0.24 0.064  0   0.089  -0.098
+#> 15       3    4 11.0 -7.7 3.1 2.3 -0.00056 0.24 0.015  0   0.167  -0.018
+```
+
+<br> The purely fixed effects response, $y_{fixed}$ is calculated as:
+$$y_{fixed} = \gamma_{0} + 
+\gamma_{1} \cdot  x_2 \cdot x_5 + 
+\gamma_{2} \cdot  x_4 \cdot x_7 +
+\gamma_{3} \cdot  x_6 \cdot x_8$$ … where $\gamma_{0}= -0.9826036$,
+$\gamma_{1} = -0.4289147$, $\gamma_{2} = -0.0456483$ and
+$\gamma_{3} = -0.8542527$
+
+<br> The mixed effects response, $y_{mixed}$ is calculated for each
+individual $i$ as: $$y_{mixed,i} = \gamma_{0,i} + 
+\gamma_{1,i} \cdot  x_2 \cdot x_5 + 
+\gamma_{2,i} \cdot  x_4 \cdot x_7 +
+\gamma_{3,i} \cdot  x_6 \cdot x_8$$ …where each $\gamma_{k,i}$ is draw
+from a normal distribution with: - for $\gamma_{0,i}$, a mean of
+$\gamma_{0}$ and a standard deviation of $0.5$, - for $\gamma_{1,i}$, a
+mean of $\gamma_{1}$ and a standard deviation of $0.5$, - for
+$\gamma_{2,i}$, a mean of $\gamma_{2}$ and a standard deviation of
+$0.05$, - for $\gamma_{3,i}$, a mean of $\gamma_{3}$ and a standard
+deviation of $0.1$.
+
+That is, one can train a MixedML model using $y_mixed$ then use
+$y_fixed$ to check how well both sub-model are fitted for their specific
+task.
+
+Let’s defined sub-datasets for the next examples:
+
+``` r
+data_1 <- data_mixedml[data_mixedml[["subject"]] %in% seq(01, 10), ]
+data_2 <- data_mixedml[data_mixedml[["subject"]] %in% seq(11, 12), ]
+```
+
+# 4 General MixedML use
+
+## 4.1 General principle
 
 The MixedML models are obtained using specific functions which have for
 signature:
@@ -69,86 +145,137 @@ some_mixed_ml_model(
   mixedml_controls,
   # controls (extra-parameters) for the hlme model
   hlme_controls,
-  # controls (extra-parameters) for the ML model
+  # controls (extra-parameters) for the implemented ML model
   controls_1, controls_2, et_caetera
 )
 ```
 
-The `fixed_spec`, `random_spec`, `cor`, `data`, `subject` and `time`
-parameters are taken from the `hlme` function and can be seen in [the
-lcmm package
+## 4.2 Arguments
+
+The `fixed_spec`, `random_spec`, `cor`, `data`, `subject` and `time` are
+used by both sub-models and are taken from the `hlme` function which can
+be seen in [the lcmm package
 documentation](https://cecileproust-lima.github.io/lcmm/reference/hlme.html)
 
-## 2.2 Controls
+Then several controls are defined, using specific functions whose names
+correspond to the control names. That is, the `some_name_ctrls(…)`
+function is used to define `some_name_controls` controls. Each control
+has its specific help.
 
-Controls are defined using specific functions, whose names correspond to
-the control names: the `some_name_ctrls` function is used to define
-`some_name_controls` controls.
-
-`mixedml_controls` and `hlme_controls` are common to all MixedML models.
-
-### 2.2.1 `mixedml_controls`
-
-**Description**
-
-Prepare the mixedml_controls
-
-**Usage**
+Here is an example using the `reservoir_mixedml` function (the resulting
+model will be used in the remaining sections):
 
 ``` r
-mixedml_ctrls(patience = 2, conv_ratio_thresh = 0.01)
+model_reservoir <- reservoir_mixedml(
+  fixed_spec = y_mixed ~ x1 + x2 + x3 + x8,
+  random_spec = y_mixed ~ x1 + x2 + x3 + x8,
+  data = data_1,
+  subject = "subject",
+  time = "time",
+  # parameters for MixedML method
+  mixedml_controls = mixedml_ctrls(),
+  # controls (extra-parameters) for the hlme model
+  hlme_controls = hlme_ctrls(nproc = 5, maxiter = 10, idiag = TRUE),
+  # controls (extra-parameters) for the ML model
+  esn_controls = esn_ctrls(units = 20, ridge = 1e-5),
+  ensemble_controls = ensemble_ctrls(seed_list = c(1, 2, 3)),
+  fit_controls = fit_ctrls(warmup = 2)
+)
+#> conda environment "01" activated!
+#> step#0
+#>  fitting fixed effects...
+#>  fitting random effects...
+#>  MSE = 0.4313
+#> step#1
+#>  fitting fixed effects...
+#>  fitting random effects...
+#>  MSE = 0.4018
+#> step#2
+#>  fitting fixed effects...
+#>  fitting random effects...
+#>  MSE = 0.3997
+#> step#3
+#>  fitting fixed effects...
+#>  fitting random effects...
+#>  MSE = 0.4009
+#> step#4
+#>  fitting fixed effects...
+#>  fitting random effects...
+#>  MSE = 0.3974
 ```
 
-**Arguments**
+## 4.3 Attributes
 
-- `patience`: Number of iterations without improvement before the
-  training is stopped. Default: 2
-- `conv_ratio_thresh`: Ratio of improvement of the MSE to consider an
-  improvement. `conv_ratio_thresh=0.01` means an improvement of at least
-  1% of the MSE is necessary. Default: 0.01
-
-**Value**
-
-mixedml_controls
-
-### 2.2.2 `hlme_controls`
-
-**Description**
-
-Please see the
-[documentation](https://cecileproust-lima.github.io/lcmm/reference/hlme.html)of
-the `hlme` function of the `lcmm` package.
-
-**Usage**
+Each sub-models are accessible from the fitted MixedML model:
 
 ``` r
-hlme_ctrls(cor = NULL, idiag = FALSE, maxiter = 500, nproc = 1)
+model_reservoir$random_model
+#> Heterogenous linear mixed model 
+#>      fitted by maximum likelihood method 
+#>  
+#> hlme(fixed = y_mixed ~ 1, random = ~x1 + x2 + x3 + x8, subject = "subject", 
+#>     idiag = TRUE, cor = NULL, data = data, maxiter = 10, posfix = 1, 
+#>     var.time = "time", nproc = 5)
+#>  
+#> Statistical Model: 
+#>      Dataset: data 
+#>      Number of subjects: 10 
+#>      Number of observations: 260 
+#>      Number of latent classes: 1 
+#>      Number of parameters: 7  
+#>      Number of estimated parameters: 6  
+#>  
+#> Iteration process: 
+#>      Convergence criteria satisfied 
+#>      Number of iterations:  9 
+#>      Convergence criteria: parameters= 2e-05 
+#>                          : likelihood= 2.3e-08 
+#>                          : second derivatives= 6.9e-12 
+#>  
+#> Goodness-of-fit statistics: 
+#>      maximum log-likelihood: -402.92  
+#>      AIC: 817.83  
+#>      BIC: 819.65  
+#>  
+#> 
 ```
 
-**Arguments**
+``` r
+# (this model uses reticulate so it not very convenient as an example…)
+model_reservoir$fixed_model
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7b3fb64296a0>
+```
 
-- `cor`: brownian motion or autoregressive process modeling the
-  correlation between the observations. “BM” or “AR” should be
-  specified, followed by the time variable between brackets.
-- `idiag`: logical for the structure of the variance-covariance matrix
-  of the random-effects. If FALSE, a non structured matrix of
-  variance-covariance is considered (by default). If TRUE a diagonal
-  matrix of variance-covariance is considered.
-- `maxiter`: maximum number of iterations for the Marquardt iterative
-  algorithm.
-- `nproc`: the number cores for parallel computation. Default to 1
-  (sequential mode).
+Also a `call` attribute exists, meaning one can trained the model with
+new inputs using `update` command:
 
-**Value**
+``` r
+updated_model <- update(model_reservoir, data = data_2)
+#> conda environment "01" activated!
+#> step#0
+#>  fitting fixed effects...
+#>  fitting random effects...
+#>  MSE = 1.666
+#> step#1
+#>  fitting fixed effects...
+#>  fitting random effects...
+#>  MSE = 1.666
+#> step#2
+#>  fitting fixed effects...
+#>  fitting random effects...
+#>  MSE = 1.685
+#> step#3
+#>  fitting fixed effects...
+#>  fitting random effects...
+#>  MSE = 1.701
+```
 
-hlme_controls
+## 4.4 Functions
 
-## 2.3 Functions
+The function `predict`, `plot_conv` and `plot_last_iter` are common to
+all fitted MixedML models.
 
-The function `predict` and `plot_conv` are common to all the MixedML
-models
-
-### 2.3.1 `predict`
+### 4.4.1 `predict`
 
 **Description**
 
@@ -169,7 +296,7 @@ predict(model, data)
 
 prediction
 
-### 2.3.2 `plot_conv`
+### 4.4.2 `plot_conv`
 
 **Description**
 
@@ -190,245 +317,35 @@ plot_conv(model, ylog = TRUE)
 
 Convergence plot
 
-# 3 Implementations
+``` r
+plot_conv(model = model_reservoir)
+```
 
-So far, a hybrid model based on Reservoir Computing is available. They
-are implemented by interfacing the
-[reservoirpy](https://github.com/reservoirpy/reservoirpy) Python package
-with R using [reticulate](https://github.com/rstudio/reticulate).
+<img src="man/figures/README-unnamed-chunk-17-1.png" width="100%" />
 
-## 3.1 MixedML with Reservoir Computing
-
-The function `reservoir_mixedml` is used to define and fit a MixedML
-model which uses an Reservoir Computing to fit the fixed effect.
+### 4.4.3 `plot_last_iter`
 
 **Description**
 
-Generate and fit a MixedML model using an Ensemble of Echo State
-Networks (Reservoir+Ridge Regression) to fit the fixed effects.
+Plot the prediction of a MixedML model
 
 **Usage**
 
 ``` r
-reservoir_mixedml(
-  fixed_spec,
-  random_spec,
-  data,
-  subject,
-  time,
-  mixedml_controls = mixedml_ctrls(),
-  hlme_controls = hlme_ctrls(),
-  esn_controls = esn_controls(),
-  ensemble_controls = ensemble_controls(),
-  fit_controls = fit_controls()
-)
+plot_last_iter(model, subject_nb_or_list, ylog = FALSE)
 ```
 
 **Arguments**
 
-- `fixed_spec`: two-sided linear formula object for the fixed-effects.
-  The response outcome is on the left of ~ and the covariates are
-  separated by + on the right of ~.
-- `random_spec`: two-sided formula for the random-effects in the linear
-  mixed model. The response outcome is on the left of ~ and the
-  covariates are separated by + on the right of ~. By default, an
-  intercept is included. If no intercept, -1 should be the first term
-  included.
-- `data`: dataframe containing the variables named in `fixed_spec`,
-  `random_spec`, `subject` and `time`.
-- `subject`: name of the covariate representing the grouping structure,
-  given as a string/character.
-- `time`: name of the time variable, given as a string/character.
-- `mixedml_controls`: controls specific to the MixedML model
-- `hlme_controls`: controls specific to the HLME model
-- `esn_controls`: controls specific to the ESN models
-- `ensemble_controls`: controls specific to the Ensemble model
-- `fit_controls`: controls specific to the ESN models fit
+- `model`: Trained MixedML model.
+- `subject_nb_or_list`: Number of subjects to plot (randomly selected)
+  or list of subjects to plot.
+- `ylog`: Plot the y-value with a log scale. Default: TRUE.
 
 **Value**
 
-fitted MixedML model
+Prediction plot of the model.
 
-Reservoir Computing is implemented using an ensemble of Echo State
-Network (Reservoir + Ridge readout), whose Reservoirs are initialized
-with different random seeds. The prediction of the ensemble model is
-calculated as the mean or median of all the ENS prediction, which
-reduces the impact of the Reservoir initialization on the results.
-
-Four controls are used to define the RC model’s behavior.
-
-### 3.1.1 `esn_controls`
-
-**Description**
-
-Please see the documentation of ReservoirPy for:
-
-- [Reservoir](https://reservoirpy.readthedocs.io/en/latest/api/generated/reservoirpy.nodes.Reservoir.html)
-- [Ridge
-  Regression](https://reservoirpy.readthedocs.io/en/latest/api/generated/reservoirpy.nodes.Ridge.html)
-
-**Usage**
-
-``` r
-esn_ctrls(units = 100, lr = 1, sr = 0.1, ridge = 0, feedback = FALSE)
-```
-
-**Arguments**
-
-- `units`: Number of reservoir units.
-- `lr`: Neurons leak rate. Must be in $[0,1]$.
-- `sr`: Spectral radius of recurrent weight matrix.
-- `ridge`: Regularization parameter $\lambda$.
-- `feedback`: Is readout connected to reservoir through feedback?
-
-**Value**
-
-esn_controls
-
-### 3.1.2 `ensemble_controls`
-
-**Description**
-
-Prepare the ensemble_controls
-
-**Usage**
-
-``` r
-ensemble_ctrls(seed_list = c(1, 2, 3), agg_func = "median", n_procs = 1)
-```
-
-**Arguments**
-
-- `seed_list`: List of seeds used to generate the Reservoir. Default:
-  c(1, 2, 3)
-- `agg_func`: Function used to aggregate the predictions of each ESN.
-  “mean” or “median”. Default: “median”
-- `n_procs`: Number of processor to use. 1 means no multiprocessing.
-  Default: 1.
-
-**Value**
-
-ensemble_controls
-
-## 3.2 `fit_controls`
-
-**Description**
-
-Please see the
-[documentation](https://reservoirpy.readthedocs.io/en/latest/api/generated/reservoirpy.nodes.ESN.html#reservoirpy.nodes.ESN.fit)of
-ReservoirPy
-
-**Usage**
-
-``` r
-fit_ctrls(warmup = 0)
-```
-
-**Arguments**
-
-- `warmup`: Number of timesteps to consider as warmup and discard at the
-  beginning. Defalut: 0 of each timeseries before training.
-
-**Value**
-
-fit_controls
-
-# 4 Example
-
-``` r
-model <- reservoir_mixedml(
-  fixed_spec = y_mixed ~ x1 + x2 + x3 + x8,
-  random_spec = y_mixed ~ x1 + x2 + x3 + x8,
-  data = data_mixedml[data_mixedml["subject"] < 10, ],
-  subject = "subject",
-  time = "time",
-  mixedml_controls = mixedml_ctrls(),
-  hlme_controls = hlme_ctrls(nproc = 5, maxiter = 10, idiag = TRUE),
-  esn_controls = esn_ctrls(units = 20, ridge = 1e-5),
-  ensemble_controls = ensemble_ctrls(seed_list = c(1, 2, 3)),
-  fit_controls = fit_ctrls(warmup = 2)
-)
-#> conda environment "01" activated!
-#> step#0
-#>  fitting fixed effects...
-#>  fitting random effects...
-#>  MSE = 0.4412
-#> step#1
-#>  fitting fixed effects...
-#>  fitting random effects...
-#>  MSE = 0.4411
-#> step#2
-#>  fitting fixed effects...
-#>  fitting random effects...
-#>  MSE = 0.4372
-#> step#3
-#>  fitting fixed effects...
-#>  fitting random effects...
-#>  MSE = 0.4422
-```
-
-``` r
-summary(model$random_model)
-#> Heterogenous linear mixed model 
-#>      fitted by maximum likelihood method 
-#>  
-#> hlme(fixed = y_mixed ~ 1, random = ~x1 + x2 + x3 + x8, subject = "subject", 
-#>     idiag = TRUE, cor = NULL, data = data, maxiter = 10, posfix = 1, 
-#>     var.time = "time", nproc = 5)
-#>  
-#> Statistical Model: 
-#>      Dataset: data 
-#>      Number of subjects: 9 
-#>      Number of observations: 234 
-#>      Number of latent classes: 1 
-#>      Number of parameters: 7  
-#>      Number of estimated parameters: 6  
-#>  
-#> Iteration process: 
-#>      Maximum number of iteration reached without convergence 
-#>      Number of iterations:  10 
-#>      Convergence criteria: parameters= 110 
-#>                          : likelihood= 0.38 
-#>                          : second derivatives= 0.11 
-#>  
-#> Goodness-of-fit statistics: 
-#>      maximum log-likelihood: -375.23  
-#>      AIC: 762.46  
-#>      BIC: 763.64  
-#>  
-#>  
-#> Maximum Likelihood Estimates: 
-#>  
-#> Fixed effects in the longitudinal model:
-#> 
-#>                 coef  Se Wald p-value
-#> intercept    0.00000*                
-#> 
-#> 
-#> Variance-covariance matrix of the random-effects:
-#>           intercept      x1       x2     x3      x8
-#> intercept  5799.386                                
-#> x1            0.000 1.67578                        
-#> x2            0.000 0.00000 60.31593               
-#> x3            0.000 0.00000  0.00000 782.29        
-#> x8            0.000 0.00000  0.00000   0.00 0.25508
-#> 
-#>                                coef Se
-#> Residual standard error:    0.71290   
-#> 
-#>  * coefficient fixed by the user 
-#> 
-```
-
-``` r
-plot_conv(model)
-```
+    #> Subjects selected randomly: use set.seed to change the selection.
 
 <img src="man/figures/README-unnamed-chunk-19-1.png" width="100%" />
-
-``` r
-plot_last_iter(model, subject_nb_or_list = 5)
-#> Subjects selected randomly: use set.seed to change the selection.
-```
-
-<img src="man/figures/README-unnamed-chunk-20-1.png" width="100%" />

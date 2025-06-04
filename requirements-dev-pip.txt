@@ -3,4 +3,3 @@ mypy
 pre-commit>4
 pytest
 joblib-stubs
-

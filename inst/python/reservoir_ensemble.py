@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from typing import Literal, Optional, Any, Union
 import logging as log
-from abc import ABC, abstractproperty
+from abc import ABC
 
 
 from numpy import mean, median, ndarray

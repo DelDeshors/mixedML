@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from numpy import ndarray
-from reservoirpy.nodes import Reservoir, Ridge  # type: ignore
 from reservoirpy.datasets import mackey_glass, japanese_vowels  # type: ignore
 
 

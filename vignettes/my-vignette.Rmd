@@ -45,7 +45,9 @@ print_help <- function(function_name) {
 # Introduction
 
 This package provides functions to train hybrid mixed effects models. Such models are a variation of linear mixed effects models, used for Gaussian longitudinal data, whose formulation is:
+
 $$Y_{ij} = X_{ij} \beta +  Z_{ij} u_i + w_{ij} + \varepsilon_{ij}$$
+
 … where $i$ is the subject, $j$ is the occasion, and $w_i$ comes from a zero-mean Gaussian stochastic process (such as Brownian motion).
 
 <br><br>
@@ -55,7 +57,9 @@ For such hybrid models:
 - a Mixed Effects model (`hlme` from [lcmm package](https://cecileproust-lima.github.io/lcmm/articles/lcmm.html)) is constrained to estimate only random effects.
 
 That is, the formulation becomes:
+
 $$Y_{ij} = f_{ML}(X_{ij}) +  Z_{ij} u_i + w_{ij} + \varepsilon_{ij}$$
+
 … where $f_{ML}(X_{ij})$ is the output from a ML model trained to predict the fixed effects.
 
 <br><br>
@@ -216,4 +220,3 @@ print_help("plot_last_iter")
 ```{r, echo=FALSE}
 plot_last_iter(model = model_reservoir, subject_nb_or_list = 3)
 ```
-

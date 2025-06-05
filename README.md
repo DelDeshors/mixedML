@@ -18,8 +18,10 @@
 This package provides functions to train hybrid mixed effects models.
 Such models are a variation of linear mixed effects models, used for
 Gaussian longitudinal data, whose formulation is:
-$$Y_{ij} = X_{ij} \beta +  Z_{ij} u_i + w_{ij} + \varepsilon_{ij}$$ …
-where $i$ is the subject, $j$ is the occasion, and $w_i$ comes from a
+
+$$Y_{ij} = X_{ij} \beta +  Z_{ij} u_i + w_{ij} + \varepsilon_{ij}$$
+
+… where $i$ is the subject, $j$ is the occasion, and $w_i$ comes from a
 zero-mean Gaussian stochastic process (such as Brownian motion).
 
 <br><br> For such hybrid models:
@@ -30,9 +32,11 @@ zero-mean Gaussian stochastic process (such as Brownian motion).
   is constrained to estimate only random effects.
 
 That is, the formulation becomes:
-$$Y_{ij} = f_{ML}(X_{ij}) +  Z_{ij} u_i + w_{ij} + \varepsilon_{ij}$$ …
-where $f_{ML}(X_{ij})$ is the output from a ML model trained to predict
-the fixed effects.
+
+$$Y_{ij} = f_{ML}(X_{ij}) +  Z_{ij} u_i + w_{ij} + \varepsilon_{ij}$$
+
+… where $f_{ML}(X_{ij})$ is the output from a ML model trained to
+predict the fixed effects.
 
 <br><br> Using ML models to estimates the fixed effects has two main
 advantages comparing to linear models:
@@ -243,7 +247,7 @@ model_reservoir$random_model
 ``` r
 # (this model uses reticulate so it not very convenient as an example…)
 model_reservoir$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7b3fb64296a0>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7b72c51296a0>
 ```
 
 Also a `call` attribute exists, meaning one can trained the model with

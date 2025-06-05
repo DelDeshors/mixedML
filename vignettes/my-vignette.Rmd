@@ -128,7 +128,7 @@ $$y_{mixed,i} = \gamma_{0,i} +
 - for $\gamma_{2,i}$, a mean of $\gamma_{2}$ and a standard deviation of $0.05$, 
 - for $\gamma_{3,i}$, a mean of $\gamma_{3}$ and a standard deviation of $0.1$.
 
-That is, one can train a MixedML model using $y_mixed$ then use $y_fixed$ to check how well both sub-model are fitted for their specific task.
+That is, one can train a MixedML model using $y_{mixed}$ then use $y_{fixed}$ to check how well both sub-model are fitted for their specific task.
 
 Let's defined sub-datasets for the next examples:
 

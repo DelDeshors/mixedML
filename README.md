@@ -131,9 +131,9 @@ $$y_{mixed,i} = \gamma_{0,i} +
 - for $\gamma_{3,i}$, a mean of $\gamma_{3}$ and a standard deviation of
   $0.1$.
 
-That is, one can train a MixedML model using $y_mixed$ then use
-$y_fixed$ to check how well both sub-model are fitted for their specific
-task.
+That is, one can train a MixedML model using $y_{mixed}$ then use
+$y_{fixed}$ to check how well both sub-model are fitted for their
+specific task.
 
 Let’s defined sub-datasets for the next examples:
 
@@ -257,7 +257,7 @@ model_reservoir$random_model
 ``` r
 # (this model uses reticulate so it not very convenient as an example…)
 model_reservoir$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7fcb8ee256a0>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x73ae188296a0>
 ```
 
 Also a `call` attribute exists, meaning one can trained the model with

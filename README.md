@@ -99,24 +99,37 @@ print(data_print, digits = 2, row.names = FALSE)
 ```
 
 <br> The purely fixed effects response, $y_{fixed}$ is calculated as:
+
 $$y_{fixed} = \gamma_{0} + 
 \gamma_{1} \cdot  x_2 \cdot x_5 + 
 \gamma_{2} \cdot  x_4 \cdot x_7 +
-\gamma_{3} \cdot  x_6 \cdot x_8$$ … where $\gamma_{0}= -0.9826036$,
-$\gamma_{1} = -0.4289147$, $\gamma_{2} = -0.0456483$ and
-$\gamma_{3} = -0.8542527$
+\gamma_{3} \cdot  x_6 \cdot x_8$$
+
+… where:
+
+- $\gamma_{0}= -0.9826036$,
+- $\gamma_{1} = -0.4289147$,
+- $\gamma_{2} = -0.0456483$,
+- $\gamma_{3} = -0.8542527$.
 
 <br> The mixed effects response, $y_{mixed}$ is calculated for each
-individual $i$ as: $$y_{mixed,i} = \gamma_{0,i} + 
+individual $i$ as:
+
+$$y_{mixed,i} = \gamma_{0,i} + 
 \gamma_{1,i} \cdot  x_2 \cdot x_5 + 
 \gamma_{2,i} \cdot  x_4 \cdot x_7 +
-\gamma_{3,i} \cdot  x_6 \cdot x_8$$ …where each $\gamma_{k,i}$ is draw
-from a normal distribution with: - for $\gamma_{0,i}$, a mean of
-$\gamma_{0}$ and a standard deviation of $0.5$, - for $\gamma_{1,i}$, a
-mean of $\gamma_{1}$ and a standard deviation of $0.5$, - for
-$\gamma_{2,i}$, a mean of $\gamma_{2}$ and a standard deviation of
-$0.05$, - for $\gamma_{3,i}$, a mean of $\gamma_{3}$ and a standard
-deviation of $0.1$.
+\gamma_{3,i} \cdot  x_6 \cdot x_8$$
+
+…where each $\gamma_{k,i}$ is draw from a normal distribution with:
+
+- for $\gamma_{0,i}$, a mean of $\gamma_{0}$ and a standard deviation of
+  $0.5$,
+- for $\gamma_{1,i}$, a mean of $\gamma_{1}$ and a standard deviation of
+  $0.5$,
+- for $\gamma_{2,i}$, a mean of $\gamma_{2}$ and a standard deviation of
+  $0.05$,
+- for $\gamma_{3,i}$, a mean of $\gamma_{3}$ and a standard deviation of
+  $0.1$.
 
 That is, one can train a MixedML model using $y_mixed$ then use
 $y_fixed$ to check how well both sub-model are fitted for their specific
@@ -244,7 +257,7 @@ model_reservoir$random_model
 ``` r
 # (this model uses reticulate so it not very convenient as an example…)
 model_reservoir$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x74f7034296a0>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7fcb8ee256a0>
 ```
 
 Also a `call` attribute exists, meaning one can trained the model with

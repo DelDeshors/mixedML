@@ -50,11 +50,10 @@ $$Y_{ij} = X_{ij} \beta +  Z_{ij} u_i + w_{ij} + \varepsilon_{ij}$$
 
 … where $i$ is the subject, $j$ is the occasion, and $w_i$ comes from a zero-mean Gaussian stochastic process (such as Brownian motion).
 
-<br><br>
-For such hybrid models:
+<br><br> For such hybrid models:
 
-- a Machine Leaning (ML) model is used to estimates the fixed effects;
-- a Mixed Effects model (`hlme` from [lcmm package](https://cecileproust-lima.github.io/lcmm/articles/lcmm.html)) is constrained to estimate only random effects.
+-   a Machine Leaning (ML) model is used to estimates the fixed effects;
+-   a Mixed Effects model (`hlme` from [lcmm package](https://cecileproust-lima.github.io/lcmm/articles/lcmm.html)) is constrained to estimate only random effects.
 
 That is, the formulation becomes:
 
@@ -62,18 +61,18 @@ $$Y_{ij} = f_{ML}(X_{ij}) +  Z_{ij} u_i + w_{ij} + \varepsilon_{ij}$$
 
 … where $f_{ML}(X_{ij})$ is the output from a ML model trained to predict the fixed effects.
 
-<br><br>
-Using ML models to estimates the fixed effects has two main advantages comparing to linear models:
+<br><br> Using ML models to estimates the fixed effects has two main advantages comparing to linear models:
 
-- they can handle highly non-linear relations, and do so with simple inputs (instead of being highly dependent of the specification);
-- they can handle complex time interactions, in the case of Recurrent Neural Networks;
+-   they can handle highly non-linear relations, and do so with simple inputs (instead of being highly dependent of the specification);
+-   they can handle complex time interactions, in the case of Recurrent Neural Networks;
 
 However, some ML models have a "black box" effect, as one cannot use its estimated parameters to understand the relations within the data.
 
 # Method
 
 The method uses a iterative training of both fixed effects and random effects models. The pseudo-code is as follow (`fe`/`re` stands for fixed/random effects):
-```
+
+```         
 ml_model_fe <- initiate_ml_model_fe()
 hlme_model_re <- initiate_hlme_model_re()
 
@@ -93,46 +92,37 @@ while not converged:
 The dataset `data_mixedml` is proposed: it is a synthetic longitudinal dataset, containing data for 500 subjects on 26 regularly spaced time steps ($t \in [0,25]$).
 
 Here's a snippet:
+
 ```{r}
 idx_print <- (data_mixedml[["subject"]] < 4) & (data_mixedml[["time"]] < 5)
 data_print <- data_mixedml[idx_print,]
 row.names(data_print) <- NULL
-print(data_print, digits = 2)
+print(data_print, digits = 2, row.names = FALSE)
 ```
 
-<br>
-The purely fixed effects response, $y_{fixed}$ is calculated as:
-$$y_{fixed} = \gamma_{0} + 
+<br> The purely fixed effects response, $y_{fixed}$ is calculated as: $$y_{fixed} = \gamma_{0} + 
 \gamma_{1} \cdot  x_2 \cdot x_5 + 
 \gamma_{2} \cdot  x_4 \cdot x_7 +
-\gamma_{3} \cdot  x_6 \cdot x_8$$
-… where $\gamma_{0}= -0.9826036$, $\gamma_{1} = -0.4289147$, $\gamma_{2} = -0.0456483$ and $\gamma_{3} = -0.8542527$
+\gamma_{3} \cdot  x_6 \cdot x_8$$ … where $\gamma_{0}= -0.9826036$, $\gamma_{1} = -0.4289147$, $\gamma_{2} = -0.0456483$ and $\gamma_{3} = -0.8542527$
 
-<br>
-The mixed effects response, $y_{mixed}$ is calculated for each individual $i$ as:
-$$y_{mixed,i} = \gamma_{0,i} + 
+<br> The mixed effects response, $y_{mixed}$ is calculated for each individual $i$ as: $$y_{mixed,i} = \gamma_{0,i} + 
 \gamma_{1,i} \cdot  x_2 \cdot x_5 + 
 \gamma_{2,i} \cdot  x_4 \cdot x_7 +
-\gamma_{3,i} \cdot  x_6 \cdot x_8$$
-…where each $\gamma_{k,i}$ is draw from a normal distribution with:
-- for $\gamma_{0,i}$, a mean of $\gamma_{0}$ and a standard deviation of $0.5$,
-- for $\gamma_{1,i}$, a mean of $\gamma_{1}$ and a standard deviation of $0.5$,
-- for $\gamma_{2,i}$, a mean of $\gamma_{2}$ and a standard deviation of $0.05$,
-- for $\gamma_{3,i}$, a mean of $\gamma_{3}$ and a standard deviation of $0.1$.
+\gamma_{3,i} \cdot  x_6 \cdot x_8$$ …where each $\gamma_{k,i}$ is draw from a normal distribution with: - for $\gamma_{0,i}$, a mean of $\gamma_{0}$ and a standard deviation of $0.5$, - for $\gamma_{1,i}$, a mean of $\gamma_{1}$ and a standard deviation of $0.5$, - for $\gamma_{2,i}$, a mean of $\gamma_{2}$ and a standard deviation of $0.05$, - for $\gamma_{3,i}$, a mean of $\gamma_{3}$ and a standard deviation of $0.1$.
 
 That is, one can train a MixedML model using $y_mixed$ then use $y_fixed$ to check how well both sub-model are fitted for their specific task.
 
 Let's defined sub-datasets for the next examples:
+
 ```{r}
 data_1 <- data_mixedml[data_mixedml[["subject"]] %in% seq(01, 10), ]
 data_2 <- data_mixedml[data_mixedml[["subject"]] %in% seq(11, 12), ]
 ```
 
-# General MixedML use
-
-## General principle
+# General principle
 
 The MixedML models are obtained using specific functions which have for signature:
+
 ```{r, eval=FALSE}
 some_mixed_ml_model(
   # parameters of the MixedML model (inpired by the hlme function definition)
@@ -150,13 +140,14 @@ some_mixed_ml_model(
 )
 ```
 
-## Arguments
+# Arguments
 
 The `fixed_spec`, `random_spec`, `cor`, `data`, `subject` and `time` are used by both sub-models and are taken from the `hlme` function which can be seen in [the lcmm package documentation](https://cecileproust-lima.github.io/lcmm/reference/hlme.html)
 
 Then several controls are defined, using specific functions whose names correspond to the control names. That is, the `some_name_ctrls(…)` function is used to define `some_name_controls` controls. Each control has its specific help.
 
 Here is an example using the `reservoir_mixedml` function (the resulting model will be used in the remaining sections):
+
 ```{r}
 model_reservoir <- reservoir_mixedml(
   fixed_spec = y_mixed ~ x1 + x2 + x3 + x8,
@@ -189,21 +180,23 @@ model_reservoir$fixed_model
 ```
 
 Also a `call` attribute exists, meaning one can trained the model with new inputs using `update` command:
+
 ```{r, eval=TRUE}
 updated_model <- update(model_reservoir, data = data_2)
 ```
 
-## Functions
+# Functions
 
 The function `predict`, `plot_conv` and `plot_last_iter` are common to all fitted MixedML models.
 
-### `predict`
+## `predict`
 
 ```{r, echo=FALSE}
 print_help("predict")
 ```
 
-### `plot_conv`
+## `plot_conv`
+
 ```{r, echo=FALSE}
 print_help("plot_conv")
 ```
@@ -212,7 +205,8 @@ print_help("plot_conv")
 plot_conv(model = model_reservoir)
 ```
 
-### `plot_last_iter`
+## `plot_last_iter`
+
 ```{r, echo=FALSE}
 print_help("plot_last_iter")
 ```

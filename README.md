@@ -2,14 +2,13 @@
 - [1 Introduction](#1-introduction)
 - [2 Method](#2-method)
 - [3 Example dataset](#3-example-dataset)
-- [4 General MixedML use](#4-general-mixedml-use)
-  - [4.1 General principle](#41-general-principle)
-  - [4.2 Arguments](#42-arguments)
-  - [4.3 Attributes](#43-attributes)
-  - [4.4 Functions](#44-functions)
-    - [4.4.1 `predict`](#441-predict)
-    - [4.4.2 `plot_conv`](#442-plot_conv)
-    - [4.4.3 `plot_last_iter`](#443-plot_last_iter)
+- [4 General principle](#4-general-principle)
+- [5 Arguments](#5-arguments)
+  - [5.1 Attributes](#51-attributes)
+- [6 Functions](#6-functions)
+  - [6.1 `predict`](#61-predict)
+  - [6.2 `plot_conv`](#62-plot_conv)
+  - [6.3 `plot_last_iter`](#63-plot_last_iter)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
@@ -80,23 +79,23 @@ Here’s a snippet:
 idx_print <- (data_mixedml[["subject"]] < 4) & (data_mixedml[["time"]] < 5)
 data_print <- data_mixedml[idx_print,]
 row.names(data_print) <- NULL
-print(data_print, digits = 2)
-#>    subject time   x1   x2  x3  x4       x5   x6    x7 x8 y_mixed y_fixed
-#> 1        1    0  2.9 -7.9 3.1 5.2 -0.99728 0.30 3.041  0  -7.022  -9.216
-#> 2        1    1  4.4 -7.4 3.1 5.1 -0.45795 0.34 3.340  0 -12.940 -13.169
-#> 3        1    2  5.8 -7.2 3.1 5.0 -0.16270 0.38 3.634  0 -16.502 -15.707
-#> 4        1    3  7.3 -7.0 3.1 5.0 -0.05143 0.42 3.916  0 -18.519 -17.307
-#> 5        1    4  8.7 -6.8 3.1 4.9 -0.01561 0.46 4.183  0 -19.883 -18.491
-#> 6        2    0  3.4 -7.6 2.2 4.4 -0.61726 0.60 2.490  1  -3.022  -6.521
-#> 7        2    1  4.5 -7.0 2.2 4.4 -0.44499 0.60 3.621  1  -8.225 -11.877
-#> 8        2    2  5.6 -6.6 2.2 4.3 -0.29761 0.61 4.365  1 -11.702 -15.412
-#> 9        2    3  6.7 -6.3 2.2 4.3 -0.18746 0.61 4.730  1 -13.594 -17.238
-#> 10       2    4  7.8 -6.1 2.2 4.3 -0.11315 0.61 4.883  1 -14.526 -18.070
-#> 11       3    0  3.4 -7.7 3.1 2.0 -1.37826 0.24 2.488  0   5.575   2.018
-#> 12       3    1  5.3 -7.7 3.1 2.1 -0.29379 0.24 0.950  0   0.416  -0.399
-#> 13       3    2  7.2 -7.7 3.1 2.2 -0.03868 0.24 0.262  0  -0.082  -0.322
-#> 14       3    3  9.1 -7.7 3.1 2.3 -0.00467 0.24 0.064  0   0.089  -0.098
-#> 15       3    4 11.0 -7.7 3.1 2.3 -0.00056 0.24 0.015  0   0.167  -0.018
+print(data_print, digits = 2, row.names = FALSE)
+#>  subject time   x1   x2  x3  x4       x5   x6    x7 x8 y_mixed y_fixed
+#>        1    0  2.9 -7.9 3.1 5.2 -0.99728 0.30 3.041  0  -7.022  -9.216
+#>        1    1  4.4 -7.4 3.1 5.1 -0.45795 0.34 3.340  0 -12.940 -13.169
+#>        1    2  5.8 -7.2 3.1 5.0 -0.16270 0.38 3.634  0 -16.502 -15.707
+#>        1    3  7.3 -7.0 3.1 5.0 -0.05143 0.42 3.916  0 -18.519 -17.307
+#>        1    4  8.7 -6.8 3.1 4.9 -0.01561 0.46 4.183  0 -19.883 -18.491
+#>        2    0  3.4 -7.6 2.2 4.4 -0.61726 0.60 2.490  1  -3.022  -6.521
+#>        2    1  4.5 -7.0 2.2 4.4 -0.44499 0.60 3.621  1  -8.225 -11.877
+#>        2    2  5.6 -6.6 2.2 4.3 -0.29761 0.61 4.365  1 -11.702 -15.412
+#>        2    3  6.7 -6.3 2.2 4.3 -0.18746 0.61 4.730  1 -13.594 -17.238
+#>        2    4  7.8 -6.1 2.2 4.3 -0.11315 0.61 4.883  1 -14.526 -18.070
+#>        3    0  3.4 -7.7 3.1 2.0 -1.37826 0.24 2.488  0   5.575   2.018
+#>        3    1  5.3 -7.7 3.1 2.1 -0.29379 0.24 0.950  0   0.416  -0.399
+#>        3    2  7.2 -7.7 3.1 2.2 -0.03868 0.24 0.262  0  -0.082  -0.322
+#>        3    3  9.1 -7.7 3.1 2.3 -0.00467 0.24 0.064  0   0.089  -0.098
+#>        3    4 11.0 -7.7 3.1 2.3 -0.00056 0.24 0.015  0   0.167  -0.018
 ```
 
 <br> The purely fixed effects response, $y_{fixed}$ is calculated as:
@@ -130,9 +129,7 @@ data_1 <- data_mixedml[data_mixedml[["subject"]] %in% seq(01, 10), ]
 data_2 <- data_mixedml[data_mixedml[["subject"]] %in% seq(11, 12), ]
 ```
 
-# 4 General MixedML use
-
-## 4.1 General principle
+# 4 General principle
 
 The MixedML models are obtained using specific functions which have for
 signature:
@@ -154,7 +151,7 @@ some_mixed_ml_model(
 )
 ```
 
-## 4.2 Arguments
+# 5 Arguments
 
 The `fixed_spec`, `random_spec`, `cor`, `data`, `subject` and `time` are
 used by both sub-models and are taken from the `hlme` function which can
@@ -208,7 +205,7 @@ model_reservoir <- reservoir_mixedml(
 #>  MSE = 0.3974
 ```
 
-## 4.3 Attributes
+## 5.1 Attributes
 
 Each sub-models are accessible from the fitted MixedML model:
 
@@ -247,7 +244,7 @@ model_reservoir$random_model
 ``` r
 # (this model uses reticulate so it not very convenient as an example…)
 model_reservoir$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7b72c51296a0>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x74f7034296a0>
 ```
 
 Also a `call` attribute exists, meaning one can trained the model with
@@ -274,12 +271,12 @@ updated_model <- update(model_reservoir, data = data_2)
 #>  MSE = 1.701
 ```
 
-## 4.4 Functions
+# 6 Functions
 
 The function `predict`, `plot_conv` and `plot_last_iter` are common to
 all fitted MixedML models.
 
-### 4.4.1 `predict`
+## 6.1 `predict`
 
 **Description**
 
@@ -300,7 +297,7 @@ predict(model, data)
 
 prediction
 
-### 4.4.2 `plot_conv`
+## 6.2 `plot_conv`
 
 **Description**
 
@@ -327,7 +324,7 @@ plot_conv(model = model_reservoir)
 
 <img src="man/figures/README-unnamed-chunk-17-1.png" width="100%" />
 
-### 4.4.3 `plot_last_iter`
+## 6.3 `plot_last_iter`
 
 **Description**
 

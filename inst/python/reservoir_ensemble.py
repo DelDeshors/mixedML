@@ -129,17 +129,6 @@ class JoblibReservoirEnsemble(_CommonReservoirEnsemble):
     def pool_close(self):
         self._pool.close()
 
-    @staticmethod
-    def _get_agg_func(agg_func):
-        agg_funcs = {
-            "mean": lambda x: mean(x, axis=0),
-            "median": lambda x: median(x, axis=0),
-        }
-        try:
-            return agg_funcs[agg_func]
-        except KeyError:
-            raise ValueError(f"agg_func must be one of {agg_funcs.keys()}")
-
     def _fix_copy_names(self):
         for model in self.model_list:
             _fix_copy_name(model)

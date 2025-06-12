@@ -1,9 +1,9 @@
-fixed_spec <- y_mixed ~ x1 + x2 + x3
-random_spec <- y_mixed ~ x1 + x2
+fixed_spec <- y_mixed ~ x1 + x2 + time
+random_spec <- y_mixed ~ x1 + x2 + time
 subject <- "subject"
 time <- "time"
 
-to_scale <- c("x1", "x2", "x3")
+to_scale <- c("x1", "x2")
 data <- data_mixedml
 data <- data[data[subject] < 5, ]
 data <- data[data[time] < 3, ]
@@ -17,7 +17,7 @@ test_that("mixedml works", {
     subject = subject,
     time = time,
     mixedml_ctrls(conv_ratio_thresh = 0.1, patience = 1),
-    hlme_controls = hlme_ctrls(maxiter = 5, idiag = FALSE),
+    hlme_controls = hlme_ctrls(maxiter = 5, idiag = TRUE, cor = AR(time)),
     esn_controls = esn_ctrls(
       units = 20,
       lr = 0.1,

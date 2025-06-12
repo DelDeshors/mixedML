@@ -19,14 +19,34 @@ hlme_ctrls <- function(
   maxiter = 500,
   nproc = 1
 ) {
-  stopifnot(
-    is.null(cor) | (rlang::is_bare_formula(cor) & (cor[0:2] %in% c("AR", "BM")))
-  )
+  # the use of cor in lcmm is tricky
+  cor <- substitute(cor)
+  stopifnot(is.null(cor) || (as.character(cor[1]) %in% c("AR", "BM")))
   return(as.list(environment()))
 }
 
 
-#' Function to plot something
+.check_cor_spec <- function(random_spec, var.time, cor) {
+  if (is.null(cor)) return()
+  #
+  cor_time <- as.character(cor)[2]
+  #
+  cond1 <- cor_time %in% all.vars(random_spec)
+  cond2 <- (cor_time == var.time)
+  if (!(cond1 && cond2)) {
+    stop(
+      '
+      when defining \"cor\",
+      the time value must be equal to the one defined in \"time\"
+      and should be used in \"random_spec\"
+      '
+    )
+  }
+  return()
+}
+
+
+#' Initiate the HLME model
 #'
 #' @import lcmm
 #'
@@ -35,7 +55,7 @@ hlme_ctrls <- function(
 #' @param subject subject
 #' @param var.time var.time
 #' @param hlme_controls hlme_controls
-#' @return description
+#' @return HLME model
 .initiate_random_hlme <- function(
   random_spec,
   data,
@@ -44,6 +64,7 @@ hlme_ctrls <- function(
   hlme_controls
 ) {
   .check_controls_with_function(hlme_controls, hlme_ctrls)
+  .check_cor_spec(random_spec, var.time, hlme_controls$cor)
 
   # preparing the hlme formula inputs
   left <- .get_left_side_string(random_spec)

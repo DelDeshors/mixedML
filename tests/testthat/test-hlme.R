@@ -2,11 +2,11 @@ test_that("hlme_full_use", {
   data <- lcmm::data_hlme
   ##########
   model <- .initiate_random_hlme(
-    random_spec = Y ~ X1 + X2 + X3,
+    random_spec = Y ~ X1 + X2 + X3 + Time,
     data = data,
     subject = "ID",
     var.time = "Time",
-    hlme_control = hlme_ctrls(maxiter = 10, idiag = TRUE)
+    hlme_controls = hlme_ctrls(maxiter = 10, idiag = TRUE, cor = AR(Time))
   )
   expect_type(model, "list")
   expect_s3_class(model, "hlme")

@@ -94,6 +94,7 @@ repos:
     hooks:
     -   id: Rtesting
         name: Rtesting
+        stages: [pre-merge-commit]
         entry: Rscript tests/precommit_testthat.R
         language: system
         files: .*\.(?:R|Rmd|rda|py)
@@ -111,6 +112,7 @@ repos:
 -   repo: local
     hooks:
     -   id: pytest
+        stages: [pre-merge-commit]
         name: pytest
         entry: python -m pytest  # python -m changes PYTHONPATH
         language: system

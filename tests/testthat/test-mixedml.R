@@ -7,6 +7,7 @@ to_scale <- c("x1", "x2")
 data <- data_mixedml
 data <- data[data[subject] < 5, ]
 data <- data[data[time] < 3, ]
+data[1, "y_mixed"] <- NA
 data[, to_scale] <- scale(data[, to_scale])
 
 test_that("mixedml works", {

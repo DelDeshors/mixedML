@@ -126,6 +126,7 @@ reservoir_mixedml <- function(
   istep <- 0
   mse_list <- c()
   mse_min <- Inf
+  comp_cases <- complete.cases(data[[target_name]])
   while (TRUE) {
     cat(sprintf("step#%d\n", istep))
     cat("\tfitting fixed effects...\n")
@@ -138,7 +139,9 @@ reservoir_mixedml <- function(
     random_model <- random_results$model
     pred_rand <- random_results$pred_rand
     #
-    residuals <- pred_fixed + pred_rand - data[[target_name]]
+    residuals <- pred_fixed[comp_cases] +
+      pred_rand -
+      data[comp_cases, target_name]
     mse <- mean(residuals**2)
     cat(sprintf("\tMSE = %.4g\n", mse))
     mse_list <- c(mse_list, mse)

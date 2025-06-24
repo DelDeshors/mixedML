@@ -1,13 +1,9 @@
+data <- data_mixedml_test
 fixed_spec <- y_mixed ~ x1 + x2 + time
 random_spec <- y_mixed ~ x1 + x2 + time
 subject <- "subject"
 time <- "time"
-
 to_scale <- c("x1", "x2")
-data <- data_mixedml
-data <- data[data[subject] < 5, ]
-data <- data[data[time] < 3, ]
-data[1, "y_mixed"] <- NA
 data[, to_scale] <- scale(data[, to_scale])
 
 test_that("mixedml works", {

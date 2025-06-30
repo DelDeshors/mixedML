@@ -70,7 +70,6 @@
   }
 }
 
-warning("Redifining is.integer so is.integer(1) is True.")
 is.integer <- function(x) {
   return(is.numeric(x) & (x == round(x)))
 }

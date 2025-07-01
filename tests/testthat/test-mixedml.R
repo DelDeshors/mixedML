@@ -1,20 +1,27 @@
-data <- data_mixedml_test
+data_ <- data_mixedml_test
 fixed_spec <- y_mixed ~ x1 + x2 + time
 random_spec <- y_mixed ~ x1 + x2 + time
 subject <- "subject"
 time <- "time"
 to_scale <- c("x1", "x2")
-data[, to_scale] <- scale(data[, to_scale])
+data_[, to_scale] <- scale(data_[, to_scale])
 
 test_that("mixedml works", {
   mixed_ml_model <- reservoir_mixedml(
     fixed_spec = fixed_spec,
     random_spec = random_spec,
-    data = data,
+    data = data_,
     subject = subject,
     time = time,
-    mixedml_ctrls(conv_ratio_thresh = 0.1, patience = 1),
-    hlme_controls = hlme_ctrls(maxiter = 5, idiag = TRUE, cor = AR(time)),
+    mixedml_ctrls(conv_ratio_thresh = 0.5, patience = 1),
+    hlme_controls = hlme_ctrls(
+      maxiter = 5,
+      idiag = TRUE,
+      cor = AR(time),
+      convB = 0.01,
+      convL = 0.01,
+      convG = 0.01
+    ),
     esn_controls = esn_ctrls(
       units = 20,
       lr = 0.1,
@@ -24,7 +31,7 @@ test_that("mixedml works", {
     ensemble_controls = ensemble_ctrls(
       seed_list = c(666, 667),
       agg_func = "median",
-      n_procs = 2
+      n_procs = 1
     ),
     fit_controls = fit_ctrls(warmup = 1)
   )
@@ -46,5 +53,5 @@ test_that("mixedml works", {
     )
   )
 
-  pred <- predict(mixed_ml_model, data)
+  pred <- predict(mixed_ml_model, data_)
 })

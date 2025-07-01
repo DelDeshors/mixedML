@@ -1,11 +1,9 @@
-data <- data_mixedml_test
-fixed_spec <- y_mixed ~ x1 + x2 + time
-subject <- "subject"
+data_ <- data_mixedml
+fixed_spec <- ym ~ x1 + x2 + time
+subject <- "ID"
 time <- "time"
-to_scale <- c("x1", "x2")
-data[, to_scale] <- scale(data[, to_scale])
 
-pred_rand <- rnorm(nrow(data))
+pred_rand <- rnorm(nrow(data_))
 
 .get_test_model <- function() {
   return(.initiate_esn(
@@ -31,11 +29,11 @@ test_that("esn works", {
   model <- .get_test_model()
   fit_result <- .fit_reservoir(
     model,
-    data,
+    data_,
     pred_rand
   )
   expect_named(fit_result, c("model", "pred_fixed"))
   expect_vector(fit_result$pred_fixed)
-  pred <- .predict_reservoir(fit_result$model, data, subject = subject)
+  pred <- .predict_reservoir(fit_result$model, data_, subject = subject)
   expect(all(pred == fit_result$pred_fixed), "predictions should be equal")
 })

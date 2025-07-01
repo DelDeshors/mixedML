@@ -1,10 +1,8 @@
-data_ <- data_mixedml_test
-fixed_spec <- y_mixed ~ x1 + x2 + time
-random_spec <- y_mixed ~ x1 + x2 + time
-subject <- "subject"
+data_ <- data_mixedml
+fixed_spec <- ym ~ x1 + x2 + time
+random_spec <- ym ~ x1 + x2 + time
+subject <- "ID"
 time <- "time"
-to_scale <- c("x1", "x2")
-data_[, to_scale] <- scale(data_[, to_scale])
 
 test_that("mixedml works", {
   mixed_ml_model <- reservoir_mixedml(

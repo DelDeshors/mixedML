@@ -125,6 +125,8 @@ fit_ctrls <- function(warmup = 0) {
   fixed_spec <- .get_r_attr_from_py_obj(model, "fixed_spec")
   subject <- .get_r_attr_from_py_obj(model, "subject")
   target_name <- .get_left_side_string(fixed_spec)
+  # no problem because R uses "copy-on-modify"
+  # we can check with tracemem(data)
   data[target_name] <- data[target_name] - pred_rand
   data_reshaped <- .reshape_for_rnn(fixed_spec, data, subject)
   #

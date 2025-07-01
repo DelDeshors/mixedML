@@ -42,17 +42,12 @@ mixedml_ctrls <- function(patience = 2, conv_ratio_thresh = 0.01) {
   stopifnot(
     .get_left_side_string(fixed_spec) == .get_left_side_string(random_spec)
   )
-  stopifnot(is.data.frame(data))
-  stopifnot(is.character(subject))
-  stopifnot(subject %in% names(data))
-  stopifnot(is.character(time))
-  stopifnot(time %in% names(data))
+  .check_sorted_data(data, subject, time)
   .check_controls_with_function(mixedml_controls, mixedml_ctrls)
   .check_controls_with_function(hlme_controls, hlme_ctrls)
   .check_controls_with_function(esn_controls, esn_ctrls)
   .check_controls_with_function(ensemble_controls, ensemble_ctrls)
   .check_controls_with_function(fit_controls, fit_ctrls)
-  .check_sorted_data(data, subject, time)
   return()
 }
 
@@ -133,7 +128,7 @@ reservoir_mixedml <- function(
     fixed_results <- .fit_reservoir(fixed_model, data, pred_rand)
     fixed_model <- fixed_results$model
     pred_fixed <- fixed_results$pred_fixed
-    #
+    stopifnot(all(!is.na(pred_fixed)))
     cat("\tfitting random effects...\n")
     random_results <- .fit_random_hlme(random_model, data, pred_fixed)
     random_model <- random_results$model
@@ -165,7 +160,7 @@ reservoir_mixedml <- function(
     }
     istep <- istep + 1
   }
-
+  .check_convergence_hlme(best$random_model)
   output <- c(
     list(
       "data" = data,

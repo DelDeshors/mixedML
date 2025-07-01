@@ -12,12 +12,22 @@
 #' If TRUE a diagonal matrix of variance-covariance is considered.
 #' @param maxiter maximum number of iterations for the Marquardt iterative algorithm.
 #' @param nproc the number cores for parallel computation. Default to 1 (sequential mode).
+#' @param convB optional threshold for the convergence criterion based on the
+#' parameter stability. By default, convB=0.0001.
+#' @param convL optional threshold for the convergence criterion based on the
+#' log-likelihood stability. By default, convL=0.0001.
+#' @param convG optional threshold for the convergence criterion based on the
+#' derivatives. By default, convG=0.0001.
 #' @export
 hlme_ctrls <- function(
   cor = NULL,
   idiag = FALSE,
   maxiter = 500,
-  nproc = 1
+  nproc = 1,
+  convB = 0.0001, # nolint
+  convL = 0.0001, # nolint
+  convG = 0.0001, # nolint
+  verbose = FALSE
 ) {
   # the use of cor in lcmm is tricky
   cor <- substitute(cor)
@@ -65,7 +75,6 @@ hlme_ctrls <- function(
 ) {
   .check_controls_with_function(hlme_controls, hlme_ctrls)
   .check_cor_spec(random_spec, var.time, hlme_controls$cor)
-
   # preparing the hlme formula inputs
   left <- .get_left_side_string(random_spec)
   right <- .get_right_side_string(random_spec)
@@ -74,12 +83,15 @@ hlme_ctrls <- function(
   hlme_controls$data <- data
   hlme_controls$subject <- subject
   hlme_controls$var.time <- var.time
+  hlme_controls$na.action <- 1
+  # preventing the fixed intercept to be estimated
   hlme_controls$posfix <- c(1)
   # initialization with maxiter = 0
   maxiter_backup <- hlme_controls$maxiter
-  hlme_controls$maxiter <- 1
+  hlme_controls$maxiter <- 0
   random_hlme <- do.call("hlme", hlme_controls)
-  random_hlme$best[["intercept"]] <- 0. # "$" does not work (conversion to list)
+  # forcing the fixed intercept to 0  ( "$" does not work: conversion to list)
+  random_hlme$best[["intercept"]] <- 0.
   random_hlme$call$maxiter <- maxiter_backup
   return(random_hlme)
 }
@@ -102,6 +114,8 @@ hlme_ctrls <- function(
   # to fitting f(X) on "Y-offset"
   # so that is the method used so far
   target_name <- .get_left_side_string(random_hlme$call$fixed)
+  # no problem because R uses "copy-on-modify"
+  # we can check with tracemem(data)
   data[target_name] <- data[target_name] - pred_fixed
   random_hlme <- stats::update(random_hlme, data = data, B = random_hlme$best)
   stopifnot(random_hlme$best["intercept"] == 0.)
@@ -111,8 +125,23 @@ hlme_ctrls <- function(
   ))
 }
 
-# prediction ----
+# convergence check ----
+.check_convergence_hlme <- function(random_hlme) {
+  stopifnot(is.integer(random_hlme$conv))
+  NOT_CONVERGED <- c(2, 4)
+  if (random_hlme$conv %in% NOT_CONVERGED) {
+    sum_conv <- paste(sprintf("%.3g", random_hlme$gconv), collapse = "/")
+    warning(sprintf(
+      "The hlme model did not converge (code %s).
+       Here are the criterions (stability/likelihood/RDM): %s",
+      random_hlme$conv,
+      sum_conv
+    ))
+  }
+  return()
+}
 
+# prediction ----
 .predict_random_hlme <- function(random_hlme, data) {
   PRED_RAND <- "__PRED_RAND" # temporary column to compute the predictions
   stopifnot(class(random_hlme) == "hlme")

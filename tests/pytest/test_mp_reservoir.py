@@ -1,26 +1,22 @@
 # -*- coding: utf-8 -*-
-from numpy import ndarray
-from reservoirpy.datasets import mackey_glass, japanese_vowels  # type: ignore
 
+# !!! fixtures defined in conftest.py
+
+from numpy import ndarray
 
 from inst.python.reservoir_ensemble import (
     JoblibReservoirEnsemble,
-    RayReservoirEnsemble,
+    # RayReservoirEnsemble,
 )
 
 
-data = mackey_glass(2000)
-
-Xarr, yarr = data[:50], data[1:51]
-
-Xlst, Ylst, _, _ = japanese_vowels(repeat_targets=True)
-
 seed_list = [1, 2, 3]
 esn_controls = {"units": 5, "ridge": 1e-5}
-n_procs = 5
-agg_func = "median"
+n_procs = 2
+aggregator = "median"
+scaler = "standard"
 seed_list = [1, 2, 3]
-fit_controls = {"reset": True, "stateful": True, "warmup": 2}
+fit_controls = {"reset": True, "stateful": True, "warmup": 0}
 predict_controls = {"reset": True, "stateful": True}
 
 
@@ -32,36 +28,16 @@ def pred_same_shape(a, b) -> bool:
     raise UserWarning()
 
 
-def train_fit_joblib_reservoir_ensemble(n_procs, X, y):
+def test_train_predict_joblib_reservoir_ensemble(data_2D_x, data_2D_y, subject):
     resmod = JoblibReservoirEnsemble(
         seed_list=seed_list,
         esn_controls=esn_controls,
         fit_controls=fit_controls,
         predict_controls=predict_controls,
         n_procs=n_procs,
-        agg_func="mean",
+        scaler=scaler,
+        aggregator=aggregator,
     )
-    resmod.fit(X, y)
-    ypred = resmod.predict(X)
-    assert pred_same_shape(ypred, y)
-
-
-def test_joblib_reservoir_ensemble():
-    train_fit_joblib_reservoir_ensemble(1, Xarr, yarr)
-    train_fit_joblib_reservoir_ensemble(5, Xarr, yarr)
-    train_fit_joblib_reservoir_ensemble(10, Xlst, Ylst)
-
-
-def test_ray_reservoir_workers():
-
-    model = RayReservoirEnsemble(
-        Xlst,
-        seed_list,
-        esn_controls,
-        fit_controls,
-        predict_controls,
-        agg_func,
-        n_procs,
-    )
-
-    model.fit(Ylst)
+    resmod.fit(X=data_2D_x, y=data_2D_y, subject_col=subject)
+    ypred = resmod.predict(data_2D_x, subject_col=subject)
+    assert ypred.shape == data_2D_y.shape

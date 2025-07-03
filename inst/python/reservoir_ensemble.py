@@ -12,15 +12,28 @@ from reservoirpy import verbosity  # type: ignore
 from joblib import Parallel, delayed, cpu_count  # type: ignore
 
 
-from .rnn_utils import (
-    data_2D_to_list,
-    data_list_to_2D,
-    Array1D,
-    Array2D,
-    get_aggregator,
-    get_scaler,
-    aggregate_predict_output,
-)
+try:
+    # Pour exécution avec pytest (en tant que package)
+    from .rnn_utils import (
+        data_2D_to_list,
+        data_list_to_2D,
+        Array1D,
+        Array2D,
+        get_aggregator,
+        get_scaler,
+        aggregate_predict_output,
+    )
+except ImportError:
+    # Pour import via reticulate (ajout au sys.path)
+    from rnn_utils import (  # type: ignore
+        data_2D_to_list,
+        data_list_to_2D,
+        Array1D,
+        Array2D,
+        get_aggregator,
+        get_scaler,
+        aggregate_predict_output,
+    )
 
 
 verbosity(0)

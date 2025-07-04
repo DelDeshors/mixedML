@@ -18,29 +18,11 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
-```
-
-```{r, include = FALSE}
+options(digits = 3)
 devtools::load_all()
+source("utils.R")
 ```
 
-```{r, include=FALSE}
-clean_help_md <- function(help_md) {
-  help_md <- gsub(pattern = "^# .*\n", replacement = "", help_md, perl = TRUE)
-  help_md <- gsub("## (.*)\n", "**\\1**\n", help_md, perl = TRUE)
-  help_md <- gsub("\n+$", "", help_md, perl = TRUE)
-  return(help_md)
-}
-
-
-print_help <- function(function_name) {
-  stopifnot(is.character(function_name))
-  hpath <- as.character(help(function_name))[[3]]
-  markdown_doc <- Rd2md::as_markdown(Rd2md::read_rdfile(hpath))
-  markdown_doc <- clean_help_md(markdown_doc)
-  return(knitr::asis_output(markdown_doc))
-}
-```
 
 # Introduction
 
@@ -72,7 +54,7 @@ However, some ML models have a "black box" effect, as one cannot use its estimat
 
 The method uses a iterative training of both fixed effects and random effects models. The pseudo-code is as follow (`fe`/`re` stands for fixed/random effects):
 
-```         
+```
 ml_model_fe <- initiate_ml_model_fe()
 hlme_model_re <- initiate_hlme_model_re()
 
@@ -83,59 +65,20 @@ while not converged:
 
   fit hlme_model_re on X and (Y - Yfe)
   Yre <-  hlme_model_re(X)
-  
+
   converged <- criterion(Y, Yfe+Yre)
 ```
 
 # Example dataset
 
-The dataset `data_mixedml` is proposed: it is a synthetic longitudinal dataset, containing data for 500 subjects on 26 regularly spaced time steps ($t \in [0,25]$).
+The dataset `data_mixedml` is proposed. It is generated using the `R/data_gen.R` file.
 
-Here's a snippet:
-
-```{r}
-idx_print <- (data_mixedml[["subject"]] < 4) & (data_mixedml[["time"]] < 5)
-data_print <- data_mixedml[idx_print,]
-row.names(data_print) <- NULL
-print(data_print, digits = 2, row.names = FALSE)
-```
-
-<br> The purely fixed effects response, $y_{fixed}$ is calculated as:
-
-$$y_{fixed} = \gamma_{0} + 
-\gamma_{1} \cdot  x_2 \cdot x_5 + 
-\gamma_{2} \cdot  x_4 \cdot x_7 +
-\gamma_{3} \cdot  x_6 \cdot x_8$$
-
-… where:
-
-- $\gamma_{0}= -0.9826036$, 
-- $\gamma_{1} = -0.4289147$, 
-- $\gamma_{2} = -0.0456483$,
-- $\gamma_{3} = -0.8542527$.
-
-<br> The mixed effects response, $y_{mixed}$ is calculated for each individual $i$ as: 
-
-$$y_{mixed,i} = \gamma_{0,i} + 
-\gamma_{1,i} \cdot  x_2 \cdot x_5 + 
-\gamma_{2,i} \cdot  x_4 \cdot x_7 +
-\gamma_{3,i} \cdot  x_6 \cdot x_8$$ 
-
-…where each $\gamma_{k,i}$ is draw from a normal distribution with: 
-
-- for $\gamma_{0,i}$, a mean of $\gamma_{0}$ and a standard deviation of $0.5$,
-- for $\gamma_{1,i}$, a mean of $\gamma_{1}$ and a standard deviation of $0.5$, 
-- for $\gamma_{2,i}$, a mean of $\gamma_{2}$ and a standard deviation of $0.05$, 
-- for $\gamma_{3,i}$, a mean of $\gamma_{3}$ and a standard deviation of $0.1$.
-
-That is, one can train a MixedML model using $y_{mixed}$ then use $y_{fixed}$ to check how well both sub-model are fitted for their specific task.
-
-Let's defined sub-datasets for the next examples:
+It is a synthetic longitudinal dataset, containing data for 10 subjects on 5 regularly spaced time steps. It contains two response columns for both fixed and mixed effects. NA values have been added manually in these columns:
 
 ```{r}
-data_1 <- data_mixedml[data_mixedml[["subject"]] %in% seq(01, 10), ]
-data_2 <- data_mixedml[data_mixedml[["subject"]] %in% seq(11, 12), ]
+data_mixedml
 ```
+
 
 # General principle
 
@@ -146,7 +89,7 @@ some_mixed_ml_model(
   # parameters of the MixedML model (inpired by the hlme function definition)
   fixed_spec,
   random_spec,
-  data,
+  data_,
   subject,
   time,
   # parameters for MixedML method
@@ -164,25 +107,27 @@ The `fixed_spec`, `random_spec`, `cor`, `data`, `subject` and `time` are used by
 
 Then several controls are defined, using specific functions whose names correspond to the control names. That is, the `some_name_ctrls(…)` function is used to define `some_name_controls` controls. Each control has its specific help.
 
-Here is an example using the `reservoir_mixedml` function (the resulting model will be used in the remaining sections):
+Here is an example using the `reservoir_mixedml` function (here is the [corresponding vignette](mixedML_reservoir.html):
 
 ```{r}
 model_reservoir <- reservoir_mixedml(
-  fixed_spec = y_mixed ~ x1 + x2 + x3 + x8,
-  random_spec = y_mixed ~ x1 + x2 + x3 + x8,
-  data = data_1,
-  subject = "subject",
+  fixed_spec = ym ~ x1 + x2 + x3,
+  random_spec = ~ x1 + x2,
+  data = data_mixedml,
+  subject = "ID",
   time = "time",
   # parameters for MixedML method
   mixedml_controls = mixedml_ctrls(),
   # controls (extra-parameters) for the hlme model
-  hlme_controls = hlme_ctrls(nproc = 5, maxiter = 10, idiag = TRUE),
+  hlme_controls = hlme_ctrls(maxiter = 50, idiag = TRUE),
   # controls (extra-parameters) for the ML model
   esn_controls = esn_ctrls(units = 20, ridge = 1e-5),
-  ensemble_controls = ensemble_ctrls(seed_list = c(1, 2, 3)),
+  ensemble_controls = ensemble_ctrls(seed_list = c(1, 2, 3, 4, 5)),
   fit_controls = fit_ctrls(warmup = 2)
 )
 ```
+
+The resulting model will be used in the remaining sections.
 
 ## Attributes
 
@@ -199,8 +144,8 @@ model_reservoir$fixed_model
 
 Also a `call` attribute exists, meaning one can trained the model with new inputs using `update` command:
 
-```{r, eval=TRUE}
-updated_model <- update(model_reservoir, data = data_2)
+```{r, eval=FALSE}
+new_model_reservoir <- update(model_reservoir, data = new_data, maxiter = new_maxiter)
 ```
 
 # Functions

@@ -17,5 +17,5 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r child = 'vignettes/my-vignette.Rmd'}
+```{r child = 'vignettes/mixedML.Rmd'}
 ```

@@ -57,5 +57,6 @@ test_that("mixedml works", {
   )
   pred <- predict(mixed_ml_model, data_)
   stopifnot(length(pred) == nrow(data_))
+  plot_conv(mixed_ml_model)
   plot_last_iter(mixed_ml_model, subject_nb_or_list = 3)
 })

@@ -1,6 +1,6 @@
 data_ <- data_mixedml
 fixed_spec <- ym ~ x1 + x2 + time
-random_spec <- ym ~ x1 + x2 + time
+random_spec <- ~ x1 + x2 + time
 subject <- "ID"
 time <- "time"
 
@@ -11,7 +11,11 @@ test_that("mixedml works", {
     data = data_,
     subject = subject,
     time = time,
-    mixedml_ctrls(conv_ratio_thresh = 0.5, patience = 1),
+    mixedml_ctrls(
+      conv_ratio_thresh = 0.1,
+      patience = 1,
+      no_random_value_as = NA
+    ),
     hlme_controls = hlme_ctrls(
       maxiter = 5,
       idiag = TRUE,
@@ -28,7 +32,8 @@ test_that("mixedml works", {
     ),
     ensemble_controls = ensemble_ctrls(
       seed_list = c(666, 667),
-      agg_func = "median",
+      aggregator = "median",
+      scaler = "standard",
       n_procs = 1
     ),
     fit_controls = fit_ctrls(warmup = 1)
@@ -50,6 +55,7 @@ test_that("mixedml works", {
       "random_model"
     )
   )
-
   pred <- predict(mixed_ml_model, data_)
+  stopifnot(length(pred) == nrow(data_))
+  plot_last_iter(mixed_ml_model, subject_nb_or_list = 3)
 })

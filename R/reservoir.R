@@ -45,21 +45,25 @@ esn_ctrls <- function(
 #'
 #'
 #' @param seed_list List of seeds used to generate the Reservoir. Default:  c(1, 2, 3)
-#' @param agg_func Function used to aggregate the predictions of each ESN.
+#' @param aggregator Function used to aggregate the predictions of each ESN.
 #' "mean" or "median". Default: "median"
+#' @param scaler scikit-learn scaler to use on the X data.
+#' "standard", "robust", "min-max", "max-abs". Default: "standard"
 #' @param n_procs Number of processor to use. 1 means no multiprocessing. Default: 1.
 #' @return ensemble_controls
 #' @export
 ensemble_ctrls <- function(
   seed_list = c(1, 2, 3),
-  agg_func = "median",
+  aggregator = "median",
+  scaler = "standard",
   n_procs = 1
 ) {
   stopifnot(is.integer(seed_list))
-  seed_list <- as.integer(seed_list)
-  stopifnot(is.character(agg_func))
+  seed_list <- as.integer(seed_list) # real integer for reticulate
+  stopifnot(is.character(aggregator))
+  stopifnot(is.character(scaler))
   stopifnot(is.single.integer(n_procs))
-  n_procs <- as.integer(n_procs)
+  n_procs <- as.integer(n_procs) # real integer for reticulate
   return(as.list(environment()))
 }
 
@@ -82,6 +86,20 @@ fit_ctrls <- function(warmup = 0) {
 }
 
 
+.test_initiate_esn <- function(
+  fixed_spec,
+  esn_controls,
+  ensemble_controls,
+  fit_controls
+) {
+  stopifnot(length(.get_y_label(fixed_spec)) == 1)
+  .check_controls_with_function(esn_controls, esn_ctrls)
+  .check_controls_with_function(ensemble_controls, ensemble_ctrls)
+  .check_controls_with_function(fit_controls, fit_ctrls)
+  return()
+}
+
+
 # recipes  ----
 .initiate_esn <- function(
   fixed_spec,
@@ -90,11 +108,9 @@ fit_ctrls <- function(warmup = 0) {
   ensemble_controls = ensemble_ctrls(),
   fit_controls = fit_ctrls()
 ) {
+  .test_initiate_esn(fixed_spec, esn_controls, ensemble_controls, fit_controls)
+  #
   retipy <- .load_package()
-  .check_controls_with_function(esn_controls, esn_ctrls)
-  .check_controls_with_function(ensemble_controls, ensemble_ctrls)
-  .check_controls_with_function(fit_controls, fit_ctrls)
-
   # enforcing "stateful=TRUE" and "reset=TRUE"
   enforcement <- list(stateful = TRUE, reset = TRUE)
   fit_controls <- c(fit_controls, enforcement)
@@ -117,43 +133,46 @@ fit_ctrls <- function(warmup = 0) {
 
 
 # fitting/training ----
-.fit_reservoir <- function(model, data, pred_rand) {
+.fit_reservoir <- function(model, data) {
   # !!! offsetting is not implemented in LCMM
   # BUT for linear models, fitting "f(X)+offset" on Y is equivalent to
   # fitting f(X) on "Y-offset"
   # so that is the method used so far
   fixed_spec <- .get_r_attr_from_py_obj(model, "fixed_spec")
   subject <- .get_r_attr_from_py_obj(model, "subject")
-  target_name <- .get_left_side_string(fixed_spec)
-  # no problem because R uses "copy-on-modify"
-  # we can check with tracemem(data)
-  data[target_name] <- data[target_name] - pred_rand
-  data_reshaped <- .reshape_for_rnn(fixed_spec, data, subject)
+  x_labels <- .get_x_labels(fixed_spec)
+  y_label <- .get_y_label(fixed_spec)
+  ccases <- complete.cases(data[x_labels])
+  data <- data[ccases, ]
   #
-  controls <- data_reshaped
+  controls <- list(
+    X = as.matrix(data[x_labels]),
+    y = as.matrix(data[y_label]),
+    subject_col = as.array(data[[subject]])
+  )
   do.call(model$fit, controls)
-  pred_fixed <- .predict_reservoir(model, data, subject, data_reshaped)
-  return(list("model" = model, "pred_fixed" = pred_fixed))
+  return(model)
 }
 
 
 # prediction ----
 .predict_reservoir <- function(
   model,
-  data,
-  subject,
-  data_reshaped = NULL
+  data
 ) {
-  if (is.null(data_reshaped)) {
-    fixed_spec <- .get_r_attr_from_py_obj(model, "fixed_spec")
-    data_reshaped <- .reshape_for_rnn(fixed_spec, data, subject)
-  } else {
-    # shortcut to avoid redoing this operation if already done in "fit"
-    stopifnot(setequal(names(data_reshaped), c("X", "y")))
-  }
-  #
-  controls <- data_reshaped["X"]
+  fixed_spec <- .get_r_attr_from_py_obj(model, "fixed_spec")
+  subject <- .get_r_attr_from_py_obj(model, "subject")
+  x_labels <- .get_x_labels(fixed_spec)
+  ccases <- complete.cases(data[x_labels])
+  data <- data[ccases, ]
+  controls <- list(
+    X = as.matrix(data[x_labels]),
+    subject_col = as.array(data[[subject]])
+  )
   pred_fixed <- do.call(model$predict, controls)
-  pred_fixed <- .reshape_pred_of_rnn(pred_fixed, data, subject)
-  return(pred_fixed)
+  stopifnot(ncol(pred_fixed) == 1)
+  stopifnot(all(!is.na(pred_fixed[, 1])))
+  pred_final <- rep(NA, length(ccases))
+  pred_final[ccases] <- pred_fixed[, 1]
+  return(pred_final)
 }

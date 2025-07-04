@@ -37,21 +37,27 @@ hlme_ctrls <- function(
 
 
 .check_cor_spec <- function(random_spec, var.time, cor) {
+  # this should move into lcmm
   if (is.null(cor)) return()
   #
   cor_time <- as.character(cor)[2]
   #
-  cond1 <- cor_time %in% all.vars(random_spec)
-  cond2 <- (cor_time == var.time)
-  if (!(cond1 && cond2)) {
+  if (!(cor_time %in% .get_x_labels(random_spec))) {
+    stop("the time value defined in \"cor\", should be used in \"random_spec\"")
+  }
+  if (!(cor_time == var.time)) {
     stop(
-      '
-      when defining \"cor\",
-      the time value must be equal to the one defined in \"time\"
-      and should be used in \"random_spec\"
-      '
+      "the time value defined in \"cor\", should equal to the one defined in \"time\""
     )
   }
+  return()
+}
+
+.test_initiate_random_hlme <- function(random_spec, hlme_controls, var.time) {
+  stopifnot(length(.get_y_label(random_spec)) == 0)
+  .check_controls_with_function(hlme_controls, hlme_ctrls)
+  .check_controls_with_function(hlme_controls, hlme_ctrls)
+  .check_cor_spec(random_spec, var.time, hlme_controls$cor)
   return()
 }
 
@@ -67,19 +73,18 @@ hlme_ctrls <- function(
 #' @param hlme_controls hlme_controls
 #' @return HLME model
 .initiate_random_hlme <- function(
+  target_name,
   random_spec,
   data,
   subject,
   var.time,
-  hlme_controls
+  hlme_controls,
+  no_random_value_as
 ) {
-  .check_controls_with_function(hlme_controls, hlme_ctrls)
-  .check_cor_spec(random_spec, var.time, hlme_controls$cor)
+  .test_initiate_random_hlme(random_spec, hlme_controls, var.time)
   # preparing the hlme formula inputs
-  left <- .get_left_side_string(random_spec)
-  right <- .get_right_side_string(random_spec)
-  hlme_controls$fixed <- stats::as.formula(paste0(left, "~1"))
-  hlme_controls$random <- stats::as.formula(paste0("~", right))
+  hlme_controls$fixed <- stats::reformulate("1", response = target_name)
+  hlme_controls$random <- random_spec
   hlme_controls$data <- data
   hlme_controls$subject <- subject
   hlme_controls$var.time <- var.time
@@ -93,36 +98,22 @@ hlme_ctrls <- function(
   # forcing the fixed intercept to 0  ( "$" does not work: conversion to list)
   random_hlme$best[["intercept"]] <- 0.
   random_hlme$call$maxiter <- maxiter_backup
+  random_hlme$no_random_value_as <- no_random_value_as
   return(random_hlme)
 }
 
 
 # training ----
-.check_fit_random_hlme <- function(random_hlme, data, pred_fixed) {
-  stopifnot(class(random_hlme) == "hlme")
-  stopifnot(random_hlme$best["intercept"] == 0.)
-  stopifnot(is.data.frame(data))
-  stopifnot(is.numeric(pred_fixed))
-  stopifnot(is.vector(pred_fixed))
-  return()
-}
-
-.fit_random_hlme <- function(random_hlme, data, pred_fixed) {
-  .check_fit_random_hlme(random_hlme, data, pred_fixed)
-  # !!! offsetting is not implemented in LCMM
-  # BUT for linear models, fitting "f(X)+offset" on Y is equivalent
-  # to fitting f(X) on "Y-offset"
-  # so that is the method used so far
-  target_name <- .get_left_side_string(random_hlme$call$fixed)
-  # no problem because R uses "copy-on-modify"
-  # we can check with tracemem(data)
-  data[target_name] <- data[target_name] - pred_fixed
+.fit_random_hlme <- function(random_hlme, data) {
+  no_random_value_as <- random_hlme$no_random_value_as
+  y_label <- .get_y_label(random_hlme$call$fixed)
+  x_labels <- .get_x_labels(random_hlme$call$random)
+  ccases <- complete.cases(data[c(y_label, x_labels)])
   random_hlme <- stats::update(random_hlme, data = data, B = random_hlme$best)
-  stopifnot(random_hlme$best["intercept"] == 0.)
-  return(list(
-    "model" = random_hlme,
-    "pred_rand" = random_hlme$pred[["pred_ss"]]
-  ))
+  random_hlme$no_random_value_as <- no_random_value_as
+  random_hlme$full_pred <- rep(random_hlme$no_random_value_as, length(ccases))
+  random_hlme$full_pred[ccases] <- random_hlme$pred$pred_ss
+  return(random_hlme)
 }
 
 # convergence check ----
@@ -143,51 +134,44 @@ hlme_ctrls <- function(
 
 # prediction ----
 .predict_random_hlme <- function(random_hlme, data) {
-  PRED_RAND <- "__PRED_RAND" # temporary column to compute the predictions
-  stopifnot(class(random_hlme) == "hlme")
+  y_label <- .get_y_label(random_hlme$call$fixed)
+  x_labels <- .get_x_labels(random_hlme$call$random)
+  ccases <- complete.cases(data[c(y_label, x_labels)])
+  #
   var.time <- random_hlme$var.time
   subject <- colnames(random_hlme$pred)[1]
-
   # trick to simplify the RE 'rowSums' calculation
   x_labels <- random_hlme$Xnames
   intercept <- x_labels[1]
   data[intercept] <- 1
-
-  # initialization with the marginal effects
-  data[PRED_RAND] <- as.vector(
-    lcmm::predictY(random_hlme, newdata = data, marg = TRUE)$pred
-  )
-  # … but they should be 0
-  if (max(abs(data[PRED_RAND])) > 0) {
-    stop(
-      "The marginal effects are different from 0: ",
-      "this is not a 100% random effects model."
-    )
-  }
+  # initialization with 0
+  preds <- data[c(var.time, subject, y_label)]
+  preds[[y_label]] <- 0
+  #
   time_unq <- sort(unique(data[[var.time]]))
   for (i_time in time_unq[-1]) {
     prev_data <- data[data[var.time] < i_time, ]
-    tryCatch(
-      # we let hlme find out if he can predict or not
-      {
-        ui <- lcmm::predictRE(random_hlme, newdata = prev_data)
-        actual_data <- data[data[var.time] == i_time, ]
-        for (i_row in rownames(actual_data)) {
-          actual_subject <- actual_data[i_row, subject]
-          ui_subject <- ui[ui[, subject] == actual_subject, ]
-          if (nrow(ui_subject) == 1) {
-            reffects <- rowSums(
-              actual_data[i_row, x_labels] * ui_subject[, x_labels]
-            )
-            data[i_row, PRED_RAND] <- data[i_row, PRED_RAND] + reffects
-          } else if (nrow(ui_subject) > 1) {
-            stop("Problem with method!")
-          }
-        }
-      },
-      error = function(e) {
+    # tryCatch(
+    # we let hlme find out if he can predict or not
+    # {
+    ui <- lcmm::predictRE(random_hlme, newdata = prev_data)
+    actual_data <- data[data[var.time] == i_time, ]
+    for (i_row in rownames(actual_data)) {
+      actual_subject <- actual_data[i_row, subject]
+      ui_subject <- ui[ui[, subject] == actual_subject, ]
+      if (nrow(ui_subject) == 1) {
+        reffects <- rowSums(
+          actual_data[i_row, x_labels] * ui_subject[, x_labels]
+        )
+        preds[i_row, y_label] <- preds[i_row, y_label] + reffects
+      } else if (nrow(ui_subject) > 1) {
+        stop("Problem with method!")
       }
-    )
+    }
+    # },
+    # error = function(e) {
+    # }
+    # )
   }
-  return(data[[PRED_RAND]])
+  return(preds[[y_label]])
 }

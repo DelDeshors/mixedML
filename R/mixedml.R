@@ -10,16 +10,24 @@ MIXEDML_CLASS <- "MixedML_Model"
 #' @param patience Number of iterations without improvement before the training is stopped. Default: 2
 #' @param conv_ratio_thresh Ratio of improvement of the MSE to consider an improvement.
 #' `conv_ratio_thresh=0.01` means an improvement of at least 1% of the MSE is necessary. Default: 0.01
+#' @param no_random_value_as value to use during the training of the random model
+#' when the prediction is not possible (NA or 0). This does not affect the prediction.
+#' Default: NA
 #' @return mixedml_controls
 #' @export
-mixedml_ctrls <- function(patience = 2, conv_ratio_thresh = 0.01) {
+mixedml_ctrls <- function(
+  patience = 2,
+  conv_ratio_thresh = 0.01,
+  no_random_value_as = NA
+) {
   stopifnot(is.single.integer(patience) & 0 <= patience)
   patience <- as.integer(patience)
-  stopifnot(
-    is.single.numeric(conv_ratio_thresh) &
-      0 < conv_ratio_thresh &
-      conv_ratio_thresh < 1
-  )
+  stopifnot(is.single.numeric(conv_ratio_thresh))
+  stopifnot(0 < conv_ratio_thresh & conv_ratio_thresh < 1)
+  #
+  stopifnot(length(no_random_value_as) == 1)
+  stopifnot(is.na(no_random_value_as) || (no_random_value_as == 0))
+  #
   control <- as.list(environment())
   return(control)
 }
@@ -37,17 +45,8 @@ mixedml_ctrls <- function(patience = 2, conv_ratio_thresh = 0.01) {
   ensemble_controls,
   fit_controls
 ) {
-  stopifnot(rlang::is_bare_formula(fixed_spec))
-  stopifnot(rlang::is_bare_formula(random_spec))
-  stopifnot(
-    .get_left_side_string(fixed_spec) == .get_left_side_string(random_spec)
-  )
   .check_sorted_data(data, subject, time)
   .check_controls_with_function(mixedml_controls, mixedml_ctrls)
-  .check_controls_with_function(hlme_controls, hlme_ctrls)
-  .check_controls_with_function(esn_controls, esn_ctrls)
-  .check_controls_with_function(ensemble_controls, ensemble_ctrls)
-  .check_controls_with_function(fit_controls, fit_ctrls)
   return()
 }
 
@@ -60,8 +59,8 @@ mixedml_ctrls <- function(patience = 2, conv_ratio_thresh = 0.01) {
 #' to fit the fixed effects.
 #' @param fixed_spec two-sided linear formula object for the fixed-effects.
 #' The response outcome is on the left of ~ and the covariates are separated by + on the right of ~.
-#' @param random_spec two-sided formula for the random-effects in the linear mixed model.
-#'  The response outcome is on the left of ~ and the covariates are separated by + on the right of ~.
+#' (do not used extra formulation such as "x1*x3")
+#' @param random_spec one-sided formula for the random-effects in the linear mixed model.
 #'  By default, an intercept is included. If no intercept, -1 should be the first term included.
 #' @param data dataframe containing the variables named in `fixed_spec`, `random_spec`, `subject` and `time`.
 #' @param subject name of the covariate representing the grouping structure, given as a string/character.
@@ -99,12 +98,15 @@ reservoir_mixedml <- function(
     fit_controls
   )
   #
+  target_name <- .get_y_label(fixed_spec)
   random_model <- .initiate_random_hlme(
+    target_name,
     random_spec,
     data,
     subject,
     time,
-    hlme_controls
+    hlme_controls,
+    mixedml_controls$no_random_value_as
   )
   fixed_model <- .initiate_esn(
     fixed_spec,
@@ -116,31 +118,41 @@ reservoir_mixedml <- function(
   conv_ratio_thresh <- mixedml_controls[["conv_ratio_thresh"]]
   patience <- mixedml_controls[["patience"]]
   ##
-  target_name <- .get_left_side_string(fixed_spec)
+  data_fixed <- data
+  data_rand <- data
   pred_rand <- rep(0, nrow(data))
   istep <- 0
   mse_list <- c()
   mse_min <- Inf
-  comp_cases <- complete.cases(data[[target_name]])
+  msg <- TRUE
+  #
   while (TRUE) {
     cat(sprintf("step#%d\n", istep))
     cat("\tfitting fixed effects...\n")
-    fixed_results <- .fit_reservoir(fixed_model, data, pred_rand)
-    fixed_model <- fixed_results$model
-    pred_fixed <- fixed_results$pred_fixed
-    stopifnot(all(!is.na(pred_fixed)))
+    data_fixed[[target_name]] <- data[[target_name]] - pred_rand
+    fixed_model <- .fit_reservoir(fixed_model, data_fixed)
+    pred_fixed <- .predict_reservoir(fixed_model, data)
     cat("\tfitting random effects...\n")
-    random_results <- .fit_random_hlme(random_model, data, pred_fixed)
-    random_model <- random_results$model
-    pred_rand <- random_results$pred_rand
+    # !!! offsetting is not implemented in LCMM
+    # BUT for linear models, fitting "f(X)+offset" on Y is equivalent
+    # to fitting f(X) on "Y-offset"
+    # so that is the method used so far
+    data_rand[[target_name]] <- data[[target_name]] - pred_fixed
+    random_model <- .fit_random_hlme(random_model, data_rand)
+    pred_rand <- random_model$full_pred
     #
-    residuals <- pred_fixed[comp_cases] +
-      pred_rand -
-      data[comp_cases, target_name]
-    mse <- mean(residuals**2)
+    residuals <- pred_fixed + pred_rand - data[, target_name]
+    ccases <- complete.cases(residuals)
+    if (msg && sum(!ccases) > 0) {
+      msg <- FALSE
+      warning(sprintf(
+        "%d observations could not be uses to train (either no fixed preds, random preds or target).",
+        sum(!ccases)
+      ))
+    }
+    mse <- mean(residuals[ccases]**2)
     cat(sprintf("\tMSE = %.4g\n", mse))
     mse_list <- c(mse_list, mse)
-
     if (mse < (1 - conv_ratio_thresh) * mse_min) {
       count_conv <- 0
       best <- list(
@@ -184,10 +196,7 @@ reservoir_mixedml <- function(
   return()
 }
 
-
 #' Predict using a fitted model and new data
-#'
-#'
 #'
 #' @param model Trained MixedML model
 #' @param data New data (same format as the one used for training)
@@ -195,14 +204,9 @@ reservoir_mixedml <- function(
 #' @export
 predict <- function(model, data) {
   .test_predict(model, data)
-  #
-  pred_fixed <- .predict_reservoir(
-    model$fixed_model,
-    data,
-    model$subject,
-  )
-  pred_mixed <- .predict_random_hlme(model$random_model, data)
-  return(pred_fixed + pred_mixed)
+  pred_fixed <- .predict_reservoir(model$fixed_model, data)
+  pred_rand <- .predict_random_hlme(model$random_model, data)
+  return(pred_fixed + pred_rand)
 }
 
 #' Plot the (MSE) convergence of the MixedML training
@@ -244,16 +248,23 @@ plot_last_iter <- function(model, subject_nb_or_list, ylog = FALSE) {
   #
   subject <- model$subject
   time <- model$time
-  target <- .get_left_side_string(as.formula(model$fixed_spec))
+  target <- .get_y_label(model$fixed_spec)
   #
-  data_true <- model$data
-  data_true[[subject]] <- as.factor(data_true[[subject]])
-  data_pred <- data_true
-  data_pred[target] <- model$pred_fixed + model$pred_rand
+  model$data[[subject]] <- as.factor(model$data[[subject]])
   #
+  type <- "type"
+  type1 <- "target"
+  data_ <- model$data
+  data_[[type]] <- type1
+  #
+  type2 <- "pred."
+  data_tmp <- model$data
+  data_tmp[[type]] <- type2
+  data_tmp[[target]] <- model$pred_fixed + model$pred_rand
+  data_ <- rbind(data_, data_tmp)
   if (is.single.integer(subject_nb_or_list)) {
     subject_nb_or_list <- sample(
-      unique(data_true[[subject]]),
+      unique(data_[[subject]]),
       subject_nb_or_list
     )
     message("Subjects selected randomly: use set.seed to change the selection.")
@@ -261,19 +272,22 @@ plot_last_iter <- function(model, subject_nb_or_list, ylog = FALSE) {
     stopifnot(all(subject_nb_or_list %in% data_true[[subject]]))
   }
   #
-  idx_keep <- data_true[[subject]] %in% subject_nb_or_list
-  data_true <- data_true[idx_keep, ]
-  data_pred <- data_pred[idx_keep, ]
+  idx_keep <- data_[[subject]] %in% subject_nb_or_list
+  data_ <- data_[idx_keep, ]
+
   return(
     ggplot(
-      mapping = aes_string(
-        x = time,
-        y = target,
-        group = subject,
-        color = subject
+      data_,
+      aes(
+        x = .data[[time]],
+        y = .data[[target]],
+        group = interaction(.data[[subject]], .data[[type]]),
+        color = .data[[subject]],
+        linetype = .data[[type]],
+        shape = .data[[type]]
       )
     ) +
-      geom_line(data = data_true, linetype = 1) +
-      geom_line(data = data_pred, linetype = 2)
+      geom_line() +
+      geom_point(size = 4)
   )
 }

@@ -3,8 +3,6 @@ fixed_spec <- ym ~ x1 + x2 + time
 subject <- "ID"
 time <- "time"
 
-pred_rand <- rnorm(nrow(data_))
-
 .get_test_model <- function() {
   return(.initiate_esn(
     fixed_spec = fixed_spec,
@@ -17,23 +15,25 @@ pred_rand <- rnorm(nrow(data_))
     ),
     ensemble_controls = ensemble_ctrls(
       seed_list = c(1L, 2L),
-      agg_func = "median",
+      aggregator = "median",
+      scaler = "standard",
       n_procs = 2L
     ),
-    fit_controls = fit_ctrls(warmup = 2)
+    fit_controls = fit_ctrls(warmup = 0)
   ))
 }
 
 
 test_that("esn works", {
   model <- .get_test_model()
-  fit_result <- .fit_reservoir(
+  model <- .fit_reservoir(
     model,
-    data_,
-    pred_rand
+    data_
   )
-  expect_named(fit_result, c("model", "pred_fixed"))
-  expect_vector(fit_result$pred_fixed)
-  pred <- .predict_reservoir(fit_result$model, data_, subject = subject)
-  expect(all(pred == fit_result$pred_fixed), "predictions should be equal")
+  stopifnot(inherits(model, "reservoir_ensemble.JoblibReservoirEnsemble"))
+  pred <- .predict_reservoir(model, data_)
+  expect_vector(pred)
+  x_labels <- .get_x_labels(fixed_spec)
+  stopifnot(nrow(pred) == nrow(data_))
+  stopifnot(sum(is.na(pred)) == sum(!complete.cases(data_[x_labels])))
 })

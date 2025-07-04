@@ -1,59 +1,17 @@
 # formula sides ----
 
-.get_left_side_string <- function(spec) {
+.get_y_label <- function(spec) {
   stopifnot(rlang::is_bare_formula(spec))
-  return(deparse(spec[[2]]))
+  return(all.vars(spec)[attr(terms(spec), "response")])
 }
 
-.get_right_side_string <- function(spec) {
+.get_x_labels <- function(spec) {
   stopifnot(rlang::is_bare_formula(spec))
-  return(deparse(spec[[3]]))
+  x_labels <- attr(terms(spec), "term.labels")
+  x_labels_ <- x_labels[attr(terms(spec), "order") == 1]
+  return(x_labels_)
 }
 
-.spec_formula_to_labels <- function(spec) {
-  left <- .get_left_side_string(spec)
-  right <- .get_right_side_string(spec)
-  right <- gsub(" ", "", right)
-  right <- gsub("\\+*\\b1\\b\\+*", "", right)
-  right <- strsplit(right, "+", fixed = TRUE)[[1]]
-  return(list(y_label = left, x_labels = right))
-}
-
-# array reshaping ----
-
-.reshape_for_rnn <- function(spec, data, subject) {
-  # https://reservoirpy.readthedocs.io/en/latest/user_guide/quickstart.html#A-note-on-data-formats
-  stopifnot(rlang::is_bare_formula(spec))
-  stopifnot(is.data.frame(data))
-  stopifnot(is.character(subject))
-  #
-  labels <- .spec_formula_to_labels(spec)
-  x_labels <- labels[["x_labels"]]
-  y_label <- labels[["y_label"]]
-
-  # unname so reticulate convert tis as a list (not a dict)
-  rnn_data <- unname(split(data, data[subject]))
-  # matric so reticulate convert is as a numpy array
-  X <- lapply(rnn_data, function(df) {
-    return(as.matrix(df[x_labels]))
-  })
-  y <- lapply(rnn_data, function(df) {
-    return(as.matrix(df[y_label]))
-  })
-  return(list(X = X, y = y))
-}
-
-.reshape_pred_of_rnn <- function(pred, data, subject) {
-  stopifnot(is.data.frame(data))
-  stopifnot(is.character(subject))
-  stopifnot(subject %in% names(data))
-  stopifnot(is.list(pred) | is.vector(pred))
-  stopifnot(length(pred) == length(unique(data[[subject]])))
-  #
-  names(pred) <- unique(data[[subject]])
-  pred <- unsplit(pred, data[[subject]])
-  return(unsplit(pred, data[subject]))
-}
 
 # data check ----
 
@@ -86,7 +44,6 @@ is.named.vector <- function(x) {
   return(is.vector(x) & ((length(x) == 0) | is.character(names(x))))
 }
 
-
 .check_controls_with_function <- function(controls, controls_function) {
   names_controls <- names(controls)
   params_function <- methods::formalArgs(controls_function)
@@ -100,7 +57,6 @@ is.named.vector <- function(x) {
     ))
   }
 }
-
 
 # reticulate ----
 .activate_environment <- function() {

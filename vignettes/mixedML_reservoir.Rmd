@@ -1,0 +1,58 @@
+---
+title: "TMPPPPPPPPPPPPPPPPPPPPPPPP"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth : 3
+    number_sections: true
+    includes:
+    css: vignette-style.css
+vignette: >
+  %\VignetteIndexEntry{TMPPPPPPPPPPPPPPPPPPPPPPPP}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+options(digits = 3)
+devtools::load_all()
+source("utils.R")
+```
+# Implementations
+
+So far, a hybrid model based on Reservoir Computing is available. They are implemented by interfacing the [reservoirpy](https://github.com/reservoirpy/reservoirpy) Python package with R using [reticulate](https://github.com/rstudio/reticulate).
+
+
+## MixedML with Reservoir Computing
+
+The function `reservoir_mixedml` is used to define and fit a MixedML model which uses an Reservoir Computing to fit the fixed effect.
+
+```{r, echo=FALSE}
+print_help("reservoir_mixedml")
+```
+
+Reservoir Computing is implemented using an ensemble of Echo State Network (Reservoir + Ridge readout), whose Reservoirs are initialized with different random seeds. The prediction of the ensemble model is calculated as the mean or median of all the ENS prediction, which reduces the impact of the Reservoir initialization on the results.
+
+Four controls are used to define the RC model's behavior.
+
+### `esn_controls`
+
+```{r, echo=FALSE}
+print_help("esn_ctrls")
+```
+
+### `ensemble_controls`
+
+```{r, echo=FALSE}
+print_help("ensemble_ctrls")
+```
+
+## `fit_controls`
+
+```{r, echo=FALSE}
+print_help("fit_ctrls")
+```

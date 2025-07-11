@@ -4,13 +4,17 @@
 \alias{mixedml_ctrls}
 \title{Prepare the mixedml_controls}
 \usage{
-mixedml_ctrls(patience = 2, conv_ratio_thresh = 0.01)
+mixedml_ctrls(patience = 2, conv_ratio_thresh = 0.01, no_random_value_as = NA)
 }
 \arguments{
 \item{patience}{Number of iterations without improvement before the training is stopped. Default: 2}
 
 \item{conv_ratio_thresh}{Ratio of improvement of the MSE to consider an improvement.
 \code{conv_ratio_thresh=0.01} means an improvement of at least 1\% of the MSE is necessary. Default: 0.01}
+
+\item{no_random_value_as}{value to use during the training of the random model
+when the prediction is not possible (NA or 0). This does not affect the prediction.
+Default: NA}
 }
 \value{
 mixedml_controls

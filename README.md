@@ -1,14 +1,15 @@
 
-  - [1 Introduction](#1-introduction)
-  - [2 Method](#2-method)
-  - [3 Example dataset](#3-example-dataset)
-  - [4 General principle](#4-general-principle)
-  - [5 Arguments](#5-arguments)
-      - [5.1 Attributes](#51-attributes)
-  - [6 Functions](#6-functions)
-      - [6.1 `predict`](#61-predict)
-      - [6.2 `plot_conv`](#62-plot_conv)
-      - [6.3 `plot_last_iter`](#63-plot_last_iter)
+- [1 Introduction](#1-introduction)
+- [2 Method](#2-method)
+- [3 Example dataset](#3-example-dataset)
+- [4 General principle](#4-general-principle)
+- [5 Arguments](#5-arguments)
+  - [5.1 Attributes](#51-attributes)
+- [6 Functions](#6-functions)
+  - [6.1 `predict`](#61-predict)
+  - [6.2 `plot_conv`](#62-plot_conv)
+  - [6.3 `plot_loglik`](#63-plot_loglik)
+  - [6.4 `plot_last_iter`](#64-plot_last_iter)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
@@ -18,46 +19,32 @@ This package provides functions to train hybrid mixed effects models.
 Such models are a variation of linear mixed effects models, used for
 Gaussian longitudinal data, whose formulation is:
 
-  
-![Y\_{ij} = X\_{ij} \\beta + Z\_{ij} u\_i + w\_{ij} +
-\\varepsilon\_{ij}](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;Y_%7Bij%7D%20%3D%20X_%7Bij%7D%20%5Cbeta%20%2B%20%20Z_%7Bij%7D%20u_i%20%2B%20w_%7Bij%7D%20%2B%20%5Cvarepsilon_%7Bij%7D
-"Y_{ij} = X_{ij} \\beta +  Z_{ij} u_i + w_{ij} + \\varepsilon_{ij}")  
+$$Y_{ij} = X_{ij} \beta +  Z_{ij} u_i + w_{ij} + \varepsilon_{ij}$$
 
-… where
-![i](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;i
-"i") is the subject,
-![j](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;j
-"j") is the occasion, and
-![w\_i](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;w_i
-"w_i") comes from a zero-mean Gaussian stochastic process (such as
-Brownian motion).
+… where $i$ is the subject, $j$ is the occasion, and $w_i$ comes from a
+zero-mean Gaussian stochastic process (such as Brownian motion).
 
 <br><br> For such hybrid models:
 
-  - a Machine Leaning (ML) model is used to estimates the fixed effects;
-  - a Mixed Effects model (`hlme` from [lcmm
-    package](https://cecileproust-lima.github.io/lcmm/articles/lcmm.html))
-    is constrained to estimate only random effects.
+- a Machine Leaning (ML) model is used to estimates the fixed effects;
+- a Mixed Effects model (`hlme` from [lcmm
+  package](https://cecileproust-lima.github.io/lcmm/articles/lcmm.html))
+  is constrained to estimate only random effects.
 
 That is, the formulation becomes:
 
-  
-![Y\_{ij} = f\_{ML}(X\_{ij}) + Z\_{ij} u\_i + w\_{ij} +
-\\varepsilon\_{ij}](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;Y_%7Bij%7D%20%3D%20f_%7BML%7D%28X_%7Bij%7D%29%20%2B%20%20Z_%7Bij%7D%20u_i%20%2B%20w_%7Bij%7D%20%2B%20%5Cvarepsilon_%7Bij%7D
-"Y_{ij} = f_{ML}(X_{ij}) +  Z_{ij} u_i + w_{ij} + \\varepsilon_{ij}")  
+$$Y_{ij} = f_{ML}(X_{ij}) +  Z_{ij} u_i + w_{ij} + \varepsilon_{ij}$$
 
-… where
-![f\_{ML}(X\_{ij})](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;f_%7BML%7D%28X_%7Bij%7D%29
-"f_{ML}(X_{ij})") is the output from a ML model trained to predict the
-fixed effects.
+… where $f_{ML}(X_{ij})$ is the output from a ML model trained to
+predict the fixed effects.
 
 <br><br> Using ML models to estimates the fixed effects has two main
 advantages comparing to linear models:
 
-  - they can handle highly non-linear relations, and do so with simple
-    inputs (instead of being highly dependent of the specification);
-  - they can handle complex time interactions, in the case of Recurrent
-    Neural Networks;
+- they can handle highly non-linear relations, and do so with simple
+  inputs (instead of being highly dependent of the specification);
+- they can handle complex time interactions, in the case of Recurrent
+  Neural Networks;
 
 However, some ML models have a “black box” effect, as one cannot use its
 estimated parameters to understand the relations within the data.
@@ -70,15 +57,15 @@ fixed/random effects):
 
     ml_model_fe <- initiate_ml_model_fe()
     hlme_model_re <- initiate_hlme_model_re()
-    
+
     Yre <- 0.
     while not converged:
       fit ml_model_fe on X and (Y - Yre)
       Yfe <-  ml_model_fe(X)
-    
+
       fit hlme_model_re on X and (Y - Yfe)
       Yre <-  hlme_model_re(X)
-    
+
       converged <- criterion(Y, Yfe+Yre)
 
 # 3 Example dataset
@@ -200,12 +187,14 @@ model_reservoir <- reservoir_mixedml(
   fit_controls = fit_ctrls(warmup = 2)
 )
 #> conda environment "01" activated!
+#> Warning in .check_na_combinaison(data, fixed_spec, random_spec, target_name): 
+#>          2 incomplete cases for the ML models
+#>          3 incomplete cases for the HLME model
+#>          2 NA values in target
+#>          => 3/50 observations could not be used to train (either no fixed preds, random preds or target).
 #> step#0
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> Warning in reservoir_mixedml(fixed_spec = ym ~ x1 + x2 + x3, random_spec = ~x1
-#> + : 3 observations could not be uses to train (either no fixed preds, random
-#> preds or target).
 #>  MSE = 482.6
 #> step#1
 #>  fitting fixed effects...
@@ -292,7 +281,7 @@ model_reservoir$random_model
 ``` r
 # (this model uses reticulate so it not very convenient as an example…)
 model_reservoir$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x77aa7fd6d6a0>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x734d753756a0>
 ```
 
 Also a `call` attribute exists, meaning one can trained the model with
@@ -321,8 +310,8 @@ predict(model, data)
 
 **Arguments**
 
-  - `model`: Trained MixedML model
-  - `data`: New data (same format as the one used for training)
+- `model`: Trained MixedML model
+- `data`: New data (same format as the one used for training)
 
 **Value**
 
@@ -342,8 +331,8 @@ plot_conv(model, ylog = TRUE)
 
 **Arguments**
 
-  - `model`: Trained MixedML model
-  - `ylog`: Plot the y-value with a log scale. Default: TRUE.
+- `model`: Trained MixedML model
+- `ylog`: Plot the y-value with a log scale. Default: TRUE.
 
 **Value**
 
@@ -355,7 +344,34 @@ plot_conv(model = model_reservoir)
 
 <img src="man/figures/README-unnamed-chunk-14-1.png" width="100%" />
 
-## 6.3 `plot_last_iter`
+## 6.3 `plot_loglik`
+
+**Description**
+
+Plot the log-likelihood of the random effect hlme during training
+
+**Usage**
+
+``` r
+plot_loglik(model, ylog = TRUE)
+```
+
+**Arguments**
+
+- `model`: Trained MixedML model
+- `ylog`: Plot the y-value with a log scale. Default: TRUE.
+
+**Value**
+
+Log-likelihood plot
+
+``` r
+plot_loglik(model = model_reservoir)
+```
+
+<img src="man/figures/README-unnamed-chunk-16-1.png" width="100%" />
+
+## 6.4 `plot_last_iter`
 
 **Description**
 
@@ -369,15 +385,18 @@ plot_last_iter(model, subject_nb_or_list, ylog = FALSE)
 
 **Arguments**
 
-  - `model`: Trained MixedML model.
-  - `subject_nb_or_list`: Number of subjects to plot (randomly selected)
-    or list of subjects to plot.
-  - `ylog`: Plot the y-value with a log scale. Default: TRUE.
+- `model`: Trained MixedML model.
+- `subject_nb_or_list`: Number of subjects to plot (randomly selected)
+  or list of subjects to plot.
+- `ylog`: Plot the y-value with a log scale. Default: TRUE.
 
 **Value**
 
 Prediction plot of the model.
 
-    #> Subjects selected randomly: use set.seed to change the selection.
+``` r
+plot_last_iter(model = model_reservoir, subject_nb_or_list = 3)
+#> Subjects selected randomly: use set.seed to change the selection.
+```
 
-<img src="man/figures/README-unnamed-chunk-16-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-18-1.png" width="100%" />

@@ -51,6 +51,38 @@ mixedml_ctrls <- function(
 }
 
 
+.check_na_combinaison <- function(data, fixed_spec, random_spec, target_name) {
+  # can be moved into a function
+  # !!! need to be adapted for ML model that have constraints on both X and Y
+  x_labels_fixed <- .get_x_labels(fixed_spec)
+  ccases_fixed <- complete.cases(data[x_labels_fixed])
+  n_na_fixed <- sum(!ccases_fixed)
+  #
+  x_labels_rand <- .get_x_labels(random_spec)
+  ccases_rand <- complete.cases(data[c(x_labels_rand, target_name)])
+  n_na_rand <- sum(!ccases_rand)
+  #
+  ccases_target <- complete.cases(data[target_name])
+  n_na_target <- sum(!ccases_target)
+  #
+  ccases_full <- ccases_fixed & ccases_rand & ccases_target
+  n_na_full <- sum(!ccases_full)
+  warning(sprintf(
+    "
+         %d incomplete cases for the ML models
+         %d incomplete cases for the HLME model
+         %d NA values in target
+         => %d/%d observations could not be used to train (either no fixed preds, random preds or target).",
+    n_na_fixed,
+    n_na_rand,
+    n_na_target,
+    n_na_full,
+    nrow(data)
+  ))
+  return(n_na_full)
+}
+
+
 # recipe: HLME/Reservoir ----
 
 #' MixedML model with Reservoir Computing
@@ -123,9 +155,9 @@ reservoir_mixedml <- function(
   pred_rand <- rep(0, nrow(data))
   istep <- 0
   mse_list <- c()
+  loglik_list <- c()
   mse_min <- Inf
-  msg <- TRUE
-  #
+  n_na_full <- .check_na_combinaison(data, fixed_spec, random_spec, target_name)
   while (TRUE) {
     cat(sprintf("step#%d\n", istep))
     cat("\tfitting fixed effects...\n")
@@ -142,17 +174,12 @@ reservoir_mixedml <- function(
     pred_rand <- random_model$full_pred
     #
     residuals <- pred_fixed + pred_rand - data[, target_name]
-    ccases <- complete.cases(residuals)
-    if (msg && sum(!ccases) > 0) {
-      msg <- FALSE
-      warning(sprintf(
-        "%d observations could not be uses to train (either no fixed preds, random preds or target).",
-        sum(!ccases)
-      ))
-    }
-    mse <- mean(residuals[ccases]**2)
+    ccases_resid <- complete.cases(residuals)
+    stopifnot(n_na_full == sum(!ccases_resid))
+    mse <- mean(residuals[ccases_resid]**2)
     cat(sprintf("\tMSE = %.4g\n", mse))
     mse_list <- c(mse_list, mse)
+    loglik_list <- c(loglik_list, random_model$loglik)
     if (mse < (1 - conv_ratio_thresh) * mse_min) {
       count_conv <- 0
       best <- list(
@@ -181,6 +208,7 @@ reservoir_mixedml <- function(
       "fixed_spec" = fixed_spec,
       "random_spec" = random_spec,
       "mse_list" = mse_list,
+      "loglik_list" = loglik_list,
       "call" = match.call()
     ),
     best
@@ -230,6 +258,27 @@ plot_conv <- function(model, ylog = TRUE) {
   ))
 }
 
+#' Plot the log-likelihood of the random effect hlme during training
+#'
+#'
+#'
+#' @param model Trained MixedML model
+#' @param ylog Plot the y-value with a log scale. Default: TRUE.
+#' @return Log-likelihood plot
+#' @export
+plot_loglik <- function(model, ylog = TRUE) {
+  stopifnot(inherits(model, MIXEDML_CLASS))
+  stopifnot(is.logical(ylog))
+  return(plot(
+    seq_along(model$loglik_list),
+    model$loglik_list,
+    type = "o",
+    xlab = "iterations",
+    ylab = "log-likelihood (hlme)",
+    ylog = ylog
+  ))
+}
+
 
 #' Plot the prediction of a MixedML model
 #'
@@ -241,9 +290,7 @@ plot_conv <- function(model, ylog = TRUE) {
 #' @export
 plot_last_iter <- function(model, subject_nb_or_list, ylog = FALSE) {
   stopifnot(inherits(model, MIXEDML_CLASS))
-  stopifnot(
-    is.single.integer(subject_nb_or_list) | is.vector(subject_nb_or_list)
-  )
+  stopifnot(is.integer(subject_nb_or_list))
   stopifnot(is.logical(ylog))
   #
   subject <- model$subject
@@ -262,19 +309,18 @@ plot_last_iter <- function(model, subject_nb_or_list, ylog = FALSE) {
   data_tmp[[type]] <- type2
   data_tmp[[target]] <- model$pred_fixed + model$pred_rand
   data_ <- rbind(data_, data_tmp)
-  if (is.single.integer(subject_nb_or_list)) {
+  if (length(subject_nb_or_list) == 1) {
     subject_nb_or_list <- sample(
       unique(data_[[subject]]),
       subject_nb_or_list
     )
     message("Subjects selected randomly: use set.seed to change the selection.")
   } else {
-    stopifnot(all(subject_nb_or_list %in% data_true[[subject]]))
+    stopifnot(all(subject_nb_or_list %in% model$data[[subject]]))
   }
   #
   idx_keep <- data_[[subject]] %in% subject_nb_or_list
   data_ <- data_[idx_keep, ]
-
   return(
     ggplot(
       data_,
@@ -283,11 +329,14 @@ plot_last_iter <- function(model, subject_nb_or_list, ylog = FALSE) {
         y = .data[[target]],
         group = interaction(.data[[subject]], .data[[type]]),
         color = .data[[subject]],
-        linetype = .data[[type]],
-        shape = .data[[type]]
+        shape = .data[[type]],
       )
     ) +
-      geom_line() +
-      geom_point(size = 4)
+      # geom_line() +
+      geom_point(size = 3) +
+      scale_shape_manual(
+        name = "Y value",
+        values = c(3, 4)
+      )
   )
 }

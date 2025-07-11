@@ -2,9 +2,17 @@
 % Please edit documentation in R/hlme_tools.R
 \name{.initiate_random_hlme}
 \alias{.initiate_random_hlme}
-\title{Function to plot something}
+\title{Initiate the HLME model}
 \usage{
-.initiate_random_hlme(random_spec, data, subject, var.time, hlme_controls)
+.initiate_random_hlme(
+  target_name,
+  random_spec,
+  data,
+  subject,
+  var.time,
+  hlme_controls,
+  no_random_value_as
+)
 }
 \arguments{
 \item{random_spec}{random_spec}
@@ -18,8 +26,8 @@
 \item{hlme_controls}{hlme_controls}
 }
 \value{
-description
+HLME model
 }
 \description{
-Function to plot something
+Initiate the HLME model
 }

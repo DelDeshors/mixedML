@@ -4,13 +4,21 @@
 \alias{ensemble_ctrls}
 \title{Prepare the ensemble_controls}
 \usage{
-ensemble_ctrls(seed_list = c(1, 2, 3), agg_func = "median", n_procs = 1)
+ensemble_ctrls(
+  seed_list = c(1, 2, 3),
+  aggregator = "median",
+  scaler = "standard",
+  n_procs = 1
+)
 }
 \arguments{
 \item{seed_list}{List of seeds used to generate the Reservoir. Default:  c(1, 2, 3)}
 
-\item{agg_func}{Function used to aggregate the predictions of each ESN.
+\item{aggregator}{Function used to aggregate the predictions of each ESN.
 "mean" or "median". Default: "median"}
+
+\item{scaler}{scikit-learn scaler to use on the X data.
+"standard", "robust", "min-max", "max-abs". Default: "standard"}
 
 \item{n_procs}{Number of processor to use. 1 means no multiprocessing. Default: 1.}
 }

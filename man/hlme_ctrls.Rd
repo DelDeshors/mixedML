@@ -4,7 +4,16 @@
 \alias{hlme_ctrls}
 \title{Prepare the hlme_controls}
 \usage{
-hlme_ctrls(cor = NULL, idiag = FALSE, maxiter = 500, nproc = 1)
+hlme_ctrls(
+  cor = NULL,
+  idiag = FALSE,
+  maxiter = 500,
+  nproc = 1,
+  convB = 1e-04,
+  convL = 1e-04,
+  convG = 1e-04,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{cor}{brownian motion or autoregressive process modeling the correlation
@@ -17,6 +26,15 @@ If TRUE a diagonal matrix of variance-covariance is considered.}
 \item{maxiter}{maximum number of iterations for the Marquardt iterative algorithm.}
 
 \item{nproc}{the number cores for parallel computation. Default to 1 (sequential mode).}
+
+\item{convB}{optional threshold for the convergence criterion based on the
+parameter stability. By default, convB=0.0001.}
+
+\item{convL}{optional threshold for the convergence criterion based on the
+log-likelihood stability. By default, convL=0.0001.}
+
+\item{convG}{optional threshold for the convergence criterion based on the
+derivatives. By default, convG=0.0001.}
 }
 \value{
 hlme_controls

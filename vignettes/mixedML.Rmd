@@ -168,12 +168,23 @@ print_help("plot_conv")
 plot_conv(model = model_reservoir)
 ```
 
+
+## `plot_loglik`
+
+```{r, echo=FALSE}
+print_help("plot_loglik")
+```
+
+```{r}
+plot_loglik(model = model_reservoir)
+```
+
 ## `plot_last_iter`
 
 ```{r, echo=FALSE}
 print_help("plot_last_iter")
 ```
 
-```{r, echo=FALSE}
+```{r}
 plot_last_iter(model = model_reservoir, subject_nb_or_list = 3)
 ```

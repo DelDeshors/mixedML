@@ -1,5 +1,5 @@
 ---
-title: "TMPPPPPPPPPPPPPPPPPPPPPPPP"
+title: "MixedML with Reservoir Computing models from resersvoirpy"
 output:
   rmarkdown::html_vignette:
     toc: true
@@ -8,7 +8,7 @@ output:
     includes:
     css: vignette-style.css
 vignette: >
-  %\VignetteIndexEntry{TMPPPPPPPPPPPPPPPPPPPPPPPP}
+  %\VignetteIndexEntry{MixedML with Reservoir Computing models from resersvoirpy}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

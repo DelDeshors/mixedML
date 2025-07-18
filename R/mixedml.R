@@ -103,6 +103,9 @@ mixedml_ctrls <- function(
 #' @param esn_controls controls specific to the ESN models
 #' @param ensemble_controls controls specific to the Ensemble model
 #' @param fit_controls controls specific to the ESN models fit
+#' @param output_dir folder path where the models and log will be saved.
+#' The default use the date at start in the format "mixedML-%y%m%d-%H%M%S"
+#' (ex: mixedML-250709-100530)
 #' @return fitted MixedML model
 #' @export
 reservoir_mixedml <- function(
@@ -115,7 +118,8 @@ reservoir_mixedml <- function(
   hlme_controls = hlme_ctrls(),
   esn_controls = esn_controls(),
   ensemble_controls = ensemble_controls(),
-  fit_controls = fit_controls()
+  fit_controls = fit_controls(),
+  output_dir = paste0("mixedML-", format(Sys.time(), "%y%m%d-%H%M%S"))
 ) {
   .test_reservoir_mixedml(
     fixed_spec,
@@ -129,6 +133,9 @@ reservoir_mixedml <- function(
     ensemble_controls,
     fit_controls
   )
+  #
+  dir.create(output_dir)
+  sink(paste0(output_dir, "/mixedML.log"), split = TRUE)
   #
   target_name <- .get_y_label(fixed_spec)
   random_model <- .initiate_random_hlme(
@@ -159,6 +166,7 @@ reservoir_mixedml <- function(
   mse_min <- Inf
   n_na_full <- .check_na_combinaison(data, fixed_spec, random_spec, target_name)
   while (TRUE) {
+    start <- format(Sys.time(), "%H:%M:%S")
     cat(sprintf("step#%d\n", istep))
     cat("\tfitting fixed effects...\n")
     data_fixed[[target_name]] <- data[[target_name]] - pred_rand
@@ -197,6 +205,11 @@ reservoir_mixedml <- function(
     if (mse < mse_min) {
       mse_min <- mse
     }
+    saveRDS(fixed_model, sprintf("%s/%03d_fixed_model.Rds", output_dir, istep))
+    saveRDS(
+      random_model,
+      sprintf("%s/%03d_random_model.Rds", output_dir, istep)
+    )
     istep <- istep + 1
   }
   .check_convergence_hlme(best$random_model)

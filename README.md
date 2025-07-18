@@ -4,12 +4,14 @@
 - [3 Example dataset](#3-example-dataset)
 - [4 General principle](#4-general-principle)
 - [5 Arguments](#5-arguments)
-  - [5.1 Attributes](#51-attributes)
-- [6 Functions](#6-functions)
-  - [6.1 `predict`](#61-predict)
-  - [6.2 `plot_conv`](#62-plot_conv)
-  - [6.3 `plot_loglik`](#63-plot_loglik)
-  - [6.4 `plot_last_iter`](#64-plot_last_iter)
+- [6 Example](#6-example)
+- [7 Attributes](#7-attributes)
+- [8 Functions](#8-functions)
+  - [8.1 `predict`](#81-predict)
+  - [8.2 `plot_conv`](#82-plot_conv)
+  - [8.3 `plot_loglik`](#83-plot_loglik)
+  - [8.4 `plot_last_iter`](#84-plot_last_iter)
+  - [8.5 `load_backup`](#85-load_backup)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
@@ -167,6 +169,8 @@ correspond to the control names. That is, the `some_name_ctrls(…)`
 function is used to define `some_name_controls` controls. Each control
 has its specific help.
 
+# 6 Example
+
 Here is an example using the `reservoir_mixedml` function (here is the
 [corresponding vignette](mixedML_reservoir.html):
 
@@ -184,7 +188,8 @@ model_reservoir <- reservoir_mixedml(
   # controls (extra-parameters) for the ML model
   esn_controls = esn_ctrls(units = 20, ridge = 1e-5),
   ensemble_controls = ensemble_ctrls(seed_list = c(1, 2, 3, 4, 5)),
-  fit_controls = fit_ctrls(warmup = 2)
+  fit_controls = fit_ctrls(warmup = 2),
+  output_dir = "mixedML_vignette"
 )
 #> conda environment "01" activated!
 #> Warning in .check_na_combinaison(data, fixed_spec, random_spec, target_name): 
@@ -240,7 +245,7 @@ model_reservoir <- reservoir_mixedml(
 
 The resulting model will be used in the remaining sections.
 
-## 5.1 Attributes
+# 7 Attributes
 
 Each sub-models are accessible from the fitted MixedML model:
 
@@ -281,7 +286,7 @@ model_reservoir$random_model
 ``` r
 # (this model uses reticulate so it not very convenient as an example…)
 model_reservoir$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x734d753756a0>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7048b12c5940>
 ```
 
 Also a `call` attribute exists, meaning one can trained the model with
@@ -291,12 +296,15 @@ new inputs using `update` command:
 new_model_reservoir <- update(model_reservoir, data = new_data, maxiter = new_maxiter)
 ```
 
-# 6 Functions
+# 8 Functions
 
-The function `predict`, `plot_conv` and `plot_last_iter` are common to
-all fitted MixedML models.
+The function `predict`, `plot_conv`, `plot_last_iter` are common to all
+fitted MixedML models.
 
-## 6.1 `predict`
+The function `load_backup` can be used to inspect the model and the
+predictions of a specific iteration.
+
+## 8.1 `predict`
 
 **Description**
 
@@ -317,7 +325,7 @@ predict(model, data)
 
 prediction
 
-## 6.2 `plot_conv`
+## 8.2 `plot_conv`
 
 **Description**
 
@@ -344,7 +352,7 @@ plot_conv(model = model_reservoir)
 
 <img src="man/figures/README-unnamed-chunk-14-1.png" width="100%" />
 
-## 6.3 `plot_loglik`
+## 8.3 `plot_loglik`
 
 **Description**
 
@@ -371,7 +379,7 @@ plot_loglik(model = model_reservoir)
 
 <img src="man/figures/README-unnamed-chunk-16-1.png" width="100%" />
 
-## 6.4 `plot_last_iter`
+## 8.4 `plot_last_iter`
 
 **Description**
 
@@ -400,3 +408,64 @@ plot_last_iter(model = model_reservoir, subject_nb_or_list = 3)
 ```
 
 <img src="man/figures/README-unnamed-chunk-18-1.png" width="100%" />
+
+## 8.5 `load_backup`
+
+``` r
+backup <- load_backup(
+  fixed_model_Rds_or_joblib = "mixedML_vignette/007_fixed_model.joblib",
+  random_model_Rds = "mixedML_vignette/007_random_model.Rds"
+)
+```
+
+``` r
+backup$fixed_model
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7048385bdf90>
+```
+
+``` r
+backup$random_model
+#> Heterogenous linear mixed model 
+#>      fitted by maximum likelihood method 
+#>  
+#> hlme(fixed = ym ~ 1, random = ~x1 + x2, subject = "ID", idiag = TRUE, 
+#>     cor = NULL, data = data, convB = 1e-04, convL = 1e-04, convG = 1e-04, 
+#>     maxiter = 50, na.action = 1, posfix = 1, verbose = FALSE, 
+#>     var.time = "time", nproc = 1)
+#>  
+#> Statistical Model: 
+#>      Dataset: data 
+#>      Number of subjects: 10 
+#>      Number of observations: 47 
+#>      Number of observations deleted: 3 
+#>      Number of latent classes: 1 
+#>      Number of parameters: 5  
+#>      Number of estimated parameters: 4  
+#>  
+#> Iteration process: 
+#>      Convergence criteria satisfied 
+#>      Number of iterations:  8 
+#>      Convergence criteria: parameters= 1.8e-07 
+#>                          : likelihood= 1.3e-08 
+#>                          : second derivatives= 6.8e-10 
+#>  
+#> Goodness-of-fit statistics: 
+#>      maximum log-likelihood: -139.56  
+#>      AIC: 287.12  
+#>      BIC: 288.33  
+#>  
+#> 
+```
+
+``` r
+predict(backup, data_mixedml)
+#>  [1] 208.9    NA 377.3 397.1 370.3  74.7 146.8    NA 153.8 162.4 210.6 411.3
+#> [13] 427.4 421.7 429.9  69.6 163.1 161.6 160.6 162.9 198.0 378.6 402.7 388.2
+#> [25] 386.9  62.6 169.4 161.4 170.1 169.8 210.3 376.9 386.1 365.6 382.4  75.4
+#> [37] 167.4 163.9 168.4 170.1 207.7 382.6 394.5 409.3 393.5  64.5 140.9 141.7
+#> [49] 147.4 144.3
+```
+
+``` r
+unlink("mixedML_vignette", recursive = TRUE)
+```

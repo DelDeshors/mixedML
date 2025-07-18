@@ -4,6 +4,13 @@ library(ggplot2)
 
 MIXEDML_CLASS <- "MixedML_Model"
 
+.test_is_midexml <- function(model) {
+  stopifnot(inherits(model, MIXEDML_CLASS))
+  stopifnot("fixed_model" %in% names(model))
+  stopifnot("random_model" %in% names(model))
+  return()
+}
+
 #' Prepare the mixedml_controls
 #'
 #'
@@ -30,24 +37,6 @@ mixedml_ctrls <- function(
   #
   control <- as.list(environment())
   return(control)
-}
-
-
-.test_reservoir_mixedml <- function(
-  fixed_spec,
-  random_spec,
-  data,
-  subject,
-  time,
-  mixedml_controls,
-  hlme_controls,
-  esn_controls,
-  ensemble_controls,
-  fit_controls
-) {
-  .check_sorted_data(data, subject, time)
-  .check_controls_with_function(mixedml_controls, mixedml_ctrls)
-  return()
 }
 
 
@@ -83,156 +72,49 @@ mixedml_ctrls <- function(
 }
 
 
-# recipe: HLME/Reservoir ----
-
-#' MixedML model with Reservoir Computing
-#'
-#' Generate and fit a MixedML model using an Ensemble of Echo State Networks (Reservoir+Ridge Regression)
-#' to fit the fixed effects.
-#' @param fixed_spec two-sided linear formula object for the fixed-effects.
-#' The response outcome is on the left of ~ and the covariates are separated by + on the right of ~.
-#' (do not used extra formulation such as "x1*x3")
-#' @param random_spec one-sided formula for the random-effects in the linear mixed model.
-#'  By default, an intercept is included. If no intercept, -1 should be the first term included.
-#' @param data dataframe containing the variables named in `fixed_spec`, `random_spec`, `subject` and `time`.
-#' @param subject name of the covariate representing the grouping structure, given as a string/character.
-#' @param time name of the time variable, given as a string/character.
-#' @param mixedml_controls controls specific to the MixedML model
-#' @param hlme_controls controls specific to the HLME model
-#' @param mixedml_controls controls specific to the MixedML model
-#' @param esn_controls controls specific to the ESN models
-#' @param ensemble_controls controls specific to the Ensemble model
-#' @param fit_controls controls specific to the ESN models fit
-#' @param output_dir folder path where the models and log will be saved.
-#' The default use the date at start in the format "mixedML-%y%m%d-%H%M%S"
-#' (ex: mixedML-250709-100530)
-#' @return fitted MixedML model
-#' @export
-reservoir_mixedml <- function(
-  fixed_spec,
-  random_spec,
-  data,
-  subject,
-  time,
-  mixedml_controls = mixedml_ctrls(),
-  hlme_controls = hlme_ctrls(),
-  esn_controls = esn_controls(),
-  ensemble_controls = ensemble_controls(),
-  fit_controls = fit_controls(),
-  output_dir = paste0("mixedML-", format(Sys.time(), "%y%m%d-%H%M%S"))
-) {
-  .test_reservoir_mixedml(
-    fixed_spec,
-    random_spec,
-    data,
-    subject,
-    time,
-    mixedml_controls,
-    hlme_controls,
-    esn_controls,
-    ensemble_controls,
-    fit_controls
-  )
-  #
-  dir.create(output_dir)
-  sink(paste0(output_dir, "/mixedML.log"), split = TRUE)
-  #
-  target_name <- .get_y_label(fixed_spec)
-  random_model <- .initiate_random_hlme(
-    target_name,
-    random_spec,
-    data,
-    subject,
-    time,
-    hlme_controls,
-    mixedml_controls$no_random_value_as
-  )
-  fixed_model <- .initiate_esn(
-    fixed_spec,
-    subject,
-    esn_controls,
-    ensemble_controls,
-    fit_controls
-  )
-  conv_ratio_thresh <- mixedml_controls[["conv_ratio_thresh"]]
-  patience <- mixedml_controls[["patience"]]
-  ##
-  data_fixed <- data
-  data_rand <- data
-  pred_rand <- rep(0, nrow(data))
-  istep <- 0
-  mse_list <- c()
-  loglik_list <- c()
-  mse_min <- Inf
-  n_na_full <- .check_na_combinaison(data, fixed_spec, random_spec, target_name)
-  while (TRUE) {
-    start <- format(Sys.time(), "%H:%M:%S")
-    cat(sprintf("step#%d\n", istep))
-    cat("\tfitting fixed effects...\n")
-    data_fixed[[target_name]] <- data[[target_name]] - pred_rand
-    fixed_model <- .fit_reservoir(fixed_model, data_fixed)
-    pred_fixed <- .predict_reservoir(fixed_model, data)
-    cat("\tfitting random effects...\n")
-    # !!! offsetting is not implemented in LCMM
-    # BUT for linear models, fitting "f(X)+offset" on Y is equivalent
-    # to fitting f(X) on "Y-offset"
-    # so that is the method used so far
-    data_rand[[target_name]] <- data[[target_name]] - pred_fixed
-    random_model <- .fit_random_hlme(random_model, data_rand)
-    pred_rand <- random_model$full_pred
-    #
-    residuals <- pred_fixed + pred_rand - data[, target_name]
-    ccases_resid <- complete.cases(residuals)
-    stopifnot(n_na_full == sum(!ccases_resid))
-    mse <- mean(residuals[ccases_resid]**2)
-    cat(sprintf("\tMSE = %.4g\n", mse))
-    mse_list <- c(mse_list, mse)
-    loglik_list <- c(loglik_list, random_model$loglik)
-    if (mse < (1 - conv_ratio_thresh) * mse_min) {
-      count_conv <- 0
-      best <- list(
-        "pred_fixed" = pred_fixed,
-        "pred_rand" = pred_rand,
-        "fixed_model" = fixed_model,
-        "random_model" = random_model
-      )
-    } else {
-      count_conv <- count_conv + 1
-      if (count_conv > patience) {
-        break
-      }
-    }
-    if (mse < mse_min) {
-      mse_min <- mse
-    }
-    saveRDS(fixed_model, sprintf("%s/%03d_fixed_model.Rds", output_dir, istep))
+# model backups ----
+.save_backup <- function(fixed_model, random_model, output_dir, iteration_num) {
+  if (.is_python_model(fixed_model)) {
+    .save_py_object(
+      fixed_model,
+      sprintf("%s/%03d_fixed_model.joblib", output_dir, iteration_num)
+    )
+  } else {
     saveRDS(
       random_model,
-      sprintf("%s/%03d_random_model.Rds", output_dir, istep)
+      sprintf("%s/%03d_fixed_model.Rds", output_dir, iteration_num)
     )
-    istep <- istep + 1
   }
-  .check_convergence_hlme(best$random_model)
-  output <- c(
-    list(
-      "data" = data,
-      "subject" = subject,
-      "time" = time,
-      "fixed_spec" = fixed_spec,
-      "random_spec" = random_spec,
-      "mse_list" = mse_list,
-      "loglik_list" = loglik_list,
-      "call" = match.call()
-    ),
-    best
+  saveRDS(
+    random_model,
+    sprintf("%s/%03d_random_model.Rds", output_dir, iteration_num)
+  )
+  return()
+}
+
+
+load_backup <- function(fixed_model_rds_or_joblib, random_model_rds) {
+  if (endsWith(fixed_model_rds_or_joblib, ".joblib")) {
+    fixed_model <- .load_py_object(fixed_model_rds_or_joblib)
+  } else if (endsWith(fixed_model_rds_or_joblib, ".Rds")) {
+    fixed_model <- readRDS(fixed_model_rds_or_joblib)
+  } else {
+    stop("Incorrect extension for fixed_model_rds_or_joblib argument.")
+  }
+  output <- list(
+    fixed_model = fixed_model,
+    random_model = readRDS(random_model_rds)
   )
   class(output) <- MIXEDML_CLASS
+  .test_is_midexml(output)
   return(output)
 }
 
+
 # prediction ----
+
 .test_predict <- function(model, data) {
-  stopifnot(inherits(model, MIXEDML_CLASS))
+  .test_is_midexml(model)
   stopifnot(names(data) == names(model$random_model$data))
   return()
 }
@@ -259,7 +141,7 @@ predict <- function(model, data) {
 #' @return Convergence plot
 #' @export
 plot_conv <- function(model, ylog = TRUE) {
-  stopifnot(inherits(model, MIXEDML_CLASS))
+  .test_is_midexml(model)
   stopifnot(is.logical(ylog))
   return(plot(
     seq_along(model$mse_list),
@@ -280,7 +162,7 @@ plot_conv <- function(model, ylog = TRUE) {
 #' @return Log-likelihood plot
 #' @export
 plot_loglik <- function(model, ylog = TRUE) {
-  stopifnot(inherits(model, MIXEDML_CLASS))
+  .test_is_midexml(model)
   stopifnot(is.logical(ylog))
   return(plot(
     seq_along(model$loglik_list),
@@ -352,4 +234,165 @@ plot_last_iter <- function(model, subject_nb_or_list, ylog = FALSE) {
         values = c(3, 4)
       )
   )
+}
+
+
+# recipe: HLME/Reservoir ----
+
+.test_reservoir_mixedml <- function(
+  fixed_spec,
+  random_spec,
+  data,
+  subject,
+  time,
+  mixedml_controls,
+  hlme_controls,
+  esn_controls,
+  ensemble_controls,
+  fit_controls
+) {
+  .check_sorted_data(data, subject, time)
+  .check_controls_with_function(mixedml_controls, mixedml_ctrls)
+  return()
+}
+
+
+#' MixedML model with Reservoir Computing
+#'
+#' Generate and fit a MixedML model using an Ensemble of Echo State Networks (Reservoir+Ridge Regression)
+#' to fit the fixed effects.
+#' @param fixed_spec two-sided linear formula object for the fixed-effects.
+#' The response outcome is on the left of ~ and the covariates are separated by + on the right of ~.
+#' (do not used extra formulation such as "x1*x3")
+#' @param random_spec one-sided formula for the random-effects in the linear mixed model.
+#'  By default, an intercept is included. If no intercept, -1 should be the first term included.
+#' @param data dataframe containing the variables named in `fixed_spec`, `random_spec`, `subject` and `time`.
+#' @param subject name of the covariate representing the grouping structure, given as a string/character.
+#' @param time name of the time variable, given as a string/character.
+#' @param mixedml_controls controls specific to the MixedML model
+#' @param hlme_controls controls specific to the HLME model
+#' @param mixedml_controls controls specific to the MixedML model
+#' @param esn_controls controls specific to the ESN models
+#' @param ensemble_controls controls specific to the Ensemble model
+#' @param fit_controls controls specific to the ESN models fit
+#' @param output_dir folder path where the models and log will be saved.
+#' The default use the date at start in the format "mixedML-%y%m%d-%H%M%S"
+#' (ex: mixedML-250709-100530)
+#' @return fitted MixedML model
+#' @export
+reservoir_mixedml <- function(
+  fixed_spec,
+  random_spec,
+  data,
+  subject,
+  time,
+  mixedml_controls = mixedml_ctrls(),
+  hlme_controls = hlme_ctrls(),
+  esn_controls = esn_controls(),
+  ensemble_controls = ensemble_controls(),
+  fit_controls = fit_controls(),
+  output_dir = paste0("mixedML-", format(Sys.time(), "%y%m%d-%H%M%S"))
+) {
+  .test_reservoir_mixedml(
+    fixed_spec,
+    random_spec,
+    data,
+    subject,
+    time,
+    mixedml_controls,
+    hlme_controls,
+    esn_controls,
+    ensemble_controls,
+    fit_controls
+  )
+  #
+  dir.create(output_dir, showWarnings = FALSE)
+  #
+  target_name <- .get_y_label(fixed_spec)
+  random_model <- .initiate_random_hlme(
+    target_name,
+    random_spec,
+    data,
+    subject,
+    time,
+    hlme_controls,
+    mixedml_controls$no_random_value_as
+  )
+  fixed_model <- .initiate_esn(
+    fixed_spec,
+    subject,
+    esn_controls,
+    ensemble_controls,
+    fit_controls
+  )
+  conv_ratio_thresh <- mixedml_controls[["conv_ratio_thresh"]]
+  patience <- mixedml_controls[["patience"]]
+  ##
+  data_fixed <- data
+  data_rand <- data
+  pred_rand <- rep(0, nrow(data))
+  istep <- 0
+  mse_list <- c()
+  loglik_list <- c()
+  mse_min <- Inf
+  n_na_full <- .check_na_combinaison(data, fixed_spec, random_spec, target_name)
+  while (TRUE) {
+    start <- format(Sys.time(), "%H:%M:%S")
+    cat(sprintf("step#%d\n", istep))
+    cat("\tfitting fixed effects...\n")
+    data_fixed[[target_name]] <- data[[target_name]] - pred_rand
+    fixed_model <- .fit_reservoir(fixed_model, data_fixed)
+    pred_fixed <- .predict_reservoir(fixed_model, data)
+    cat("\tfitting random effects...\n")
+    # !!! offsetting is not implemented in LCMM
+    # BUT for linear models, fitting "f(X)+offset" on Y is equivalent
+    # to fitting f(X) on "Y-offset"
+    # so that is the method used so far
+    data_rand[[target_name]] <- data[[target_name]] - pred_fixed
+    random_model <- .fit_random_hlme(random_model, data_rand)
+    pred_rand <- random_model$full_pred
+    #
+    residuals <- pred_fixed + pred_rand - data[, target_name]
+    ccases_resid <- complete.cases(residuals)
+    stopifnot(n_na_full == sum(!ccases_resid))
+    mse <- mean(residuals[ccases_resid]**2)
+    cat(sprintf("\tMSE = %.4g\n", mse))
+    mse_list <- c(mse_list, mse)
+    loglik_list <- c(loglik_list, random_model$loglik)
+    if (mse < (1 - conv_ratio_thresh) * mse_min) {
+      count_conv <- 0
+      best <- list(
+        "pred_fixed" = pred_fixed,
+        "pred_rand" = pred_rand,
+        "fixed_model" = fixed_model,
+        "random_model" = random_model
+      )
+    } else {
+      count_conv <- count_conv + 1
+      if (count_conv > patience) {
+        break
+      }
+    }
+    if (mse < mse_min) {
+      mse_min <- mse
+    }
+    .save_backup(fixed_model, random_model, output_dir, istep)
+    istep <- istep + 1
+  }
+  .check_convergence_hlme(best$random_model)
+  output <- c(
+    list(
+      "data" = data,
+      "subject" = subject,
+      "time" = time,
+      "fixed_spec" = fixed_spec,
+      "random_spec" = random_spec,
+      "mse_list" = mse_list,
+      "loglik_list" = loglik_list,
+      "call" = match.call()
+    ),
+    best
+  )
+  class(output) <- MIXEDML_CLASS
+  return(output)
 }

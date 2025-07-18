@@ -97,3 +97,24 @@ is.named.vector <- function(x) {
 .get_r_attr_from_py_obj <- function(py_obj, name) {
   return(reticulate::py_to_r(reticulate::py_get_attr(py_obj, name)))
 }
+
+
+.is_python_model <- function(obj) {
+  return(
+    inherits(obj, "python.builtin.object") && !reticulate::py_is_null_xptr(obj)
+  )
+}
+
+.save_py_object <- function(obj, filename) {
+  joblib <- reticulate::import("joblib")
+  with <- reticulate::import_builtins()$open
+  joblib$dump(obj, with(filename, "wb"))
+  return()
+}
+
+.load_py_object <- function(filename) {
+  joblib <- reticulate::import("joblib")
+  with <- reticulate::import_builtins()$open
+  model <- joblib$load(with(filename, "rb"))
+  return(model)
+}

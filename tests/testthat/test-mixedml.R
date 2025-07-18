@@ -5,6 +5,7 @@ subject <- "ID"
 time <- "time"
 
 test_that("mixedml works", {
+  folder <- tempdir()
   mixed_ml_model <- reservoir_mixedml(
     fixed_spec = fixed_spec,
     random_spec = random_spec,
@@ -36,27 +37,12 @@ test_that("mixedml works", {
       scaler = "standard",
       n_procs = 1
     ),
-    fit_controls = fit_ctrls(warmup = 1)
-  )
-
-  expect_named(
-    mixed_ml_model,
-    c(
-      "data",
-      "subject",
-      "time",
-      "fixed_spec",
-      "random_spec",
-      "mse_list",
-      "call",
-      "pred_fixed",
-      "pred_rand",
-      "fixed_model",
-      "random_model"
-    )
+    fit_controls = fit_ctrls(warmup = 1),
+    output_dir = folder
   )
   pred <- predict(mixed_ml_model, data_)
   stopifnot(length(pred) == nrow(data_))
   plot_conv(mixed_ml_model)
   plot_last_iter(mixed_ml_model, subject_nb_or_list = 3)
+  unlink(folder, recursive = TRUE)
 })

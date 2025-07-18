@@ -3,6 +3,8 @@
 # !!! fixtures defined in conftest.py
 
 from numpy import ndarray
+import joblib
+
 
 from inst.python.reservoir_ensemble import (
     JoblibReservoirEnsemble,
@@ -41,3 +43,16 @@ def test_train_predict_joblib_reservoir_ensemble(data_2D_x, data_2D_y, subject):
     resmod.fit(X=data_2D_x, y=data_2D_y, subject_col=subject)
     ypred = resmod.predict(data_2D_x, subject_col=subject)
     assert ypred.shape == data_2D_y.shape
+
+
+def test_create_backup(tmp_path):
+    resmod = JoblibReservoirEnsemble(
+        seed_list=seed_list,
+        esn_controls=esn_controls,
+        fit_controls=fit_controls,
+        predict_controls=predict_controls,
+        n_procs=n_procs,
+        scaler=scaler,
+        aggregator=aggregator,
+    )
+    joblib.dump(resmod, tmp_path / "test.joblib")

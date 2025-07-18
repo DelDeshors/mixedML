@@ -114,41 +114,36 @@ class JoblibReservoirEnsemble(_CommonReservoirEnsemble):
         self.model_list = [ESN(**dict(**esn_controls, seed=s)) for s in seed_list]
         self._model_names = [m.name for m in self.model_list]
         self._nodes_names = [m.node_names for m in self.model_list]
-        self._pool_open(self.n_procs)
         self.fit_controls = fit_controls
         self.predict_controls = predict_controls
-
-    def _pool_open(self, n_procs: int):
-        # https://joblib.readthedocs.io/en/stable/parallel.html
-        # backend="loky" does not work when using reticulate
-        # it seems quite hard to understand why, and the fact that another
-        # backend works suggest that it is not a coding problem
-        self._pool = Parallel(n_jobs=n_procs, backend="multiprocessing")
-
-    def _pool_close(self):
-        self._pool.close()
 
     def _fix_copy_names(self):
         for model in self.model_list:
             _fix_copy_name(model)
 
+    def _get_pool(self):
+        return Parallel(n_jobs=self.n_procs, backend="multiprocessing")
+
     def fit(self, X: Array2D, y: Array2D, subject_col: Array1D) -> None:
         X_scal = self._scaler.fit_transform(X)
         X_list = data_2D_to_list(X_scal, subject_col)
         y_list = data_2D_to_list(y, subject_col)
-        self.model_list = self._pool(
-            delayed(_fit_single)(m, X_list, y_list, self.fit_controls)
-            for m in self.model_list
-        )
+        with self._get_pool() as pool:
+            self.model_list = pool(
+                delayed(_fit_single)(m, X_list, y_list, self.fit_controls)
+                for m in self.model_list
+            )
+
         self._fix_copy_names()
 
     def predict(self, X: Array2D, subject_col: Array1D) -> Array2D:
         X_scal = self._scaler.transform(X)
         X_list = data_2D_to_list(X_scal, subject_col)
-        models_preds = self._pool(
-            delayed(_predict_single)(m, X_list, self.predict_controls)
-            for m in self.model_list
-        )
+        with self._get_pool() as pool:
+            models_preds = pool(
+                delayed(_predict_single)(m, X_list, self.predict_controls)
+                for m in self.model_list
+            )
         agg_pred = aggregate_predict_output(models_preds, self._aggregator)
         return data_list_to_2D(agg_pred, subject_col)
 

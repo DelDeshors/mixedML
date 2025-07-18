@@ -13,6 +13,10 @@ Array2D = NDArray
 Scaler = Union[StandardScaler, RobustScaler, MinMaxScaler, MaxAbsScaler]
 
 
+# !!! IMPORTANT !!!
+# do not use lambda in order to be able to save the model with joblib
+
+
 def data_2D_to_list(data_2D: Array2D, subject_col: Array1D) -> list[Array2D]:
     assert data_2D.ndim == 2
     assert subject_col.ndim == 1
@@ -30,10 +34,18 @@ def data_list_to_2D(data_list: list[Array2D], subject_col: Array1D) -> Array2D:
     return data2D  # -*- coding: utf-8 -*-
 
 
+def mean_axis_0(x):
+    return mean(x, axis=0)
+
+
+def median_axis_0(x):
+    return median(x, axis=0)
+
+
 def get_aggregator(aggregator: str) -> Callable[[list[Array2D]], Array2D]:
     funcs: dict[str, Callable[[list[Array2D]], Array2D]] = {
-        "mean": lambda x: mean(x, axis=0),
-        "median": lambda x: median(x, axis=0),
+        "mean": mean_axis_0,
+        "median": median_axis_0,
     }
     try:
         return funcs[aggregator]

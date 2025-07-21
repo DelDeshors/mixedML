@@ -32,7 +32,7 @@ repos:
         pass_filenames: true
 #  R precommit hooks
 -   repo: https://github.com/lorenzwalthert/precommit    #  R precommit hooks
-    rev: v0.4.3.9009
+    rev: v0.4.3.9012
     hooks:
     -   id: roxygenize
         stages: [pre-merge-commit]
@@ -86,7 +86,7 @@ repos:
         require_serial: true
         pass_filenames: false
 -   repo: https://github.com/pycqa/flake8
-    rev: 7.0.0
+    rev: 7.3.0
     hooks:
     -   id: flake8
 # R testing
@@ -94,7 +94,7 @@ repos:
     hooks:
     -   id: Rtesting
         name: Rtesting
-        stages: [pre-merge-commit]
+        stages: [pre-push]
         entry: Rscript tests/precommit_testthat.R
         language: system
         files: .*\.(?:R|Rmd|rda|py)
@@ -103,7 +103,7 @@ repos:
     hooks:
     -   id: vignette
         name: vignette
-        stages: [pre-merge-commit]
+        stages: [pre-push]
         entry: Rscript tests/precommit_vignette.R
         language: system
         files: .*\.(?:R|Rmd|rda)
@@ -112,7 +112,7 @@ repos:
 -   repo: local
     hooks:
     -   id: pytest
-        stages: [pre-merge-commit]
+        stages: [pre-push]
         name: pytest
         entry: python -m pytest  # python -m changes PYTHONPATH
         language: system

@@ -15,8 +15,8 @@ MIXEDML_CLASS <- "MixedML_Model"
 #'
 #'
 #' @param patience Number of iterations without improvement before the training is stopped. Default: 2
-#' @param conv_ratio_thresh Ratio of improvement of the MSE to consider an improvement.
-#' `conv_ratio_thresh=0.01` means an improvement of at least 1% of the MSE is necessary. Default: 0.01
+#' @param conv_thresh Minimal difference of MSE to consider an improvement.
+#' `conv_thresh=0.01` means an improvement of at least 1% of the MSE is necessary. Default: 0.01
 #' @param no_random_value_as value to use during the training of the random model
 #' when the prediction is not possible (NA or 0). This does not affect the prediction.
 #' Default: NA
@@ -24,13 +24,13 @@ MIXEDML_CLASS <- "MixedML_Model"
 #' @export
 mixedml_ctrls <- function(
   patience = 2,
-  conv_ratio_thresh = 0.01,
+  conv_thresh = 0.01,
   no_random_value_as = NA
 ) {
   stopifnot(is.single.integer(patience) & 0 <= patience)
   patience <- as.integer(patience)
-  stopifnot(is.single.numeric(conv_ratio_thresh))
-  stopifnot(0 < conv_ratio_thresh & conv_ratio_thresh < 1)
+  stopifnot(is.single.numeric(conv_thresh))
+  stopifnot(0 < conv_thresh)
   #
   stopifnot(length(no_random_value_as) == 1)
   stopifnot(is.na(no_random_value_as) || (no_random_value_as == 0))
@@ -325,7 +325,7 @@ reservoir_mixedml <- function(
     ensemble_controls,
     fit_controls
   )
-  conv_ratio_thresh <- mixedml_controls[["conv_ratio_thresh"]]
+  conv_thresh <- mixedml_controls[["conv_thresh"]]
   patience <- mixedml_controls[["patience"]]
   ##
   data_fixed <- data
@@ -359,14 +359,8 @@ reservoir_mixedml <- function(
     cat(sprintf("\tMSE = %.4g\n", mse))
     mse_list <- c(mse_list, mse)
     loglik_list <- c(loglik_list, random_model$loglik)
-    if (mse < (1 - conv_ratio_thresh) * mse_min) {
+    if (mse < mse_min - conv_thresh) {
       count_conv <- 0
-      best <- list(
-        "pred_fixed" = pred_fixed,
-        "pred_rand" = pred_rand,
-        "fixed_model" = fixed_model,
-        "random_model" = random_model
-      )
     } else {
       count_conv <- count_conv + 1
       if (count_conv > patience) {
@@ -375,6 +369,12 @@ reservoir_mixedml <- function(
     }
     if (mse < mse_min) {
       mse_min <- mse
+      best <- list(
+        "pred_fixed" = pred_fixed,
+        "pred_rand" = pred_rand,
+        "fixed_model" = fixed_model,
+        "random_model" = random_model
+      )
     }
     .save_backup(fixed_model, random_model, output_dir, istep)
     istep <- istep + 1

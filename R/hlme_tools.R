@@ -12,6 +12,7 @@
 #' If TRUE a diagonal matrix of variance-covariance is considered.
 #' @param maxiter maximum number of iterations for the Marquardt iterative algorithm.
 #' @param nproc the number cores for parallel computation. Default to 1 (sequential mode).
+#' @param B_rand random effects "varcov" values to initiate the random effects model
 #' @param convB optional threshold for the convergence criterion based on the
 #' parameter stability. By default, convB=0.0001.
 #' @param convL optional threshold for the convergence criterion based on the
@@ -24,14 +25,14 @@ hlme_ctrls <- function(
   idiag = FALSE,
   maxiter = 500,
   nproc = 1,
+  B_rand = NULL, # nolint
   convB = 0.0001, # nolint
   convL = 0.0001, # nolint
   convG = 0.0001, # nolint
   verbose = FALSE
 ) {
-  # the use of cor in lcmm is tricky
+  # the use of cor in lcmm is very tricky…
   cor <- substitute(cor)
-  stopifnot(is.null(cor) || (as.character(cor[1]) %in% c("AR", "BM")))
   return(as.list(environment()))
 }
 
@@ -40,6 +41,10 @@ hlme_ctrls <- function(
   # this should move into lcmm
   if (is.null(cor)) return()
   #
+  cor_code <- as.character(cor)[1]
+  if (!cor_code %in% c("AR", "BM")) {
+    stop(sprintf('Please use one of %s to define \"cor\"', c("AR", "BM")))
+  }
   cor_time <- as.character(cor)[2]
   #
   if (!(cor_time %in% .get_x_labels(random_spec))) {
@@ -94,11 +99,29 @@ hlme_ctrls <- function(
   # initialization with maxiter = 0
   maxiter_backup <- hlme_controls$maxiter
   hlme_controls$maxiter <- 0
+  # … and no B
+  b_backup <- hlme_controls$B_rand
+  hlme_controls$B_rand <- NULL
+  # initialization call
   random_hlme <- do.call("hlme", hlme_controls)
-  # forcing the fixed intercept to 0  ( "$" does not work: conversion to list)
-  random_hlme$best[["intercept"]] <- 0.
+  #
   random_hlme$call$maxiter <- maxiter_backup
   random_hlme$no_random_value_as <- no_random_value_as
+  # the use of B in hlme is tricky
+  # (no default value then 'try(as.numeric(B), silent = TRUE)')
+  if (!is.null(b_backup)) {
+    idx_varcov <- grepl("^varcov ", names(random_hlme$best))
+    n_rand_var <- sum(idx_varcov)
+    if (length(b_backup) != n_rand_var) {
+      stop(sprintf(
+        "B should only contains %d random-effects \"varcov\" values.",
+        n_rand_var
+      ))
+    }
+    random_hlme$best[idx_varcov] <- b_backup
+  }
+  # forcing the fixed intercept to 0  ( "$" does not work: conversion to list)
+  random_hlme$best[["intercept"]] <- 0.
   return(random_hlme)
 }
 

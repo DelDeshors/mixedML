@@ -1,13 +1,19 @@
 test_that("hlme_full_use", {
   data <- data_mixedml
   ##########
+
   model <- .initiate_random_hlme(
     target_name = "ym",
     random_spec = ~ x1 + x2 + x3 + time,
     data = data,
     subject = "ID",
     var.time = "time",
-    hlme_controls = hlme_ctrls(maxiter = 2, idiag = TRUE, cor = AR(time)),
+    hlme_controls = hlme_ctrls(
+      maxiter = 2,
+      idiag = TRUE,
+      cor = AR(time),
+      B_rand = c(1, 2, 3, 4, 5)
+    ),
     no_random_value_as = NA
   )
   expect_s3_class(model, "hlme")

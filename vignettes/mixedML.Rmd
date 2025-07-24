@@ -199,8 +199,8 @@ plot_last_iter(model = model_reservoir, subject_nb_or_list = 3)
 
 ```{r}
 backup <- load_backup(
-  fixed_model_Rds_or_joblib = "mixedML_vignette/007_fixed_model.joblib",
-  random_model_Rds = "mixedML_vignette/007_random_model.Rds"
+  fixed_model_rds_or_joblib = "mixedML_vignette/007_fixed_model.joblib",
+  random_model_rds = "mixedML_vignette/007_random_model.Rds"
 )
 ```
 

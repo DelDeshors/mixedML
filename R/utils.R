@@ -118,3 +118,22 @@ is.named.vector <- function(x) {
   model <- joblib$load(with(filename, "rb"))
   return(model)
 }
+
+
+# covariance matrix ----
+
+.cov_vector_to_cov_matrix <- function(cov_vector, names) {
+  covmat <- matrix(0, ncol = length(names), nrow = length(names))
+  idx <- upper.tri(covmat, diag = TRUE)
+  covmat[idx] <- cov_vector
+  idx <- lower.tri(covmat, diag = FALSE)
+  covmat[idx] <- t(covmat)[idx]
+  colnames(covmat) <- names
+  rownames(covmat) <- names
+  return(covmat)
+}
+
+get_cov_matrix <- function(hlme) {
+  cov_vector <- hlme$best[startsWith(names(hlme$best), "varcov ")]
+  return(.cov_vector_to_cov_matrix(cov_vector, hlme$Xnames[hlme$idea0 == 1]))
+}

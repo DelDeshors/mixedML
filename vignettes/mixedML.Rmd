@@ -41,6 +41,7 @@ That is, the formulation becomes:
 
 $$Y_{ij} = f_{ML}(X_{ij}) +  Z_{ij} u_i + w_{ij} + \varepsilon_{ij}$$
 
+
 … where $f_{ML}(X_{ij})$ is the output from a ML model trained to predict the fixed effects.
 
 <br><br> Using ML models to estimates the fixed effects has two main advantages comparing to linear models:

@@ -46,7 +46,7 @@ repos:
     # -   id: codemeta-description-updated
     -   id: use-tidy-description
     -   id: lintr
-    -   id: readme-rmd-rendered  # automated with vignette
+    # -   id: readme-rmd-rendered  # automated with vignette
     -   id: parsable-R
     -   id: no-browser-statement
     -   id: no-print-statement
@@ -101,9 +101,9 @@ repos:
 # README.md check
 -   repo: local
     hooks:
-    -   id: README.md
-        name: README.md
-        stages: [pre-push]
+    -   id: readme-md-rendered
+        name: readme-md-rendered
+        stages: [pre-commit]
         entry: Rscript vignettes/check_readme_update.R
         language: system
         pass_filenames: false

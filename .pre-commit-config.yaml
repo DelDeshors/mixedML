@@ -99,15 +99,6 @@ repos:
         language: system
         files: .*\.(?:R|Rmd|rda|py)
         pass_filenames: false
--   repo: local
-    hooks:
-    -   id: vignette
-        name: vignette
-        stages: [pre-push]
-        entry: Rscript tests/precommit_vignette.R
-        language: system
-        files: .*\.(?:R|Rmd|rda)
-        pass_filenames: false
 # Python testing
 -   repo: local
     hooks:

@@ -286,7 +286,7 @@ model_reservoir$random_model
 ``` r
 # (this model uses reticulate so it not very convenient as an example…)
 model_reservoir$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7048b12c5940>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7455340c1940>
 ```
 
 Also a `call` attribute exists, meaning one can trained the model with
@@ -405,6 +405,8 @@ Prediction plot of the model.
 ``` r
 plot_last_iter(model = model_reservoir, subject_nb_or_list = 3)
 #> Subjects selected randomly: use set.seed to change the selection.
+#> Warning: Removed 2 rows containing missing values or values outside the scale range
+#> (`geom_point()`).
 ```
 
 <img src="man/figures/README-unnamed-chunk-18-1.png" width="100%" />
@@ -413,14 +415,14 @@ plot_last_iter(model = model_reservoir, subject_nb_or_list = 3)
 
 ``` r
 backup <- load_backup(
-  fixed_model_Rds_or_joblib = "mixedML_vignette/007_fixed_model.joblib",
-  random_model_Rds = "mixedML_vignette/007_random_model.Rds"
+  fixed_model_rds_or_joblib = "mixedML_vignette/007_fixed_model.joblib",
+  random_model_rds = "mixedML_vignette/007_random_model.Rds"
 )
 ```
 
 ``` r
 backup$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7048385bdf90>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7454bb231f90>
 ```
 
 ``` r

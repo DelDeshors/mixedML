@@ -4,7 +4,7 @@ fail_fast: true
 repos:
 # officials hooks mixed with R precommit modifications
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
     -   id: check-yaml
     -   id: end-of-file-fixer
@@ -32,7 +32,7 @@ repos:
         pass_filenames: true
 #  R precommit hooks
 -   repo: https://github.com/lorenzwalthert/precommit    #  R precommit hooks
-    rev: v0.4.3.9012
+    rev: v0.4.3.9014
     hooks:
     -   id: roxygenize
         stages: [pre-merge-commit]

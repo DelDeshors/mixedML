@@ -286,7 +286,7 @@ model_reservoir$random_model
 ``` r
 # (this model uses reticulate so it not very convenient as an example…)
 model_reservoir$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7937fd6c1940>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x77d5744c5940>
 ```
 
 Also a `call` attribute exists, meaning one can trained the model with
@@ -405,7 +405,7 @@ Prediction plot of the model.
 ``` r
 plot_last_iter(model = model_reservoir, subject_nb_or_list = 3)
 #> Subjects selected randomly: use set.seed to change the selection.
-#> Warning: Removed 3 rows containing missing values or values outside the scale range
+#> Warning: Removed 5 rows containing missing values or values outside the scale range
 #> (`geom_point()`).
 ```
 
@@ -422,7 +422,7 @@ backup <- load_backup(
 
 ``` r
 backup$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7937848b9f90>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x77d4fb54d810>
 ```
 
 ``` r

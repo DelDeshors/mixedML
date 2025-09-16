@@ -97,7 +97,15 @@ repos:
         stages: [pre-push]
         entry: Rscript tests/precommit_testthat.R
         language: system
-        files: .*\.(?:R|Rmd|rda|py)
+        pass_filenames: false
+# README.md check
+-   repo: local
+    hooks:
+    -   id: README.md
+        name: README.md
+        stages: [pre-push]
+        entry: Rscript vignettes/check_readme_update.R
+        language: system
         pass_filenames: false
 # Python testing
 -   repo: local
@@ -107,8 +115,6 @@ repos:
         name: pytest
         entry: python -m pytest  # python -m changes PYTHONPATH
         language: system
-        types: [python]
-        require_serial: true
         pass_filenames: false
 ci:
     autoupdate_schedule: monthly

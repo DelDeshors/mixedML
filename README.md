@@ -54,8 +54,17 @@ estimated parameters to understand the relations within the data.
 # 2 Method
 
 The method uses a iterative training of both fixed effects and random
-effects models. The pseudo-code is as follow (`fe`/`re` stands for
-fixed/random effects):
+effects models.
+
+So far we are fitting each model on the residuals of the other. This is
+only valid for **regression problems** where it is equivalent to to
+fitting using the predictions (of the other model) as offset. In
+generalized linear model terms: the models use an identity link. In
+neural networks terms: the models do not use a final activation
+function.
+
+The pseudo-code is as follow (`fe`/`re` stands for fixed/random
+effects):
 
     ml_model_fe <- initiate_ml_model_fe()
     hlme_model_re <- initiate_hlme_model_re()
@@ -286,7 +295,7 @@ model_reservoir$random_model
 ``` r
 # (this model uses reticulate so it not very convenient as an example…)
 model_reservoir$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7e835b755940>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x724820771940>
 ```
 
 Also a `call` attribute exists, meaning one can trained the model with
@@ -420,7 +429,7 @@ backup <- load_backup(
 
 ``` r
 backup$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7e831c73d950>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7247aa06df90>
 ```
 
 ``` r

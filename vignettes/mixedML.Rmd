@@ -53,8 +53,16 @@ However, some ML models have a "black box" effect, as one cannot use its estimat
 
 # Method
 
-The method uses a iterative training of both fixed effects and random effects models. The pseudo-code is as follow (`fe`/`re` stands for fixed/random effects):
+The method uses a iterative training of both fixed effects and random effects models.
 
+So far we are fitting each model on the residuals of the other.
+This is only valid for **regression problems** where it is equivalent to
+to fitting using the predictions (of the other model) as offset.
+In generalized linear model terms: the models use an identity link.
+In neural networks terms: the models do not use a final activation function.
+
+
+The pseudo-code is as follow (`fe`/`re` stands for fixed/random effects):
 ```
 ml_model_fe <- initiate_ml_model_fe()
 hlme_model_re <- initiate_hlme_model_re()

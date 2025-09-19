@@ -20,12 +20,24 @@ MIXEDML_CLASS <- "MixedML_Model"
 #' @param no_random_value_as value to use during the training of the random model
 #' when the prediction is not possible (NA or 0). This does not affect the prediction.
 #' Default: NA
+#' @param convB optional iterations models threshold for the convergence criterion based on the
+#' parameter stability. Used during the MixedML iterations.
+#' By default, convB=0.01.
+#' @param convL optional threshold for the convergence criterion based on the
+#' log-likelihood stability. Used during the MixedML iterations.
+#' By default, convL=0.01.
+#' @param convG optional threshold for the convergence criterion based on the
+#' derivatives. Used during the MixedML iterations.
+#' By default, convG=0.10.
 #' @return mixedml_controls
 #' @export
 mixedml_ctrls <- function(
   patience = 2,
   conv_thresh = 0.01,
-  no_random_value_as = NA
+  no_random_value_as = NA,
+  convB = 0.01, # nolint
+  convL = 0.01, # nolint
+  convG = 0.01 # nolint
 ) {
   stopifnot(is.single.integer(patience) & 0 <= patience)
   patience <- as.integer(patience)
@@ -309,13 +321,20 @@ reservoir_mixedml <- function(
   dir.create(output_dir, showWarnings = FALSE)
   #
   target_name <- .get_y_label(fixed_spec)
+  # we change the convergence criterions for faster iterations
+  # the original criterions will be used to adjust the final model
+  hlme_controls_final <- hlme_controls
+  hlme_controls_iter <- hlme_controls
+  hlme_controls_iter$convB <- mixedml_controls$convB
+  hlme_controls_iter$convL <- mixedml_controls$convL
+  hlme_controls_iter$convG <- mixedml_controls$convG
   random_model <- .initiate_random_hlme(
     target_name,
     random_spec,
     data,
     subject,
     time,
-    hlme_controls,
+    hlme_controls_iter,
     mixedml_controls$no_random_value_as
   )
   fixed_model <- .initiate_esn(
@@ -336,22 +355,22 @@ reservoir_mixedml <- function(
   loglik_list <- c()
   mse_min <- Inf
   n_na_full <- .check_na_combinaison(data, fixed_spec, random_spec, target_name)
+  # ----
   while (TRUE) {
     start <- format(Sys.time(), "%H:%M:%S")
     cat(sprintf("step#%d\n", istep))
+    # -----
     cat("\tfitting fixed effects...\n")
     data_fixed[[target_name]] <- data[[target_name]] - pred_rand
     fixed_model <- .fit_reservoir(fixed_model, data_fixed)
     pred_fixed <- .predict_reservoir(fixed_model, data)
+    # -----
     cat("\tfitting random effects...\n")
-    # !!! offsetting is not implemented in LCMM
-    # BUT for linear models, fitting "f(X)+offset" on Y is equivalent
-    # to fitting f(X) on "Y-offset"
-    # so that is the method used so far
     data_rand[[target_name]] <- data[[target_name]] - pred_fixed
     random_model <- .fit_random_hlme(random_model, data_rand)
+    .check_convergence_hlme(random_model)
     pred_rand <- random_model$full_pred
-    #
+    # -----
     residuals <- pred_fixed + pred_rand - data[, target_name]
     ccases_resid <- complete.cases(residuals)
     stopifnot(n_na_full == sum(!ccases_resid))
@@ -379,6 +398,16 @@ reservoir_mixedml <- function(
     .save_backup(fixed_model, random_model, output_dir, istep)
     istep <- istep + 1
   }
+  # final model with saved convergence criteria
+  cat("Final convergence of HLME with strict convergence criterions.")
+  .check_convergence_hlme(best$random_model)
+  best$random_model <- stats::update(
+    best$random_model,
+    B = best$random_model$best,
+    convB = hlme_controls_final$convB,
+    convL = hlme_controls_final$convL,
+    convG = hlme_controls_final$convG
+  )
   .check_convergence_hlme(best$random_model)
   output <- c(
     list(

@@ -14,11 +14,11 @@
 #' @param nproc the number cores for parallel computation. Default to 1 (sequential mode).
 #' @param B_rand random effects "varcov" values to initiate the random effects model
 #' @param convB optional threshold for the convergence criterion based on the
-#' parameter stability. By default, convB=0.0001.
+#' parameter stability. Used for the final MixedML model. By default, convB=0.0001.
 #' @param convL optional threshold for the convergence criterion based on the
-#' log-likelihood stability. By default, convL=0.0001.
+#' log-likelihood stability. Used for the final MixedML model. By default, convL=0.0001.
 #' @param convG optional threshold for the convergence criterion based on the
-#' derivatives. By default, convG=0.0001.
+#' derivatives. Used for the final MixedML model. By default, convG=0.0001.
 #' @export
 hlme_ctrls <- function(
   cor = NULL,

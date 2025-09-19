@@ -9,6 +9,7 @@ hlme_ctrls(
   idiag = FALSE,
   maxiter = 500,
   nproc = 1,
+  B_rand = NULL,
   convB = 1e-04,
   convL = 1e-04,
   convG = 1e-04,
@@ -27,14 +28,16 @@ If TRUE a diagonal matrix of variance-covariance is considered.}
 
 \item{nproc}{the number cores for parallel computation. Default to 1 (sequential mode).}
 
+\item{B_rand}{random effects "varcov" values to initiate the random effects model}
+
 \item{convB}{optional threshold for the convergence criterion based on the
-parameter stability. By default, convB=0.0001.}
+parameter stability. Used for the final MixedML model. By default, convB=0.0001.}
 
 \item{convL}{optional threshold for the convergence criterion based on the
-log-likelihood stability. By default, convL=0.0001.}
+log-likelihood stability. Used for the final MixedML model. By default, convL=0.0001.}
 
 \item{convG}{optional threshold for the convergence criterion based on the
-derivatives. By default, convG=0.0001.}
+derivatives. Used for the final MixedML model. By default, convG=0.0001.}
 }
 \value{
 hlme_controls

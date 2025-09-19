@@ -105,6 +105,7 @@ repos:
         name: readme-md-rendered
         stages: [pre-commit]
         entry: Rscript vignettes/check_readme_update.R
+        files: '(README.*|vignettes/mixedML.Rmd)'
         language: system
         pass_filenames: false
 # Python testing

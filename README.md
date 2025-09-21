@@ -91,57 +91,55 @@ these columns:
 
 ``` r
 data_mixedml
-#>    ID time    x1    x2 x3    yf    ym
-#> 1   1    0 10.38 100.6  1 205.9 191.5
-#> 2   1    1    NA 103.5  1    NA    NA
-#> 3   1    2  9.82  97.9  1 196.3 182.3
-#> 4   1    3 11.01  98.2  1 214.3 199.8
-#> 5   1    4  8.89  98.5  1 182.6 169.0
-#> 6   2    0 10.38  97.5  0 100.7  89.4
-#> 7   2    1  9.35  99.3  0    NA    NA
-#> 8   2    2  9.60    NA  0  96.8  86.3
-#> 9   2    3  9.10 102.2  0  96.6  86.4
-#> 10  2    4  9.98 103.8  0 101.8  90.8
-#> 11  3    0 11.08  97.0  1 214.6 237.6
-#> 12  3    1  9.11  97.3  1 185.4 206.4
-#> 13  3    2 10.43  96.0  1 204.5 226.7
-#> 14  3    3  9.14 105.8  1 190.0 212.1
-#> 15  3    4 10.07 102.0  1 202.0 224.6
-#> 16  4    0  9.96  98.8  0  99.2  89.9
-#> 17  4    1 10.43 100.6  0 102.4  93.0
-#> 18  4    2 10.17 101.2  0 101.5  91.9
-#> 19  4    3  9.71 104.9  0 101.0  90.7
-#> 20  4    4 10.39  99.8  0 101.9  92.6
-#> 21  5    0  9.65  99.1  1 194.3 186.4
-#> 22  5    1  9.41  99.6  1 190.9 183.1
-#> 23  5    2 10.63 102.1  1 210.6 202.1
-#> 24  5    3  9.84 100.6  1 197.9 189.9
-#> 25  5    4 10.02  96.3  1 198.4 190.4
-#> 26  6    0  9.26  99.8  0  96.2 109.5
-#> 27  6    1  9.44  97.6  0  96.0 109.1
-#> 28  6    2  9.12  91.2  0  91.2 103.5
-#> 29  6    3  9.47  98.1  0  96.4 109.6
-#> 30  6    4  9.33  98.3  0  95.8 109.0
-#> 31  7    0 10.38 104.5  1 207.9 186.2
-#> 32  7    1  9.68 102.7  1 196.5 175.4
-#> 33  7    2 10.72  99.0  1 210.2 189.3
-#> 34  7    3  9.69  96.1  1 193.4 173.4
-#> 35  7    4 10.11 100.0  1 201.7 180.9
-#> 36  8    0 10.13 103.0  0 102.2 101.0
-#> 37  8    1 10.21 101.2  0 101.7 100.6
-#> 38  8    2  9.26 104.3  0  98.4  96.9
-#> 39  8    3 10.09 100.4  0 100.7  99.6
-#> 40  8    4 11.03  96.0  0 103.1 102.6
-#> 41  9    0 10.36  98.5  1 204.7 197.1
-#> 42  9    1  9.76  97.3  1 195.0 187.7
-#> 43  9    2  9.76 101.0  1 196.8 189.5
-#> 44  9    3 10.92 100.9  1 214.3 206.4
-#> 45  9    4 10.26  96.9  1 202.3 194.8
-#> 46 10    0  9.44 101.2  0  97.8  73.7
-#> 47 10    1  9.84 102.4  0 100.4  76.0
-#> 48 10    2 10.05  98.3  0  99.4  75.7
-#> 49 10    3 10.32 100.5  0 101.9  77.6
-#> 50 10    4 10.19 100.1  0 101.0  76.9
+#>    ID time    x1    x2 x3    yf     yr    ym ym_nonoise
+#> 1   1    0    NA 100.6  1 206.9 -12.76 194.5      194.2
+#> 2   1    1 11.01 103.5  1 217.9 -13.29 205.0      204.6
+#> 3   1    2  9.82  97.9  1 197.3 -12.29 184.7      185.0
+#> 4   1    3 11.01  98.2  1 215.3 -12.88 201.8      202.4
+#> 5   1    4  8.89  98.5  1 183.6 -11.89 171.5      171.7
+#> 6   2    0 10.38  97.5  0 101.7  10.97 112.8      112.6
+#> 7   2    1  9.35    NA  0  97.4  11.28 108.6      108.7
+#> 8   2    2  9.60  97.7  0  97.8  11.06 107.3      108.9
+#> 9   2    3  9.10 102.2  0  97.6  11.66 108.6      109.3
+#> 10  2    4  9.98 103.8  0 102.8  11.79 115.1      114.6
+#> 11  3    0 11.08  97.0  1 215.6  13.11    NA      228.7
+#> 12  3    1  9.11  97.3  1 186.4  11.92 197.6      198.3
+#> 13  3    2 10.43  96.0  1 205.5  12.65 218.5      218.2
+#> 14  3    3  9.14 105.8  1 191.0  12.48 204.2      203.5
+#> 15  3    4 10.07 102.0  1 203.0  12.81 216.1      215.8
+#> 16  4    0  9.96  98.8  0 100.2   3.43 103.1      103.6
+#> 17  4    1 10.43 100.6  0 103.4   3.29    NA      106.7
+#> 18  4    2 10.17 101.2  0 102.5   3.53 106.8      106.0
+#> 19  4    3  9.71 104.9  0 102.0   4.23 106.3      106.2
+#> 20  4    4 10.39  99.8  0 102.9   3.24 106.2      106.1
+#> 21  5    1  9.41  99.6  1 191.9  -3.72 187.2      188.2
+#> 22  5    2 10.63 102.1  1 211.6  -3.97 207.5      207.6
+#> 23  5    3  9.84 100.6  1 198.9  -3.81 195.1      195.1
+#> 24  5    4 10.02  96.3  1 199.4  -3.74 194.8      195.6
+#> 25  6    0  9.26  99.8  0  97.2  16.39 113.9      113.6
+#> 26  6    2  9.12  91.2  0  92.2  15.33 108.3      107.5
+#> 27  6    3  9.47  98.1  0  97.4  16.31 114.1      113.7
+#> 28  6    4  9.33  98.3  0  96.8  16.26 112.6      113.1
+#> 29  7    0 10.38 104.5  1 208.9  -6.09 202.7      202.8
+#> 30  7    1  9.68 102.7  1 197.5  -5.55 192.6      192.0
+#> 31  7    2 10.72  99.0  1 211.2  -6.52 204.5      204.7
+#> 32  7    3  9.69  96.1  1 194.4  -5.73 189.8      188.7
+#> 33  7    4 10.11 100.0  1 202.7  -5.99 196.1      196.7
+#> 34  8    0 10.13 103.0  0 103.2  -7.37  96.1       95.8
+#> 35  8    1 10.21 101.2  0 102.7  -7.30  94.6       95.4
+#> 36  8    2  9.26 104.3  0  99.4  -7.24  92.9       92.2
+#> 37  8    3 10.09 100.4  0 101.7  -7.23  94.8       94.4
+#> 38  8    4 11.03  96.0  0 104.1  -7.22  96.6       96.9
+#> 39  9    0 10.36  98.5  1 205.7   2.49 208.0      208.2
+#> 40  9    1  9.76  97.3  1 196.0   2.51 198.4      198.5
+#> 41  9    2  9.76 101.0  1 197.8   2.64 201.2      200.5
+#> 42  9    3 10.92 100.9  1 215.3   2.51 217.7      217.8
+#> 43  9    4 10.26  96.9  1 203.3   2.44 205.5      205.7
+#> 44 10    0  9.44 101.2  0  98.8 -21.28  77.2       77.5
+#> 45 10    1  9.84 102.4  0 101.4 -21.84  79.4       79.6
+#> 46 10    2 10.05  98.3  0 100.4 -21.58  77.4       78.8
+#> 47 10    3 10.32 100.5  0 102.9 -22.11  81.6       80.8
+#> 48 10    4 10.19 100.1  0 102.0 -21.93  80.2       80.1
 ```
 
 # 4 General principle
@@ -203,53 +201,66 @@ model_reservoir <- reservoir_mixedml(
 #> conda environment "01" activated!
 #> Warning in .check_na_combinaison(data, fixed_spec, random_spec, target_name): 
 #>          2 incomplete cases for the ML models
-#>          3 incomplete cases for the HLME model
+#>          4 incomplete cases for the HLME model
 #>          2 NA values in target
-#>          => 3/50 observations could not be used to train (either no fixed preds, random preds or target).
+#>          => 4/48 observations could not be used to train (either no fixed preds, random preds or target).
 #> step#0
 #>  fitting fixed effects...
 #>  fitting random effects...
-#>  MSE = 482.6
+#>  MSE = 221.2
 #> step#1
 #>  fitting fixed effects...
 #>  fitting random effects...
-#>  MSE = 162.7
+#>  MSE = 74.45
 #> step#2
 #>  fitting fixed effects...
 #>  fitting random effects...
-#>  MSE = 67.37
+#>  MSE = 17.41
 #> step#3
 #>  fitting fixed effects...
 #>  fitting random effects...
-#>  MSE = 28.61
+#>  MSE = 13.83
 #> step#4
 #>  fitting fixed effects...
 #>  fitting random effects...
-#>  MSE = 4.964
+#>  MSE = 5.016
 #> step#5
 #>  fitting fixed effects...
 #>  fitting random effects...
-#>  MSE = 5.608
+#>  MSE = 3.928
 #> step#6
 #>  fitting fixed effects...
 #>  fitting random effects...
-#>  MSE = 4.283
+#>  MSE = 3.247
 #> step#7
 #>  fitting fixed effects...
 #>  fitting random effects...
-#>  MSE = 4.149
+#>  MSE = 2.477
 #> step#8
 #>  fitting fixed effects...
 #>  fitting random effects...
-#>  MSE = 4.37
+#>  MSE = 1.682
 #> step#9
 #>  fitting fixed effects...
 #>  fitting random effects...
-#>  MSE = 4.713
+#>  MSE = 2.318
 #> step#10
 #>  fitting fixed effects...
 #>  fitting random effects...
-#>  MSE = 5.086
+#>  MSE = 1.627
+#> step#11
+#>  fitting fixed effects...
+#>  fitting random effects...
+#>  MSE = 6.655
+#> step#12
+#>  fitting fixed effects...
+#>  fitting random effects...
+#>  MSE = 1.667
+#> step#13
+#>  fitting fixed effects...
+#>  fitting random effects...
+#>  MSE = 1.677
+#> Final convergence of HLME with strict convergence criterions.
 ```
 
 The resulting model will be used in the remaining sections.
@@ -264,30 +275,31 @@ model_reservoir$random_model
 #>      fitted by maximum likelihood method 
 #>  
 #> hlme(fixed = ym ~ 1, random = ~x1 + x2, subject = "ID", idiag = TRUE, 
-#>     cor = NULL, data = data, convB = 1e-04, convL = 1e-04, convG = 1e-04, 
+#>     cor = NULL, data = data, convB = hlme_controls_final$convB, 
+#>     convL = hlme_controls_final$convL, convG = hlme_controls_final$convG, 
 #>     maxiter = 50, na.action = 1, posfix = 1, verbose = FALSE, 
 #>     var.time = "time", nproc = 1)
 #>  
 #> Statistical Model: 
 #>      Dataset: data 
 #>      Number of subjects: 10 
-#>      Number of observations: 47 
-#>      Number of observations deleted: 3 
+#>      Number of observations: 44 
+#>      Number of observations deleted: 4 
 #>      Number of latent classes: 1 
 #>      Number of parameters: 5  
 #>      Number of estimated parameters: 4  
 #>  
 #> Iteration process: 
 #>      Convergence criteria satisfied 
-#>      Number of iterations:  8 
-#>      Convergence criteria: parameters= 1.8e-07 
-#>                          : likelihood= 1.3e-08 
-#>                          : second derivatives= 6.8e-10 
+#>      Number of iterations:  19 
+#>      Convergence criteria: parameters= 8.7e-10 
+#>                          : likelihood= 8.7e-11 
+#>                          : second derivatives= 5.7e-15 
 #>  
 #> Goodness-of-fit statistics: 
-#>      maximum log-likelihood: -139.56  
-#>      AIC: 287.12  
-#>      BIC: 288.33  
+#>      maximum log-likelihood: -125.03  
+#>      AIC: 258.06  
+#>      BIC: 259.27  
 #>  
 #> 
 ```
@@ -295,7 +307,7 @@ model_reservoir$random_model
 ``` r
 # (this model uses reticulate so it not very convenient as an example…)
 model_reservoir$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x724820771940>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7cbab5971940>
 ```
 
 Also a `call` attribute exists, meaning one can trained the model with
@@ -412,8 +424,9 @@ plot_last_iter(model, subject_nb_or_list, ylog = FALSE)
 Prediction plot of the model.
 
 ``` r
-plot_last_iter(model = model_reservoir, subject_nb_or_list = 3)
-#> Subjects selected randomly: use set.seed to change the selection.
+plot_last_iter(model = model_reservoir, subject_nb_or_list = c(1, 2, 3, 4, 5))
+#> Warning: Removed 6 rows containing missing values or values outside the scale range
+#> (`geom_point()`).
 ```
 
 <img src="man/figures/README-unnamed-chunk-18-1.png" width="100%" />
@@ -429,7 +442,7 @@ backup <- load_backup(
 
 ``` r
 backup$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7247aa06df90>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7cba3f646210>
 ```
 
 ``` r
@@ -438,41 +451,40 @@ backup$random_model
 #>      fitted by maximum likelihood method 
 #>  
 #> hlme(fixed = ym ~ 1, random = ~x1 + x2, subject = "ID", idiag = TRUE, 
-#>     cor = NULL, data = data, convB = 1e-04, convL = 1e-04, convG = 1e-04, 
+#>     cor = NULL, data = data, convB = 0.01, convL = 0.01, convG = 0.01, 
 #>     maxiter = 50, na.action = 1, posfix = 1, verbose = FALSE, 
 #>     var.time = "time", nproc = 1)
 #>  
 #> Statistical Model: 
 #>      Dataset: data 
 #>      Number of subjects: 10 
-#>      Number of observations: 47 
-#>      Number of observations deleted: 3 
+#>      Number of observations: 44 
+#>      Number of observations deleted: 4 
 #>      Number of latent classes: 1 
 #>      Number of parameters: 5  
 #>      Number of estimated parameters: 4  
 #>  
 #> Iteration process: 
 #>      Convergence criteria satisfied 
-#>      Number of iterations:  8 
-#>      Convergence criteria: parameters= 1.8e-07 
-#>                          : likelihood= 1.3e-08 
-#>                          : second derivatives= 6.8e-10 
+#>      Number of iterations:  4 
+#>      Convergence criteria: parameters= 3.4e-05 
+#>                          : likelihood= 1.9e-07 
+#>                          : second derivatives= 4.4e-14 
 #>  
 #> Goodness-of-fit statistics: 
-#>      maximum log-likelihood: -139.56  
-#>      AIC: 287.12  
-#>      BIC: 288.33  
+#>      maximum log-likelihood: -127.27  
+#>      AIC: 262.54  
+#>      BIC: 263.75  
 #>  
 #> 
 ```
 
 ``` r
 predict(backup, data_mixedml)
-#>  [1] 208.9    NA 377.3 397.1 370.3  74.7 146.8    NA 153.8 162.4 210.6 411.3
-#> [13] 427.4 421.7 429.9  69.6 163.1 161.6 160.6 162.9 198.0 378.6 402.7 388.2
-#> [25] 386.9  62.6 169.4 161.4 170.1 169.8 210.3 376.9 386.1 365.6 382.4  75.4
-#> [37] 167.4 163.9 168.4 170.1 207.7 382.6 394.5 409.3 393.5  64.5 140.9 141.7
-#> [49] 147.4 144.3
+#>  [1]    NA 202.8 303.5 342.2 300.9  87.9    NA 141.3 144.7 153.6 199.5 180.4
+#> [13] 318.3 318.9 337.5  83.5 149.1 147.8 147.7 152.0 188.3 317.9 322.3 326.0
+#> [25]  79.8 140.4 145.8 146.0 199.5 307.9 328.6 304.0 323.2  85.2 140.9 135.2
+#> [37] 140.5 146.0 196.4 306.9 314.3 336.9 332.3  80.3 127.4 132.5 134.0 134.2
 ```
 
 ``` r

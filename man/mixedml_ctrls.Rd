@@ -19,8 +19,9 @@ mixedml_ctrls(
 \item{conv_thresh}{Minimal difference of MSE to consider an improvement.
 \code{conv_thresh=0.01} means an improvement of at least 1\% of the MSE is necessary. Default: 0.01}
 
-\item{no_random_value_as}{value to use during the training of the random model
-when the prediction is not possible (NA or 0). This does not affect the prediction.
+\item{no_random_value_as}{value to use during the training of the mixedML model
+when a prediction of the random model is not possible (NA or 0).
+This does not affect the prediction.
 Default: NA}
 
 \item{convB}{optional iterations models threshold for the convergence criterion based on the

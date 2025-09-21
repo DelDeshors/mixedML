@@ -199,7 +199,7 @@ print_help("plot_last_iter")
 ```
 
 ```{r}
-plot_last_iter(model = model_reservoir, subject_nb_or_list = 3)
+plot_last_iter(model = model_reservoir, subject_nb_or_list = c(1, 2, 3, 4, 5))
 ```
 
 

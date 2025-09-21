@@ -17,8 +17,9 @@ MIXEDML_CLASS <- "MixedML_Model"
 #' @param patience Number of iterations without improvement before the training is stopped. Default: 2
 #' @param conv_thresh Minimal difference of MSE to consider an improvement.
 #' `conv_thresh=0.01` means an improvement of at least 1% of the MSE is necessary. Default: 0.01
-#' @param no_random_value_as value to use during the training of the random model
-#' when the prediction is not possible (NA or 0). This does not affect the prediction.
+#' @param no_random_value_as value to use during the training of the mixedML model
+#' when a prediction of the random model is not possible (NA or 0).
+#' This does not affect the prediction.
 #' Default: NA
 #' @param convB optional iterations models threshold for the convergence criterion based on the
 #' parameter stability. Used during the MixedML iterations.

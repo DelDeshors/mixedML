@@ -84,7 +84,8 @@ hlme_ctrls <- function(
   subject,
   var.time,
   hlme_controls,
-  no_random_value_as
+  no_random_value_as,
+  use_only_past_info
 ) {
   .test_initiate_random_hlme(random_spec, hlme_controls, var.time)
   # preparing the hlme formula inputs
@@ -104,9 +105,8 @@ hlme_ctrls <- function(
   hlme_controls$B_rand <- NULL
   # initialization call
   random_hlme <- do.call("hlme", hlme_controls)
-  #
+  # continuing with the real maxiter
   random_hlme$call$maxiter <- maxiter_backup
-  random_hlme$no_random_value_as <- no_random_value_as
   # the use of B in hlme is tricky
   # (no default value then 'try(as.numeric(B), silent = TRUE)')
   if (!is.null(b_backup)) {
@@ -122,20 +122,33 @@ hlme_ctrls <- function(
   }
   # forcing the fixed intercept to 0  ( "$" does not work: conversion to list)
   random_hlme$best[["intercept"]] <- 0.
+  #
+  random_hlme$no_random_value_as <- no_random_value_as
+  random_hlme$use_only_past_info <- use_only_past_info
   return(random_hlme)
 }
 
 
 # training ----
 .fit_random_hlme <- function(random_hlme, data) {
-  no_random_value_as <- random_hlme$no_random_value_as
   y_label <- .get_y_label(random_hlme$call$fixed)
   x_labels <- .get_x_labels(random_hlme$call$random)
-  ccases <- complete.cases(data[c(y_label, x_labels)])
+  #
+  no_random_value_as <- random_hlme$no_random_value_as
+  use_only_past_info <- random_hlme$use_only_past_info
   random_hlme <- stats::update(random_hlme, data = data, B = random_hlme$best)
   random_hlme$no_random_value_as <- no_random_value_as
-  random_hlme$full_pred <- rep(random_hlme$no_random_value_as, length(ccases))
-  random_hlme$full_pred[ccases] <- random_hlme$pred$pred_ss
+  random_hlme$use_only_past_info <- use_only_past_info
+  #
+  if (random_hlme$use_only_past_info) {
+    preds <- .predict_random_hlme(random_hlme, data)
+  } else {
+    preds <- rep(random_hlme$no_random_value_as, nrow(data))
+    ind <- as.numeric(row.names(random_hlme$pred))
+    preds[ind] <- random_hlme$pred$pred_ss
+  }
+  #
+  random_hlme$full_pred <- preds
   return(random_hlme)
 }
 
@@ -163,38 +176,32 @@ hlme_ctrls <- function(
   #
   var.time <- random_hlme$var.time
   subject <- colnames(random_hlme$pred)[1]
-  # trick to simplify the RE 'rowSums' calculation
-  x_labels <- random_hlme$Xnames
-  intercept <- x_labels[1]
-  data[intercept] <- 1
-  # initialization with 0
+  # trick to be able to use rowSum which simplifies the random effects calculation
+  # we assume that "intercept" (used by hlme) is not already defined in the dataset
+  stopifnot(!("intercept" %in% names(data)))
+  data["intercept"] <- 1.
+  # initialization with 0. (will be erase if random effects can be calculated
+  # for a specific subject at a specific time)
   preds <- data[c(var.time, subject, y_label)]
-  preds[[y_label]] <- 0
+  preds[[y_label]] <- 0.
   #
   time_unq <- sort(unique(data[[var.time]]))
   for (i_time in time_unq[-1]) {
-    prev_data <- data[data[var.time] < i_time, ]
-    # tryCatch(
-    # we let hlme find out if he can predict or not
-    # {
-    ui <- lcmm::predictRE(random_hlme, newdata = prev_data)
     actual_data <- data[data[var.time] == i_time, ]
+    prev_data <- data[data[var.time] < i_time, ]
+    ui <- lcmm::predictRE(random_hlme, newdata = prev_data)
     for (i_row in rownames(actual_data)) {
       actual_subject <- actual_data[i_row, subject]
       ui_subject <- ui[ui[, subject] == actual_subject, ]
+      stopifnot(nrow(ui_subject) <= 1) # might be removed after a while
       if (nrow(ui_subject) == 1) {
         reffects <- rowSums(
           actual_data[i_row, x_labels] * ui_subject[, x_labels]
         )
-        preds[i_row, y_label] <- preds[i_row, y_label] + reffects
-      } else if (nrow(ui_subject) > 1) {
-        stop("Problem with method!")
+        stopifnot(preds[i_row, y_label] == 0.) # might be removed after a while
+        preds[i_row, y_label] <- reffects
       }
     }
-    # },
-    # error = function(e) {
-    # }
-    # )
   }
   return(preds[[y_label]])
 }

@@ -15,7 +15,7 @@ reservoir_mixedml(
   esn_controls = esn_controls(),
   ensemble_controls = ensemble_controls(),
   fit_controls = fit_controls(),
-  output_dir = paste0("mixedML-", format(Sys.time(), "\%y\%m\%d-\%H\%M\%S"))
+  output_dir = .get_output_dir()
 )
 }
 \arguments{
@@ -42,12 +42,10 @@ By default, an intercept is included. If no intercept, -1 should be the first te
 
 \item{fit_controls}{controls specific to the ESN models fit}
 
-\item{output_dir}{folder path where the models and log will be saved.
-The default use the date at start in the format "mixedML-\%y\%m\%d-\%H\%M\%S"
-(ex: mixedML-250709-100530)}
+\item{output_dir}{folder path where the models and log will be saved.}
 }
 \value{
-fitted MixedML model
+fitted mixedML model
 }
 \description{
 Generate and fit a MixedML model using an Ensemble of Echo State Networks (Reservoir+Ridge Regression)

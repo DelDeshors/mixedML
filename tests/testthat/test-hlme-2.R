@@ -1,8 +1,8 @@
-use_only_past_info <- FALSE
+use_only_past_info <- TRUE
 
-# here we use `lcmm::predictY` for the post-fit predictions
-# in this case we get NA when there are NA in the Xs or the Y
-# (we use `complete.cases(data_mixedml[c(x_labels, y_label)])`)
+# here we use `mixedML::.predict_random_hlme` for the post-fit predictions
+# in this case we get NA only when there are NA in the Xs
+# (we use `complete.cases(data_mixedml[c(x_labels)])`)
 
 test_that("hlme_full_use", {
   data <- data_mixedml
@@ -37,7 +37,7 @@ test_that("hlme_full_use", {
   y_label <- .get_y_label(model$call$fixed)
   stopifnot(
     sum(is.na(model$full_pred)) ==
-      sum(!complete.cases(data_mixedml[c(x_labels, y_label)]))
+      sum(!complete.cases(data_mixedml[c(x_labels)]))
   )
   ##########
   k <- 0.5

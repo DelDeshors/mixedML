@@ -11,9 +11,8 @@ is_newer <- function(file1, file2) {
 }
 
 if (is_newer(readme_rmd, readme_md) || is_newer(mixed_rmd, readme_md)) {
-  rlang::abort(
-    "README.md is out of date; please re-knit README.Rmd or use devtools::build_readme()"
-  )
+  warning("Updating README.md…")
+  devtools::build_readme()
 }
 
 file_names_staged <- system2(

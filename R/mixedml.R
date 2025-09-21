@@ -17,17 +17,9 @@ MIXEDML_CLASS <- "MixedML_Model"
 #' @param patience Number of iterations without improvement before the training is stopped. Default: 2
 #' @param conv_thresh Minimal difference of MSE to consider an improvement.
 #' `conv_thresh=0.01` means an improvement of at least 1% of the MSE is necessary. Default: 0.01
-#' @param use_only_past_info If FALSE, then the hlme predictions
-#' returned during the mixedML iterations will use all the information (past/future,
-#' behaviour of the lcmm::predictY function).
-#' If TRUE, the predictions will only use the past information
-#' (behaviour of the mixedml::.predict_random_hlme function).
-#' Default: FALSE
-#' @param no_random_value_as value to use in the
-#' "use_only_past_info==TRUE",
-#' when the prediction is not possible .
-#' This does not affect the prediction.
-#' NA or 0. Default: NA
+#' @param no_random_value_as value to use during the training of the random model
+#' when the prediction is not possible (NA or 0). This does not affect the prediction.
+#' Default: NA
 #' @param convB optional iterations models threshold for the convergence criterion based on the
 #' parameter stability. Used during the MixedML iterations.
 #' By default, convB=0.01.
@@ -42,7 +34,6 @@ MIXEDML_CLASS <- "MixedML_Model"
 mixedml_ctrls <- function(
   patience = 2,
   conv_thresh = 0.01,
-  use_only_past_info = FALSE,
   no_random_value_as = NA,
   convB = 0.01, # nolint
   convL = 0.01, # nolint
@@ -52,7 +43,6 @@ mixedml_ctrls <- function(
   patience <- as.integer(patience)
   stopifnot(is.single.numeric(conv_thresh))
   stopifnot(0 < conv_thresh)
-  stopifnot(is.logical(use_only_past_info))
   #
   stopifnot(length(no_random_value_as) == 1)
   stopifnot(is.na(no_random_value_as) || (no_random_value_as == 0))
@@ -93,17 +83,6 @@ mixedml_ctrls <- function(
   return(n_na_full)
 }
 
-
-#' Returns the default output directory path where the models and log will be saved.
-#' The default use the date/time at start in the format "mixedML-%y%m%d-%H%M%S"
-#' (ex: mixedML-250709-100530)
-#' @return output folder path
-#' @export
-.get_output_dir <- function() {
-  output_dir <- paste0("mixedML-", format(Sys.time(), "%y%m%d-%H%M%S"))
-  message("The following output folder is used:", output_dir)
-  return(output_dir)
-}
 
 # model backups ----
 .save_backup <- function(fixed_model, random_model, output_dir, iteration_num) {
@@ -309,7 +288,9 @@ plot_last_iter <- function(model, subject_nb_or_list, ylog = FALSE) {
 #' @param ensemble_controls controls specific to the Ensemble model
 #' @param fit_controls controls specific to the ESN models fit
 #' @param output_dir folder path where the models and log will be saved.
-#' @return fitted mixedML model
+#' The default use the date at start in the format "mixedML-%y%m%d-%H%M%S"
+#' (ex: mixedML-250709-100530)
+#' @return fitted MixedML model
 #' @export
 reservoir_mixedml <- function(
   fixed_spec,
@@ -322,7 +303,7 @@ reservoir_mixedml <- function(
   esn_controls = esn_controls(),
   ensemble_controls = ensemble_controls(),
   fit_controls = fit_controls(),
-  output_dir = .get_output_dir()
+  output_dir = paste0("mixedML-", format(Sys.time(), "%y%m%d-%H%M%S"))
 ) {
   .test_reservoir_mixedml(
     fixed_spec,
@@ -354,8 +335,7 @@ reservoir_mixedml <- function(
     subject,
     time,
     hlme_controls_iter,
-    mixedml_controls$no_random_value_as,
-    mixedml_controls$use_only_past_info
+    mixedml_controls$no_random_value_as
   )
   fixed_model <- .initiate_esn(
     fixed_spec,
@@ -378,14 +358,14 @@ reservoir_mixedml <- function(
   # ----
   while (TRUE) {
     start <- format(Sys.time(), "%H:%M:%S")
-    message(sprintf("step#%d", istep))
+    cat(sprintf("step#%d\n", istep))
     # -----
-    message("\tfitting fixed effects...")
+    cat("\tfitting fixed effects...\n")
     data_fixed[[target_name]] <- data[[target_name]] - pred_rand
     fixed_model <- .fit_reservoir(fixed_model, data_fixed)
     pred_fixed <- .predict_reservoir(fixed_model, data)
     # -----
-    message("\tfitting random effects...")
+    cat("\tfitting random effects...\n")
     data_rand[[target_name]] <- data[[target_name]] - pred_fixed
     random_model <- .fit_random_hlme(random_model, data_rand)
     .check_convergence_hlme(random_model)
@@ -395,7 +375,7 @@ reservoir_mixedml <- function(
     ccases_resid <- complete.cases(residuals)
     stopifnot(n_na_full == sum(!ccases_resid))
     mse <- mean(residuals[ccases_resid]**2)
-    message(sprintf("\tMSE = %.4g", mse))
+    cat(sprintf("\tMSE = %.4g\n", mse))
     mse_list <- c(mse_list, mse)
     loglik_list <- c(loglik_list, random_model$loglik)
     if (mse < mse_min - conv_thresh) {
@@ -419,7 +399,7 @@ reservoir_mixedml <- function(
     istep <- istep + 1
   }
   # final model with saved convergence criteria
-  message("Final convergence of HLME with strict convergence criterions.")
+  cat("Final convergence of HLME with strict convergence criterions.")
   .check_convergence_hlme(best$random_model)
   best$random_model <- stats::update(
     best$random_model,

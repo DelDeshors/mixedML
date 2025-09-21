@@ -7,7 +7,6 @@
 mixedml_ctrls(
   patience = 2,
   conv_thresh = 0.01,
-  use_all_information_for_hlme_predictions = TRUE,
   no_random_value_as = NA,
   convB = 0.01,
   convL = 0.01,
@@ -20,18 +19,9 @@ mixedml_ctrls(
 \item{conv_thresh}{Minimal difference of MSE to consider an improvement.
 \code{conv_thresh=0.01} means an improvement of at least 1\% of the MSE is necessary. Default: 0.01}
 
-\item{use_all_information_for_hlme_predictions}{If TRUE, then the hlme predictions
-returned during the mixedML iterations will use all the information (past/future,
-behaviour of the lcmm::predictY function).
-If False, the predictions will only use the past information
-(behaviour of the mixedml::.predict_random_hlme function).
-Default: TRUE.}
-
-\item{no_random_value_as}{value to use in the
-"use_all_information_for_hlme_predictions==TRUE",
-when the prediction is not possible .
-This does not affect the prediction.
-NA or 0. Default: NA}
+\item{no_random_value_as}{value to use during the training of the random model
+when the prediction is not possible (NA or 0). This does not affect the prediction.
+Default: NA}
 
 \item{convB}{optional iterations models threshold for the convergence criterion based on the
 parameter stability. Used during the MixedML iterations.

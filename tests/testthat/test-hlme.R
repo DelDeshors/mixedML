@@ -1,11 +1,7 @@
-use_only_past_info <- FALSE
-
-# here we use `lcmm::predictY` for the post-fit predictions
-# in this case we get NA when there are NA in the Xs or the Y
-# (we use `complete.cases(data_mixedml[c(x_labels, y_label)])`)
-
 test_that("hlme_full_use", {
   data <- data_mixedml
+  ##########
+
   model <- .initiate_random_hlme(
     target_name = "ym",
     random_spec = ~ x1 + x2 + x3 + time,
@@ -18,8 +14,7 @@ test_that("hlme_full_use", {
       cor = AR(time),
       B_rand = c(1, 2, 3, 4, 5)
     ),
-    no_random_value_as = NA,
-    use_only_past_info = use_only_past_info
+    no_random_value_as = NA
   )
   expect_s3_class(model, "hlme")
   stopifnot(model$best["intercept"] == 0.)

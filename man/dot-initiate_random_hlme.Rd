@@ -11,8 +11,7 @@
   subject,
   var.time,
   hlme_controls,
-  no_random_value_as,
-  use_all_info
+  no_random_value_as
 )
 }
 \arguments{

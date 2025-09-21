@@ -32,9 +32,6 @@
   B2 <- 0.5
   B3 <- 10.
   yf <- B0 + B1 * x1 + B2 * x2 + B3 * (x3 * x1)
-  # response with NA
-  yf[ID == 1 & time == 1] <- NA
-  yf[ID == 2 & time == 1] <- NA
 
   # random effects ----
   u0i <- rnorm(n_sub, mean = 0., sd = 0.05)[ID]
@@ -46,15 +43,21 @@
   ym_nonoise <- yf + yr
   ym <- yf + yr + rnorm(n_obs, sd = 0.01 * sd(ym_nonoise, na.rm = TRUE))
 
-  # independent variables as with NA ----
-  x1[ID == 1 & time == 1] <- NA
-  x2[ID == 2 & time == 2] <- NA
-
   # dataset generation ----
   data_mixedml <- data.frame(ID, time, x1, x2, x3, yf, yr, ym, ym_nonoise)
 
-  # removing one observation ----
-  data_mixedml <- data_mixedml[!(ID == 3 & time == 0), ]
+  # independent variables with NA ----
+  data_mixedml[ID == 1 & time == 0, "x1"] <- NA
+  data_mixedml[ID == 2 & time == 1, "x2"] <- NA
+
+  # dependent variables with NA ----
+  data_mixedml[ID == 3 & time == 0, "ym"] <- NA
+  data_mixedml[ID == 4 & time == 1, "ym"] <- NA
+
+  # observation missing ----
+  data_mixedml <- data_mixedml[
+    !((ID == 5 & time == 0) | (ID == 6 & time == 1)),
+  ]
   row.names(data_mixedml) <- NULL
 
   # file generation ----

@@ -54,7 +54,7 @@
   data_mixedml <- data.frame(ID, time, x1, x2, x3, yf, yr, ym, ym_nonoise)
 
   # removing one observation ----
-  data_mixedml <- data_mixedml[!(ID == 3 & time == 1), ]
+  data_mixedml <- data_mixedml[!(ID == 3 & time == 0), ]
   row.names(data_mixedml) <- NULL
 
   # file generation ----

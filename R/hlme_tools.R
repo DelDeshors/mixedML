@@ -167,6 +167,7 @@ hlme_ctrls <- function(
   subject <- colnames(random_hlme$pred)[1]
   # trick to simplify the RE calculation using 'rowSums'
   stopifnot(!"intercept" %in% names(data))
+  x_labels <- c("intercept", x_labels)
   data["intercept"] <- 1.
   # initialization with 0
   preds <- data[c(var.time, subject, y_label)]
@@ -175,6 +176,7 @@ hlme_ctrls <- function(
   time_unq <- sort(unique(data[[var.time]]))
   for (i_time in time_unq[-1]) {
     actual_data <- data[data[var.time] == i_time, ]
+    actual_data <- actual_data[complete.cases(actual_data[x_labels]), ]
     prev_data <- data[data[var.time] < i_time, ]
     ui <- lcmm::predictRE(random_hlme, newdata = prev_data)
     for (i_row in rownames(actual_data)) {

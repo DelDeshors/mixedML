@@ -135,6 +135,7 @@ hlme_ctrls <- function(
   preds <- rep(random_hlme$no_random_value_as, nrow(data))
   names(preds) <- row.names(data)
   rnames_pred <- row.names(random_hlme$pred)
+  stopifnot(length(setdiff(rnames_pred, names(preds))) == 0)
   preds[rnames_pred] <- random_hlme$pred$pred_ss
   random_hlme$full_pred <- preds
   return(random_hlme)
@@ -157,38 +158,42 @@ hlme_ctrls <- function(
 }
 
 # prediction ----
+
+.product_random_effects <- function(modmat, ui) {
+  cols <- sub("\\(Intercept\\)", "intercept", colnames(modmat))
+  ui_ordered <- ui[cols]
+  return(modmat[,] %*% as.numeric(ui_ordered)) # nolint
+}
+
+
 .predict_random_hlme <- function(random_hlme, data) {
-  y_label <- .get_y_label(random_hlme$call$fixed)
-  x_labels <- .get_x_labels(random_hlme$call$random)
   #
   var.time <- random_hlme$var.time
   subject <- colnames(random_hlme$pred)[1]
-  # trick to simplify the RE calculation using 'rowSums'
-  stopifnot(!"intercept" %in% names(data))
-  x_labels <- c("intercept", x_labels)
-  data["intercept"] <- 1.
-  # initialization with 0
-  preds <- data[c(var.time, subject, y_label)]
-  preds[[y_label]] <- 0.
-  #
+  randspec <- as.formula(random_hlme$call$random)
+  modmat <- model.matrix(as.formula(random_hlme$call$random), data)
+  preds <- rep(0., nrow(data))
+  names(preds) <- rownames(data)
   time_unq <- sort(unique(data[[var.time]]))
   for (i_time in time_unq[-1]) {
     actual_data <- data[data[var.time] == i_time, ]
-    actual_data <- actual_data[complete.cases(actual_data[x_labels]), ]
     prev_data <- data[data[var.time] < i_time, ]
     ui <- lcmm::predictRE(random_hlme, newdata = prev_data)
-    for (i_row in rownames(actual_data)) {
-      actual_subject <- actual_data[i_row, subject]
+    for (rname in rownames(actual_data)) {
+      actual_subject_data <- actual_data[rname, ]
+      actual_subject <- actual_subject_data[[subject]]
       ui_subject <- ui[ui[, subject] == actual_subject, ]
       stopifnot(nrow(ui_subject) <= 1)
       if (nrow(ui_subject) == 1) {
-        reffects <- rowSums(
-          actual_data[i_row, x_labels] * ui_subject[, x_labels]
-        )
-        stopifnot(preds[i_row, y_label] == 0.)
-        preds[i_row, y_label] <- reffects
+        actual_subject_modmat <- model.matrix(randspec, actual_subject_data)
+        stopifnot(nrow(actual_subject_modmat) <= 1)
+        if (nrow(actual_subject_modmat) == 1) {
+          stopifnot(preds[rname] == 0.)
+          reffects <- .product_random_effects(actual_subject_modmat, ui_subject)
+          preds[rname] <- reffects
+        }
       }
     }
   }
-  return(preds[[y_label]])
+  return(preds)
 }

@@ -128,9 +128,6 @@ hlme_ctrls <- function(
 
 # training ----
 .fit_random_hlme <- function(random_hlme, data) {
-  y_label <- .get_y_label(random_hlme$call$fixed)
-  x_labels <- .get_x_labels(random_hlme$call$random)
-  #
   no_random_value_as <- random_hlme$no_random_value_as
   random_hlme <- stats::update(random_hlme, data = data, B = random_hlme$best)
   random_hlme$no_random_value_as <- no_random_value_as

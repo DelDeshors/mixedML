@@ -55,9 +55,10 @@ However, some ML models have a "black box" effect, as one cannot use its estimat
 
 The method uses a iterative training of both fixed effects and random effects models.
 
-So far we are fitting each model on the residuals of the other.
+So far we are fitting each model on the **residuals** of the other.
 This is only valid for **regression problems** where it is equivalent to
-to fitting using the predictions (of the other model) as offset.
+to fitting using the predictions (of the other model) as offset
+(see [this vignette](method_study.html) for an example).
 In generalized linear model terms: the models use an identity link.
 In neural networks terms: the models do not use a final activation function.
 

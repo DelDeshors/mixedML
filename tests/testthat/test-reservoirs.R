@@ -1,5 +1,5 @@
 data_ <- data_mixedml
-fixed_spec <- ym ~ x1 + x2 + time
+fixed_spec <- ym ~ 1 + x1 + x2 + time
 subject <- "ID"
 time <- "time"
 

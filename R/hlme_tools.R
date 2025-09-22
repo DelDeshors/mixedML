@@ -133,8 +133,9 @@ hlme_ctrls <- function(
   random_hlme$no_random_value_as <- no_random_value_as
   #
   preds <- rep(random_hlme$no_random_value_as, nrow(data))
-  idx_pred <- as.numeric(row.names(random_hlme$pred))
-  preds[idx_pred] <- random_hlme$pred$pred_ss
+  names(preds) <- row.names(data)
+  rnames_pred <- row.names(random_hlme$pred)
+  preds[rnames_pred] <- random_hlme$pred$pred_ss
   random_hlme$full_pred <- preds
   return(random_hlme)
 }

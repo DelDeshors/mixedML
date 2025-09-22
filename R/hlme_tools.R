@@ -47,7 +47,7 @@ hlme_ctrls <- function(
   }
   cor_time <- as.character(cor)[2]
   #
-  if (!(cor_time %in% .get_x_labels(random_spec))) {
+  if (!(cor_time %in% .get_x_labels(random_spec, allow_interactions = TRUE))) {
     stop("the time value defined in \"cor\", should be used in \"random_spec\"")
   }
   if (!(cor_time == var.time)) {

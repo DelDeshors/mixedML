@@ -4,7 +4,7 @@ test_that("hlme_full_use", {
 
   model <- .initiate_random_hlme(
     target_name = "ym",
-    random_spec = ~ x1 + x2 + x3 + time,
+    random_spec = ~ 1 + x1 + x2 + x3 + x1:x3 + time,
     data = data,
     subject = "ID",
     var.time = "time",
@@ -12,7 +12,7 @@ test_that("hlme_full_use", {
       maxiter = 2,
       idiag = TRUE,
       cor = AR(time),
-      B_rand = c(1, 2, 3, 4, 5)
+      B_rand = c(1, 2, 3, 4, 5, 6)
     ),
     no_random_value_as = NA
   )
@@ -28,8 +28,8 @@ test_that("hlme_full_use", {
   stopifnot(all(model$pred$pred_m == 0.))
   stopifnot(length(model$full_pred) == nrow(data_mixedml))
 
-  x_labels <- .get_x_labels(model$call$random)
-  y_label <- .get_y_label(model$call$fixed)
+  x_labels <- c("x1", "x2", "x3", "time")
+  y_label <- "ym"
   stopifnot(
     sum(is.na(model$full_pred)) ==
       sum(!complete.cases(data_mixedml[c(x_labels, y_label)]))

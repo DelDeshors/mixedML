@@ -5,12 +5,12 @@
   return(all.vars(spec)[attr(terms(spec), "response")])
 }
 
-.get_x_labels <- function(spec) {
+.get_x_labels <- function(spec, allow_interactions = FALSE) {
   stopifnot(rlang::is_bare_formula(spec))
   x_labels <- attr(terms(spec), "term.labels")
   orders <- attr(terms(spec), "order")
-  if (max(orders) > 1) {
-    stop("Crossed-terms in formulas are not implemented so far.")
+  if ((!allow_interactions) && max(orders) > 1) {
+    stop("Formula with interactions are not allowed for this model.")
   }
   return(x_labels)
 }

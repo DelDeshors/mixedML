@@ -8,8 +8,11 @@
 .get_x_labels <- function(spec) {
   stopifnot(rlang::is_bare_formula(spec))
   x_labels <- attr(terms(spec), "term.labels")
-  x_labels_ <- x_labels[attr(terms(spec), "order") == 1]
-  return(x_labels_)
+  orders <- attr(terms(spec), "order")
+  if (max(orders) > 1) {
+    stop("Crossed-terms in formulas are not implemented so far.")
+  }
+  return(x_labels)
 }
 
 

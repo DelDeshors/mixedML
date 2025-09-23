@@ -83,8 +83,7 @@ hlme_ctrls <- function(
   data,
   subject,
   var.time,
-  hlme_controls,
-  no_random_value_as
+  hlme_controls
 ) {
   .test_initiate_random_hlme(random_spec, hlme_controls, var.time)
   # preparing the hlme formula inputs
@@ -106,7 +105,6 @@ hlme_ctrls <- function(
   random_hlme <- do.call("hlme", hlme_controls)
   #
   random_hlme$call$maxiter <- maxiter_backup
-  random_hlme$no_random_value_as <- no_random_value_as
   # the use of B in hlme is tricky
   # (no default value then 'try(as.numeric(B), silent = TRUE)')
   if (!is.null(b_backup)) {
@@ -128,16 +126,7 @@ hlme_ctrls <- function(
 
 # training ----
 .fit_random_hlme <- function(random_hlme, data) {
-  no_random_value_as <- random_hlme$no_random_value_as
   random_hlme <- stats::update(random_hlme, data = data, B = random_hlme$best)
-  random_hlme$no_random_value_as <- no_random_value_as
-  #
-  preds <- rep(random_hlme$no_random_value_as, nrow(data))
-  names(preds) <- row.names(data)
-  rnames_pred <- row.names(random_hlme$pred)
-  stopifnot(length(setdiff(rnames_pred, names(preds))) == 0)
-  preds[rnames_pred] <- random_hlme$pred$pred_ss
-  random_hlme$full_pred <- preds
   return(random_hlme)
 }
 
@@ -158,8 +147,30 @@ hlme_ctrls <- function(
 }
 
 # prediction ----
+.predict_random_hlme <- function(
+  random_hlme,
+  data,
+  no_random_value_as,
+  use_all_info
+) {
+  if (use_all_info) {
+    return(.predict_with_all_info(random_hlme, data, no_random_value_as))
+  } else {
+    return(.predict_with_past_info(random_hlme, data))
+  }
+}
 
-.predict_random_hlme <- function(random_hlme, data) {
+.predict_with_all_info <- function(random_hlme, data, no_random_value_as) {
+  # this simply uses the existing results stored in random_hlme
+  # but with a vector of the same size as the data
+  full_preds <- rep(no_random_value_as, nrow(data))
+  names(full_preds) <- row.names(data)
+  rnames_pred <- row.names(random_hlme$pred)
+  full_preds[rnames_pred] <- random_hlme$pred$pred_ss
+  return(full_preds)
+}
+
+.predict_with_past_info <- function(random_hlme, data) {
   #
   var.time <- random_hlme$var.time
   subject <- colnames(random_hlme$pred)[1]

@@ -4,12 +4,25 @@
 \alias{predict}
 \title{Predict using a fitted model and new data}
 \usage{
-predict(model, data)
+predict(
+  model,
+  data,
+  no_random_value_as = 0,
+  all_info_hlme_prediction = FALSE
+)
 }
 \arguments{
 \item{model}{Trained MixedML model}
 
 \item{data}{New data (same format as the one used for training)}
+
+\item{no_random_value_as}{value to use during the training of the mixedML model
+when a prediction of the random model is not possible (NA or 0).
+This does not affect the prediction. Default: 0.}
+
+\item{all_info_hlme_prediction}{boolean to choose if all the information
+(past, present, future) is used for the hlme prediction (TRUE) or if only the past
+information is used (FALSE). Default: FALSE}
 }
 \value{
 prediction

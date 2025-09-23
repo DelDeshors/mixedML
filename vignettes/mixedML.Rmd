@@ -228,7 +228,6 @@ predict(backup, data_mixedml)
 
 
 
-
 ```{r}
 unlink("mixedML_vignette", recursive = TRUE)
 ```

@@ -307,7 +307,7 @@ model_reservoir$random_model
 ``` r
 # (this model uses reticulate so it not very convenient as an example…)
 model_reservoir$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x732af996d940>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x72eef8171940>
 ```
 
 Also a `call` attribute exists, meaning one can trained the model with
@@ -334,13 +334,24 @@ Predict using a fitted model and new data
 **Usage**
 
 ``` r
-predict(model, data)
+predict(
+  model,
+  data,
+  no_random_value_as = 0,
+  all_info_hlme_prediction = FALSE
+)
 ```
 
 **Arguments**
 
 - `model`: Trained MixedML model
 - `data`: New data (same format as the one used for training)
+- `no_random_value_as`: value to use during the training of the mixedML
+  model when a prediction of the random model is not possible (NA or 0).
+  This does not affect the prediction. Default: 0.
+- `all_info_hlme_prediction`: boolean to choose if all the
+  information (past, present, future) is used for the hlme prediction
+  (TRUE) or if only the past information is used (FALSE). Default: FALSE
 
 **Value**
 
@@ -442,7 +453,7 @@ backup <- load_backup(
 
 ``` r
 backup$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x732a83735a90>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x72ee81b19a90>
 ```
 
 ``` r

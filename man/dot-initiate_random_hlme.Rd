@@ -10,8 +10,7 @@
   data,
   subject,
   var.time,
-  hlme_controls,
-  no_random_value_as
+  hlme_controls
 )
 }
 \arguments{

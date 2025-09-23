@@ -21,6 +21,9 @@ MIXEDML_CLASS <- "MixedML_Model"
 #' when a prediction of the random model is not possible (NA or 0).
 #' This does not affect the prediction.
 #' Default: NA
+#' @param all_info_hlme_prediction boolean to choose if all the information
+#' (past, present, future) is used for the hlme prediction (TRUE) or if only the past
+#' information is used (FALSE). Default: TRUE
 #' @param convB optional iterations models threshold for the convergence criterion based on the
 #' parameter stability. Used during the MixedML iterations.
 #' By default, convB=0.01.
@@ -36,6 +39,7 @@ mixedml_ctrls <- function(
   patience = 2,
   conv_thresh = 0.01,
   no_random_value_as = NA,
+  all_info_hlme_prediction = TRUE,
   convB = 0.01, # nolint
   convL = 0.01, # nolint
   convG = 0.01 # nolint
@@ -136,12 +140,28 @@ load_backup <- function(fixed_model_rds_or_joblib, random_model_rds) {
 #'
 #' @param model Trained MixedML model
 #' @param data New data (same format as the one used for training)
+#' @param no_random_value_as value to use during the training of the mixedML model
+#' when a prediction of the random model is not possible (NA or 0).
+#' This does not affect the prediction. Default: 0.
+#' @param all_info_hlme_prediction boolean to choose if all the information
+#' (past, present, future) is used for the hlme prediction (TRUE) or if only the past
+#' information is used (FALSE). Default: FALSE
 #' @return prediction
 #' @export
-predict <- function(model, data) {
+predict <- function(
+  model,
+  data,
+  no_random_value_as = 0.,
+  all_info_hlme_prediction = FALSE
+) {
   .test_predict(model, data)
   pred_fixed <- .predict_reservoir(model$fixed_model, data)
-  pred_rand <- .predict_random_hlme(model$random_model, data)
+  pred_rand <- .predict_random_hlme(
+    model$random_model,
+    data,
+    no_random_value_as,
+    all_info_hlme_prediction
+  )
   return(pred_fixed + pred_rand)
 }
 
@@ -335,8 +355,7 @@ reservoir_mixedml <- function(
     data,
     subject,
     time,
-    hlme_controls_iter,
-    mixedml_controls$no_random_value_as
+    hlme_controls_iter
   )
   fixed_model <- .initiate_esn(
     fixed_spec,
@@ -364,13 +383,18 @@ reservoir_mixedml <- function(
     cat("\tfitting fixed effects...\n")
     data_fixed[[target_name]] <- data[[target_name]] - pred_rand
     fixed_model <- .fit_reservoir(fixed_model, data_fixed)
-    pred_fixed <- .predict_reservoir(fixed_model, data)
+    pred_fixed <- .predict_reservoir(fixed_model, data_fixed)
     # -----
     cat("\tfitting random effects...\n")
     data_rand[[target_name]] <- data[[target_name]] - pred_fixed
     random_model <- .fit_random_hlme(random_model, data_rand)
     .check_convergence_hlme(random_model)
-    pred_rand <- random_model$full_pred
+    pred_rand <- .predict_random_hlme(
+      random_model,
+      data_rand,
+      mixedml_controls$no_random_value_as,
+      mixedml_controls$all_info_hlme_prediction
+    )
     # -----
     residuals <- pred_fixed + pred_rand - data[, target_name]
     ccases_resid <- complete.cases(residuals)

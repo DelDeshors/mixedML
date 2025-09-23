@@ -8,6 +8,7 @@ mixedml_ctrls(
   patience = 2,
   conv_thresh = 0.01,
   no_random_value_as = NA,
+  all_info_hlme_prediction = TRUE,
   convB = 0.01,
   convL = 0.01,
   convG = 0.01
@@ -23,6 +24,10 @@ mixedml_ctrls(
 when a prediction of the random model is not possible (NA or 0).
 This does not affect the prediction.
 Default: NA}
+
+\item{all_info_hlme_prediction}{boolean to choose if all the information
+(past, present, future) is used for the hlme prediction (TRUE) or if only the past
+information is used (FALSE). Default: TRUE}
 
 \item{convB}{optional iterations models threshold for the convergence criterion based on the
 parameter stability. Used during the MixedML iterations.

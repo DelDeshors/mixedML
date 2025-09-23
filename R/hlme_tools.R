@@ -159,13 +159,6 @@ hlme_ctrls <- function(
 
 # prediction ----
 
-.product_random_effects <- function(modmat, ui) {
-  cols <- sub("\\(Intercept\\)", "intercept", colnames(modmat))
-  ui_ordered <- ui[cols]
-  return(modmat[,] %*% as.numeric(ui_ordered)) # nolint
-}
-
-
 .predict_random_hlme <- function(random_hlme, data) {
   #
   var.time <- random_hlme$var.time
@@ -183,15 +176,17 @@ hlme_ctrls <- function(
       actual_subject_data <- actual_data[rname, ]
       actual_subject <- actual_subject_data[[subject]]
       ui_subject <- ui[ui[, subject] == actual_subject, ]
-      stopifnot(nrow(ui_subject) <= 1)
-      if (nrow(ui_subject) == 1) {
-        actual_subject_modmat <- model.matrix(randspec, actual_subject_data)
-        stopifnot(nrow(actual_subject_modmat) <= 1)
-        if (nrow(actual_subject_modmat) == 1) {
-          stopifnot(preds[rname] == 0.)
-          reffects <- .product_random_effects(actual_subject_modmat, ui_subject)
-          preds[rname] <- reffects
-        }
+      #
+      try_predict <- try(
+        predictY(
+          random_hlme,
+          newdata = actual_subject_data,
+          predRE = ui_subject
+        )$pred,
+        silent = TRUE
+      )
+      if (is.matrix(try_predict)) {
+        preds[rname] <- try_predict[1, 1]
       }
     }
   }

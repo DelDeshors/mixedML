@@ -47,7 +47,7 @@ The default use the date at start in the format "mixedML-\%y\%m\%d-\%H\%M\%S"
 (ex: mixedML-250709-100530)}
 }
 \value{
-fitted MixedML model
+fitted MixedML model (best iteration)
 }
 \description{
 Generate and fit a MixedML model using an Ensemble of Echo State Networks (Reservoir+Ridge Regression)

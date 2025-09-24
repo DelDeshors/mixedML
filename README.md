@@ -10,7 +10,7 @@
   - [8.1 `predict`](#81-predict)
   - [8.2 `plot_conv`](#82-plot_conv)
   - [8.3 `plot_loglik`](#83-plot_loglik)
-  - [8.4 `plot_last_iter`](#84-plot_last_iter)
+  - [8.4 `plot_best_iter`](#84-plot_best_iter)
   - [8.5 `load_backup`](#85-load_backup)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -307,7 +307,7 @@ model_reservoir$random_model
 ``` r
 # (this model uses reticulate so it not very convenient as an example…)
 model_reservoir$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x72eef8171940>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x719b64f71940>
 ```
 
 Also a `call` attribute exists, meaning one can trained the model with
@@ -319,7 +319,7 @@ new_model_reservoir <- update(model_reservoir, data = new_data, maxiter = new_ma
 
 # 8 Functions
 
-The function `predict`, `plot_conv`, `plot_last_iter` are common to all
+The function `predict`, `plot_conv`, `plot_best_iter` are common to all
 fitted MixedML models.
 
 The function `load_backup` can be used to inspect the model and the
@@ -349,9 +349,9 @@ predict(
 - `no_random_value_as`: value to use during the training of the mixedML
   model when a prediction of the random model is not possible (NA or 0).
   This does not affect the prediction. Default: 0.
-- `all_info_hlme_prediction`: boolean to choose if all the
-  information (past, present, future) is used for the hlme prediction
-  (TRUE) or if only the past information is used (FALSE). Default: FALSE
+- `all_info_hlme_prediction`: boolean to choose if all the information
+  (past, present, future) is used for the hlme prediction (TRUE) or if
+  only the past information is used (FALSE). Default: FALSE
 
 **Value**
 
@@ -411,7 +411,7 @@ plot_loglik(model = model_reservoir)
 
 <img src="man/figures/README-unnamed-chunk-16-1.png" width="100%" />
 
-## 8.4 `plot_last_iter`
+## 8.4 `plot_best_iter`
 
 **Description**
 
@@ -420,7 +420,7 @@ Plot the prediction of a MixedML model
 **Usage**
 
 ``` r
-plot_last_iter(model, subject_nb_or_list, ylog = FALSE)
+plot_best_iter(model, subject_nb_or_list, ylog = FALSE)
 ```
 
 **Arguments**
@@ -435,7 +435,7 @@ plot_last_iter(model, subject_nb_or_list, ylog = FALSE)
 Prediction plot of the model.
 
 ``` r
-plot_last_iter(model = model_reservoir, subject_nb_or_list = c(1, 2, 3, 4, 5))
+plot_best_iter(model = model_reservoir, subject_nb_or_list = c(1, 2, 3, 4, 5))
 #> Warning: Removed 6 rows containing missing values or values outside the scale range
 #> (`geom_point()`).
 ```
@@ -453,7 +453,7 @@ backup <- load_backup(
 
 ``` r
 backup$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x72ee81b19a90>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x719aee89d950>
 ```
 
 ``` r

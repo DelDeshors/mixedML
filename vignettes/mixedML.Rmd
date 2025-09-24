@@ -162,7 +162,7 @@ new_model_reservoir <- update(model_reservoir, data = new_data, maxiter = new_ma
 
 # Functions
 
-The function `predict`, `plot_conv`, `plot_last_iter` are common to all fitted MixedML models.
+The function `predict`, `plot_conv`, `plot_best_iter` are common to all fitted MixedML models.
 
 The function `load_backup` can be used to inspect the model and the predictions of a specific iteration.
 
@@ -193,14 +193,14 @@ print_help("plot_loglik")
 plot_loglik(model = model_reservoir)
 ```
 
-## `plot_last_iter`
+## `plot_best_iter`
 
 ```{r, echo=FALSE}
-print_help("plot_last_iter")
+print_help("plot_best_iter")
 ```
 
 ```{r}
-plot_last_iter(model = model_reservoir, subject_nb_or_list = c(1, 2, 3, 4, 5))
+plot_best_iter(model = model_reservoir, subject_nb_or_list = c(1, 2, 3, 4, 5))
 ```
 
 

@@ -4,12 +4,7 @@
 \alias{predict}
 \title{Predict using a fitted model and new data}
 \usage{
-predict(
-  model,
-  data,
-  no_random_value_as = 0,
-  all_info_hlme_prediction = FALSE
-)
+predict(model, data, no_random_value_as = 0, all_info_hlme_prediction = FALSE)
 }
 \arguments{
 \item{model}{Trained MixedML model}

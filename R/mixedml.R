@@ -214,7 +214,7 @@ plot_loglik <- function(model, ylog = TRUE) {
 }
 
 
-#' Plot the prediction of a MixedML model
+#' Plot the prediction of a MixedML model (best iteration)
 #'
 #' @param model Trained MixedML model.
 #' @param subject_nb_or_list Number of subjects to plot (randomly selected) or
@@ -222,7 +222,7 @@ plot_loglik <- function(model, ylog = TRUE) {
 #' @param ylog Plot the y-value with a log scale. Default: TRUE.
 #' @return Prediction plot of the model.
 #' @export
-plot_last_iter <- function(model, subject_nb_or_list, ylog = FALSE) {
+plot_best_iter <- function(model, subject_nb_or_list, ylog = FALSE) {
   stopifnot(inherits(model, MIXEDML_CLASS))
   stopifnot(is.integer(subject_nb_or_list))
   stopifnot(is.logical(ylog))
@@ -317,7 +317,7 @@ plot_last_iter <- function(model, subject_nb_or_list, ylog = FALSE) {
 #' @param output_dir folder path where the models and log will be saved.
 #' The default use the date at start in the format "mixedML-%y%m%d-%H%M%S"
 #' (ex: mixedML-250709-100530)
-#' @return fitted MixedML model
+#' @return fitted MixedML model (best iteration)
 #' @export
 reservoir_mixedml <- function(
   fixed_spec,

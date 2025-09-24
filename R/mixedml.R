@@ -154,6 +154,12 @@ predict <- function(
   no_random_value_as = 0.,
   all_info_hlme_prediction = FALSE
 ) {
+  if (all_info_hlme_prediction) {
+    stop(
+      "Not implemented yet: so far the predictions stored in  model
+       (model$pred$pred_ss) are simply returned"
+    )
+  }
   .test_predict(model, data)
   pred_fixed <- .predict_reservoir(model$fixed_model, data)
   pred_rand <- .predict_random_hlme(
@@ -425,7 +431,6 @@ reservoir_mixedml <- function(
   }
   # final model with saved convergence criteria
   cat("Final convergence of HLME with strict convergence criterions.")
-  .check_convergence_hlme(best$random_model)
   best$random_model <- stats::update(
     best$random_model,
     B = best$random_model$best,

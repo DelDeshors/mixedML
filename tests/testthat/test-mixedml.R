@@ -12,7 +12,7 @@ test_that("mixedml works", {
     data = data_,
     subject = subject,
     time = time,
-    mixedml_ctrls(
+    mixedml_controls = mixedml_ctrls(
       conv_thresh = 0.01,
       patience = 1,
       no_random_value_as = NA

@@ -183,8 +183,8 @@ plot_conv <- function(model, ylog = TRUE) {
   .test_is_midexml(model)
   stopifnot(is.logical(ylog))
   return(plot(
-    seq_along(model$mse_list),
-    model$mse_list,
+    seq_along(model$mse_train_list),
+    model$mse_train_list,
     type = "o",
     xlab = "iterations",
     ylab = "MSE",
@@ -282,6 +282,7 @@ plot_best_iter <- function(model, subject_nb_or_list, ylog = FALSE) {
   fixed_spec,
   random_spec,
   data,
+  data_val,
   subject,
   time,
   mixedml_controls,
@@ -291,6 +292,12 @@ plot_best_iter <- function(model, subject_nb_or_list, ylog = FALSE) {
   fit_controls
 ) {
   .check_sorted_data(data, subject, time)
+  if (!is.null(data_val)) {
+    stopifnot(setequal(colnames(data_val), colnames(data)))
+    stopifnot(length(intersect(rownames(data_val), rownames(data))) == 0)
+    .check_sorted_data(data_val, subject, time)
+  }
+
   .check_controls_with_function(mixedml_controls, mixedml_ctrls)
   return()
 }
@@ -323,6 +330,7 @@ reservoir_mixedml <- function(
   fixed_spec,
   random_spec,
   data,
+  data_val = NULL,
   subject,
   time,
   mixedml_controls = mixedml_ctrls(),
@@ -336,6 +344,7 @@ reservoir_mixedml <- function(
     fixed_spec,
     random_spec,
     data,
+    data_val,
     subject,
     time,
     mixedml_controls,
@@ -344,6 +353,7 @@ reservoir_mixedml <- function(
     ensemble_controls,
     fit_controls
   )
+  do_val <- (!is.null(data_val))
   #
   dir.create(output_dir, showWarnings = FALSE)
   #
@@ -377,9 +387,11 @@ reservoir_mixedml <- function(
   data_rand <- data
   pred_rand <- rep(0, nrow(data))
   istep <- 0
-  mse_list <- c()
+  mse_train_list <- c()
+  mse_val_list <- c()
   loglik_list <- c()
   mse_min <- Inf
+  # confusing name, might need to change:
   n_na_full <- .check_na_combinaison(data, fixed_spec, random_spec, target_name)
   # ----
   while (TRUE) {
@@ -389,27 +401,49 @@ reservoir_mixedml <- function(
     cat("\tfitting fixed effects...\n")
     data_fixed[[target_name]] <- data[[target_name]] - pred_rand
     fixed_model <- .fit_reservoir(fixed_model, data_fixed)
-    pred_fixed <- .predict_reservoir(fixed_model, data_fixed)
+    pred_fixed <- .predict_reservoir(fixed_model, data)
     # -----
     cat("\tfitting random effects...\n")
     data_rand[[target_name]] <- data[[target_name]] - pred_fixed
-    random_model <- .fit_random_hlme(random_model, data_rand)
+    random_model <- .fit_random_hlme(random_model, data)
     .check_convergence_hlme(random_model)
     pred_rand <- .predict_random_hlme(
       random_model,
-      data_rand,
+      data,
       mixedml_controls$no_random_value_as,
       mixedml_controls$all_info_hlme_prediction
     )
-    # -----
-    residuals <- pred_fixed + pred_rand - data[, target_name]
-    ccases_resid <- complete.cases(residuals)
+    # train residuals/mse ----
+    residuals_train <- data[, target_name] - (pred_fixed + pred_rand)
+    ccases_resid <- complete.cases(residuals_train)
     stopifnot(n_na_full == sum(!ccases_resid))
-    mse <- mean(residuals[ccases_resid]**2)
-    cat(sprintf("\tMSE = %.4g\n", mse))
-    mse_list <- c(mse_list, mse)
+    mse_train <- mean(residuals_train[ccases_resid]**2)
+    cat(sprintf("\tMSE-train = %.4g\n", mse_train))
+    mse_train_list <- c(mse_train_list, mse_train)
+    # val residuals/mse ----
+    if (do_val) {
+      pred_fixed_val <- .predict_reservoir(fixed_model, data_val)
+      pred_rand_val <- .predict_random_hlme(
+        random_model,
+        data_val,
+        mixedml_controls$no_random_value_as,
+        mixedml_controls$all_info_hlme_prediction
+      )
+      residuals_val <- data_val[, target_name] -
+        (pred_fixed_val + pred_rand_val)
+      mse_val <- mean(residuals_val[ccases_resid]**2, na.rm = TRUE)
+      cat(sprintf("\tMSE-val = %.4g\n", mse_val))
+      mse_val_list <- c(mse_val_list, mse_val)
+    }
+    # loglik ----
     loglik_list <- c(loglik_list, random_model$loglik)
-    if (mse < mse_min - conv_thresh) {
+    # convergence tests ----
+    if (do_val) {
+      mse_conv <- mse_val
+    } else {
+      mse_conv <- mse_train
+    }
+    if (mse_conv < mse_min - conv_thresh) {
       count_conv <- 0
     } else {
       count_conv <- count_conv + 1
@@ -417,8 +451,8 @@ reservoir_mixedml <- function(
         break
       }
     }
-    if (mse < mse_min) {
-      mse_min <- mse
+    if (mse_conv < mse_min) {
+      mse_min <- mse_conv
       best <- list(
         "pred_fixed" = pred_fixed,
         "pred_rand" = pred_rand,
@@ -446,7 +480,8 @@ reservoir_mixedml <- function(
       "time" = time,
       "fixed_spec" = fixed_spec,
       "random_spec" = random_spec,
-      "mse_list" = mse_list,
+      "mse_train_list" = mse_train_list,
+      "mse_val_list" = mse_val_list,
       "loglik_list" = loglik_list,
       "call" = match.call()
     ),

@@ -405,7 +405,7 @@ reservoir_mixedml <- function(
     # -----
     cat("\tfitting random effects...\n")
     data_rand[[target_name]] <- data[[target_name]] - pred_fixed
-    random_model <- .fit_random_hlme(random_model, data)
+    random_model <- .fit_random_hlme(random_model, data_rand)
     .check_convergence_hlme(random_model)
     pred_rand <- .predict_random_hlme(
       random_model,

@@ -182,22 +182,38 @@ hlme_ctrls <- function(
   for (i_time in time_unq[-1]) {
     actual_data <- data[data[var.time] == i_time, ]
     prev_data <- data[data[var.time] < i_time, ]
-    ui <- lcmm::predictRE(random_hlme, newdata = prev_data)
-    for (rname in rownames(actual_data)) {
-      actual_subject_data <- actual_data[rname, ]
-      actual_subject <- actual_subject_data[[subject]]
-      ui_subject <- ui[ui[, subject] == actual_subject, ]
-      #
-      try_predict <- try(
-        predictY(
-          random_hlme,
-          newdata = actual_subject_data,
-          predRE = ui_subject
-        )$pred,
-        silent = TRUE
-      )
-      if (is.matrix(try_predict)) {
-        preds[rname] <- try_predict[1, 1]
+    # predictRE calls the training of the model with iteration 0 in order to
+    # access model$pred_ss
+    # so the data which raise an error for training
+    # will also raise an error for predictRE
+    # Erreur dans matYXord[, 4 + ng] : nombre de dimensions incorrect
+    try_predict_re <- try(
+      lcmm::predictRE(random_hlme, newdata = prev_data),
+      silent = TRUE
+    )
+    if (is.data.frame(try_predict_re)) {
+      ui <- try_predict_re
+      # we work by subject to avoid the
+      # predRE should contain as many rows as latent classes error
+      # (number of rows > 1)
+      for (rname in rownames(actual_data)) {
+        actual_subject_data <- actual_data[rname, ]
+        actual_subject <- actual_subject_data[[subject]]
+        ui_subject <- ui[ui[, subject] == actual_subject, ]
+        # we can still have the
+        # "predRE should contain as many rows as latent classes" error
+        # (number of rows == 0 because of NAs)
+        try_predict_y <- try(
+          predictY(
+            random_hlme,
+            newdata = actual_subject_data,
+            predRE = ui_subject
+          )$pred,
+          silent = TRUE
+        )
+        if (is.matrix(try_predict_y)) {
+          preds[rname] <- try_predict_y[1, 1]
+        }
       }
     }
   }

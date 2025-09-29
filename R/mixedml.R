@@ -355,7 +355,7 @@ reservoir_mixedml <- function(
   )
   do_val <- (!is.null(data_val))
   #
-  dir.create(output_dir, showWarnings = FALSE)
+  dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
   #
   target_name <- .get_y_label(fixed_spec)
   # we change the convergence criterions for faster iterations

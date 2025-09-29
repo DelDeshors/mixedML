@@ -383,6 +383,7 @@ reservoir_mixedml <- function(
   conv_thresh <- mixedml_controls[["conv_thresh"]]
   patience <- mixedml_controls[["patience"]]
   ##
+  data_train <- data
   data_fixed <- data
   data_rand <- data
   pred_rand <- rep(0, nrow(data))
@@ -392,29 +393,34 @@ reservoir_mixedml <- function(
   loglik_list <- c()
   mse_min <- Inf
   # confusing name, might need to change:
-  n_na_full <- .check_na_combinaison(data, fixed_spec, random_spec, target_name)
-  # ----
+  n_na_full <- .check_na_combinaison(
+    data_train,
+    fixed_spec,
+    random_spec,
+    target_name
+  )
+  # converegnce loop ----
   while (TRUE) {
     start <- format(Sys.time(), "%H:%M:%S")
     cat(sprintf("step#%d\n", istep))
-    # -----
+    # fitting fixed effects -----
     cat("\tfitting fixed effects...\n")
-    data_fixed[[target_name]] <- data[[target_name]] - pred_rand
+    data_fixed[[target_name]] <- data_train[[target_name]] - pred_rand
     fixed_model <- .fit_reservoir(fixed_model, data_fixed)
-    pred_fixed <- .predict_reservoir(fixed_model, data)
-    # -----
+    pred_fixed <- .predict_reservoir(fixed_model, data_fixed)
+    # fitting random effects -----
     cat("\tfitting random effects...\n")
-    data_rand[[target_name]] <- data[[target_name]] - pred_fixed
+    data_rand[[target_name]] <- data_train[[target_name]] - pred_fixed
     random_model <- .fit_random_hlme(random_model, data_rand)
     .check_convergence_hlme(random_model)
     pred_rand <- .predict_random_hlme(
       random_model,
-      data,
+      data_rand,
       mixedml_controls$no_random_value_as,
       mixedml_controls$all_info_hlme_prediction
     )
     # train residuals/mse ----
-    residuals_train <- data[, target_name] - (pred_fixed + pred_rand)
+    residuals_train <- data_train[, target_name] - (pred_fixed + pred_rand)
     ccases_resid <- complete.cases(residuals_train)
     stopifnot(n_na_full == sum(!ccases_resid))
     mse_train <- mean(residuals_train[ccases_resid]**2)
@@ -422,10 +428,12 @@ reservoir_mixedml <- function(
     mse_train_list <- c(mse_train_list, mse_train)
     # val residuals/mse ----
     if (do_val) {
+      data_rand_val <- data_val
       pred_fixed_val <- .predict_reservoir(fixed_model, data_val)
+      data_rand_val[[target_name]] <- data_val[[target_name]] - pred_fixed_val
       pred_rand_val <- .predict_random_hlme(
         random_model,
-        data_val,
+        data_rand_val,
         mixedml_controls$no_random_value_as,
         mixedml_controls$all_info_hlme_prediction
       )
@@ -475,7 +483,8 @@ reservoir_mixedml <- function(
   .check_convergence_hlme(best$random_model)
   output <- c(
     list(
-      "data" = data,
+      "data" = data_train,
+      "data_val" = data_val,
       "subject" = subject,
       "time" = time,
       "fixed_spec" = fixed_spec,

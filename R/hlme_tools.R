@@ -147,6 +147,146 @@ hlme_ctrls <- function(
 }
 
 # prediction ----
+
+## utils ----
+.initiate_full_preds <- function(data, no_random_value_as) {
+  full_preds <- rep(no_random_value_as, nrow(data))
+  names(full_preds) <- row.names(data)
+  rnames_pred <- row.names(data)
+  return(full_preds)
+}
+
+.predict_newdata_ss <- function(
+  random_hlme,
+  data,
+  data_re,
+  no_random_value_as
+) {
+  # NOTE: with this method the observations with no NAs in Xs and NA in Y
+  # will get a prediction, which is different from the library original behaviour
+  # in model$pred$pred_ss
+  full_preds <- .initiate_full_preds(data, no_random_value_as)
+  # predictRE calls the training of the model with iteration 0 in order to
+  # access model$pred_ss
+  # so the data which raise an error for training
+  # will also raise an error for predictRE
+  # Erreur dans matYXord[, 4 + ng] : nombre de dimensions incorrect
+  try_predict_re <- try(
+    lcmm::predictRE(random_hlme, data_re),
+    silent = TRUE
+  )
+  # TEST IN ----
+  # testing "using all infor case"
+  ALL_INFO <- identical(data, data_re)
+  if (ALL_INFO) {
+    cat("Using all info (same data for predY and predRE\n")
+    lala <- max(abs(try_predict_re - random_hlme$predRE))
+    cat("\tdifference between model$predRE and predictRE(model)? ", lala)
+  }
+  # TEST OUT ----
+
+  if (is.data.frame(try_predict_re)) {
+    # we work by subject to avoid the
+    # predRE should contain as many rows as latent classes error
+    # (number of rows > 1)
+    subject <- colnames(try_predict_re)[1]
+    for (subj in try_predict_re[[subject]]) {
+      # isolating data_subj makes it easier to "merge" later with full_pred
+      # the results are the same (there can be micro-tiny numerical difference)
+      data_subj <- data[data[[subject]] == subj, ]
+      ui_subj <- try_predict_re[try_predict_re[[subject]] == subj, ]
+      # we can still have the
+      # "predRE should contain as many rows as latent classes" error
+      # (number of rows == 0 because of NAs)
+      try_predict_y <- try(
+        predictY(
+          random_hlme,
+          newdata = data_subj,
+          predRE = ui_subj
+        ),
+        silent = TRUE
+      )
+      if (is.list(try_predict_y)) {
+        full_preds[rownames(try_predict_y$times)] <- try_predict_y$pred[, 1]
+        # TEST IN ----
+        # testing "using all infor case"
+        if (ALL_INFO) {
+          cat("\nsubj:", subj, "\n")
+          rnames0 <- rownames(random_hlme$pred)
+          rnames1 <- rownames(try_predict_y$times)
+          # test: using full data or subject data for predictY ----
+          cat("difference between using all data or subject data for RE: ")
+          try_predict_y2 <- try(
+            predictY(
+              random_hlme,
+              newdata = data,
+              predRE = ui_subj
+            ),
+            silent = TRUE
+          )
+          rnames2 <- rownames(try_predict_y2$times)
+          pred1 <- try_predict_y$pred[, 1]
+          pred2 <- try_predict_y2$pred[rnames2 %in% rnames1]
+          cat(max(abs(pred1 - pred2)), "\n")
+          # test: same result between predss and predictY ----
+          cat("difference between using stored pred_ss and predictY: ")
+          rnames_inter <- intersect(rnames0, rnames1)
+          if (length(rnames_inter) > 2) {
+            pred0 <- random_hlme$pred[rnames_inter, "pred_ss"]
+            pred1 <- full_preds[rnames_inter]
+            cat(max(abs(pred1 - pred0)), "\n")
+          }
+          if (length(rnames1) > length(rnames_inter)) {
+            cat("\t\t(More prediction with method than in pred_ss)\n")
+          }
+        }
+        # TEST OUT ----
+      }
+    }
+  }
+
+  return(full_preds)
+}
+
+
+## prediction with all information ----
+
+### global method ----
+.predict_with_all_info <- function(
+  random_hlme,
+  data,
+  no_random_value_as
+) {
+  full_preds <- .predict_newdata_ss(
+    random_hlme,
+    data = data,
+    data_re = data,
+    no_random_value_as
+  )
+  return(full_preds)
+}
+
+
+## prediction with past information ----
+.predict_with_past_info <- function(random_hlme, data, no_random_value_as) {
+  full_preds <- .initiate_full_preds(data, no_random_value_as)
+  var.time <- random_hlme$var.time
+  time_unq <- sort(unique(data[[var.time]]))
+  for (i_time in time_unq[-1]) {
+    actual_data <- data[data[var.time] == i_time, ]
+    prev_data <- data[data[var.time] < i_time, ]
+    full_preds[rownames(actual_data)] <- .predict_newdata_ss(
+      random_hlme,
+      data = actual_data,
+      data_re = prev_data,
+      no_random_value_as
+    )
+  }
+  return(full_preds)
+}
+
+
+## global method ----
 .predict_random_hlme <- function(
   random_hlme,
   data,
@@ -154,68 +294,12 @@ hlme_ctrls <- function(
   use_all_info
 ) {
   if (use_all_info) {
-    return(.predict_with_all_info(random_hlme, data, no_random_value_as))
+    return(.predict_with_all_info(
+      random_hlme,
+      data,
+      no_random_value_as
+    ))
   } else {
-    return(.predict_with_past_info(random_hlme, data))
+    return(.predict_with_past_info(random_hlme, data, no_random_value_as))
   }
-}
-
-.predict_with_all_info <- function(random_hlme, data, no_random_value_as) {
-  # this simply uses the existing results stored in random_hlme
-  # but with a vector of the same size as the data
-  full_preds <- rep(no_random_value_as, nrow(data))
-  names(full_preds) <- row.names(data)
-  rnames_pred <- row.names(random_hlme$pred)
-  full_preds[rnames_pred] <- random_hlme$pred$pred_ss
-  return(full_preds)
-}
-
-.predict_with_past_info <- function(random_hlme, data) {
-  #
-  var.time <- random_hlme$var.time
-  subject <- colnames(random_hlme$pred)[1]
-  randspec <- as.formula(random_hlme$call$random)
-  modmat <- model.matrix(as.formula(random_hlme$call$random), data)
-  preds <- rep(0., nrow(data))
-  names(preds) <- rownames(data)
-  time_unq <- sort(unique(data[[var.time]]))
-  for (i_time in time_unq[-1]) {
-    actual_data <- data[data[var.time] == i_time, ]
-    prev_data <- data[data[var.time] < i_time, ]
-    # predictRE calls the training of the model with iteration 0 in order to
-    # access model$pred_ss
-    # so the data which raise an error for training
-    # will also raise an error for predictRE
-    # Erreur dans matYXord[, 4 + ng] : nombre de dimensions incorrect
-    try_predict_re <- try(
-      lcmm::predictRE(random_hlme, newdata = prev_data),
-      silent = TRUE
-    )
-    if (is.data.frame(try_predict_re)) {
-      ui <- try_predict_re
-      # we work by subject to avoid the
-      # predRE should contain as many rows as latent classes error
-      # (number of rows > 1)
-      for (rname in rownames(actual_data)) {
-        actual_subject_data <- actual_data[rname, ]
-        actual_subject <- actual_subject_data[[subject]]
-        ui_subject <- ui[ui[, subject] == actual_subject, ]
-        # we can still have the
-        # "predRE should contain as many rows as latent classes" error
-        # (number of rows == 0 because of NAs)
-        try_predict_y <- try(
-          predictY(
-            random_hlme,
-            newdata = actual_subject_data,
-            predRE = ui_subject
-          )$pred,
-          silent = TRUE
-        )
-        if (is.matrix(try_predict_y)) {
-          preds[rname] <- try_predict_y[1, 1]
-        }
-      }
-    }
-  }
-  return(preds)
 }

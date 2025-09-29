@@ -2,7 +2,9 @@ test_that("hlme_full_use", {
   data <- data_mixedml
   x_labels <- c("x1", "x2", "x3", "time")
   y_label <- "ym"
-  ccases <- complete.cases(data_mixedml[c(x_labels, y_label)])
+
+  # our prediction method is not limited by NAs for Y
+  ccases <- complete.cases(data_mixedml[c(x_labels)])
 
   # initialization ----
   model <- .initiate_random_hlme(
@@ -43,7 +45,8 @@ test_that("hlme_full_use", {
   # prediction with past info ----
   pred <- .predict_with_past_info(
     random_hlme = model,
-    data = data
+    data = data,
+    no_random_value_as = NA
   )
   stopifnot(length(pred) == nrow(data_mixedml))
 

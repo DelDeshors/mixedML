@@ -175,21 +175,36 @@ hlme_ctrls <- function(
     lcmm::predictRE(random_hlme, data_re),
     silent = TRUE
   )
-  # TEST IN ----
-  # testing "using all infor case"
-  ALL_INFO <- identical(data, data_re)
-  if (ALL_INFO) {
-    cat("Using all info (same data for predY and predRE\n")
-    lala <- max(abs(try_predict_re - random_hlme$predRE))
-    cat("\tdifference between model$predRE and predictRE(model)? ", lala)
-  }
-  # TEST OUT ----
-
   if (is.data.frame(try_predict_re)) {
     # we work by subject to avoid the
     # predRE should contain as many rows as latent classes error
     # (number of rows > 1)
     subject <- colnames(try_predict_re)[1]
+
+    # TEST IN ----
+    # # testing "using all infor case"
+    # ALL_INFO <- identical(data, data_re)
+    # if (ALL_INFO) {
+    #   cat("Using all info (same data for predY and predRE)\n")
+    # } else {
+    #   cat("Using only past info\n")
+    # }
+    # # testing if its val set (so the subject are not in random_hlme$predRE
+    # VAL_SET <- length(intersect(
+    #   random_hlme$predRE[[subject]],
+    #   data[[subject]]
+    # )) ==
+    #   0
+    # if (VAL_SET) {
+    #   cat("Predicting for the validation set\n")
+    # } else {
+    #   cat("Predicting for the train set\n")
+    # }
+    # if (ALL_INFO && !VAL_SET) {
+    #   lala <- max(abs(try_predict_re - random_hlme$predRE))
+    #   cat("\tdifference between model$predRE and predictRE(model)? ", lala)
+    # }
+    # TEST OUT ----
     for (subj in try_predict_re[[subject]]) {
       # isolating data_subj makes it easier to "merge" later with full_pred
       # the results are the same (there can be micro-tiny numerical difference)
@@ -199,7 +214,7 @@ hlme_ctrls <- function(
       # "predRE should contain as many rows as latent classes" error
       # (number of rows == 0 because of NAs)
       try_predict_y <- try(
-        predictY(
+        lcmm::predictY(
           random_hlme,
           newdata = data_subj,
           predRE = ui_subj
@@ -208,38 +223,42 @@ hlme_ctrls <- function(
       )
       if (is.list(try_predict_y)) {
         full_preds[rownames(try_predict_y$times)] <- try_predict_y$pred[, 1]
+
         # TEST IN ----
-        # testing "using all infor case"
-        if (ALL_INFO) {
-          cat("\nsubj:", subj, "\n")
-          rnames0 <- rownames(random_hlme$pred)
-          rnames1 <- rownames(try_predict_y$times)
-          # test: using full data or subject data for predictY ----
-          cat("difference between using all data or subject data for RE: ")
-          try_predict_y2 <- try(
-            predictY(
-              random_hlme,
-              newdata = data,
-              predRE = ui_subj
-            ),
-            silent = TRUE
-          )
-          rnames2 <- rownames(try_predict_y2$times)
-          pred1 <- try_predict_y$pred[, 1]
-          pred2 <- try_predict_y2$pred[rnames2 %in% rnames1]
-          cat(max(abs(pred1 - pred2)), "\n")
-          # test: same result between predss and predictY ----
-          cat("difference between using stored pred_ss and predictY: ")
-          rnames_inter <- intersect(rnames0, rnames1)
-          if (length(rnames_inter) > 2) {
-            pred0 <- random_hlme$pred[rnames_inter, "pred_ss"]
-            pred1 <- full_preds[rnames_inter]
-            cat(max(abs(pred1 - pred0)), "\n")
-          }
-          if (length(rnames1) > length(rnames_inter)) {
-            cat("\t\t(More prediction with method than in pred_ss)\n")
-          }
-        }
+        # if (ALL_INFO) {
+        #   cat("\nsubj:", subj, "\n")
+        #   rnames0 <- rownames(random_hlme$pred)
+        #   rnames1 <- rownames(try_predict_y$times)
+        #   # test: using full data or subject data for predictY ----
+        #   cat("difference between using all data or only subject data for RE: ")
+        #   try_predict_y2 <- try(
+        #     lcmm::predictY(
+        #       random_hlme,
+        #       newdata = data,
+        #       predRE = ui_subj
+        #     ),
+        #     silent = TRUE
+        #   )
+        #   rnames2 <- rownames(try_predict_y2$times)
+        #   pred1 <- try_predict_y$pred[, 1]
+        #   pred2 <- try_predict_y2$pred[rnames2 %in% rnames1]
+        #   cat(max(abs(pred1 - pred2)), "\n")
+        # }
+        # if (ALL_INFO && !VAL_SET) {
+        #   # test: same result between predss and predictY ----
+        #   cat(
+        #     "difference between using stored pred_ss and calling predictY with train set: "
+        #   )
+        #   rnames_inter <- intersect(rnames0, rnames1)
+        #   if (length(rnames_inter) > 2) {
+        #     pred0 <- random_hlme$pred[rnames_inter, "pred_ss"]
+        #     pred1 <- full_preds[rnames_inter]
+        #     cat(max(abs(pred1 - pred0)), "\n")
+        #   }
+        #   if (length(rnames1) > length(rnames_inter)) {
+        #     cat("\t\t(More prediction with method than in pred_ss)\n")
+        #   }
+        # }
         # TEST OUT ----
       }
     }
@@ -257,6 +276,9 @@ hlme_ctrls <- function(
   data,
   no_random_value_as
 ) {
+  # TEST IN ----
+  # cat(".predict_with_all_info\n")
+  # TEST OUT ----
   full_preds <- .predict_newdata_ss(
     random_hlme,
     data = data,
@@ -269,6 +291,9 @@ hlme_ctrls <- function(
 
 ## prediction with past information ----
 .predict_with_past_info <- function(random_hlme, data, no_random_value_as) {
+  # TEST IN ----
+  # cat(".predict_with_past_info\n")
+  # TEST OUT ----
   full_preds <- .initiate_full_preds(data, no_random_value_as)
   var.time <- random_hlme$var.time
   time_unq <- sort(unique(data[[var.time]]))

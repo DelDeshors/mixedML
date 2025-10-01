@@ -118,9 +118,14 @@ mixedml_ctrls <- function(
 # model backups ----
 
 .joblib_from_rds <- function(mixedml_model_rds) {
-  return(sub("mixedml_model.Rds", "fixed_model.joblib", mixedml_model_rds))
+  return(paste0(mixedml_model_rds, ".joblib"))
 }
 
+#' Save a MixedML model
+#'
+#' @param model Trained MixedML model
+#' @param mixedml_model_rds Name of the RDS fileNew data (same format as the one used for training)
+#' @export
 save_mixedml <- function(model, mixedml_model_rds) {
   if (.is_python_model(model$fixed_model)) {
     fixed_model_joblib <- .joblib_from_rds(mixedml_model_rds)
@@ -131,7 +136,12 @@ save_mixedml <- function(model, mixedml_model_rds) {
   return(invisible())
 }
 
-
+#' Load a MixedML model
+#'
+#' @param mixedml_model_rds Name of the RDS fileNew data (same format as the one used for training)
+#' @export
+#' @return MixedMl model
+#' @export
 load_mixedml <- function(mixedml_model_rds) {
   model <- readRDS(mixedml_model_rds)
   if (is.null(model$fixed_model)) {
@@ -187,35 +197,33 @@ predict <- function(
   return(pred_fixed + pred_rand)
 }
 
-#' Plot the (MSE) convergence of the MixedML training and validation
-#'
-#'
-#'
-#' @param model Trained MixedML model
-#' @param ylog Plot the y-value with a log scale. Default: TRUE.
-#' @return Convergence plot
-#' @export
-plot_conv <- function(model, ylog = TRUE) {
-  .test_is_midexml(model)
+
+.plot_train_val_metric <- function(
+  metric_train_list,
+  metric_val_list,
+  metric_name,
+  ylog
+) {
   stopifnot(is.logical(ylog))
   data_plot <- data.frame(
-    iteration = seq_along(model$mse_train_list),
-    MSE = model$mse_train_list,
+    iteration = seq_along(metric_train_list),
+    METRIC = metric_train_list,
     group = "train"
   )
-  if (!is.null(model$mse_val_list)) {
+  if (!is.null(metric_val_list)) {
     data_plot <- rbind(
       data_plot,
       data.frame(
-        iteration = seq_along(model$mse_val_list),
-        MSE = model$mse_val_list,
+        iteration = seq_along(metric_val_list),
+        METRIC = metric_val_list,
         group = "val"
       )
     )
   }
+  colnames(data_plot)[2] <- metric_name
   plt <- ggplot2::ggplot(
     data = data_plot,
-    aes(x = iteration, y = MSE, color = group)
+    aes(x = iteration, y = .data[[metric_name]], color = group)
   ) +
     ggplot2::geom_line() +
     geom_point()
@@ -225,37 +233,52 @@ plot_conv <- function(model, ylog = TRUE) {
   return(plt)
 }
 
+
+#' Plot the (MSE) convergence of the MixedML training and validation
+#'
+#'
+#'
+#' @param model Trained MixedML model
+#' @param ylog Plot the y-value with a log scale. Default: FALSE
+#' @return Convergence plot
+#' @export
+plot_conv_mse <- function(model, ylog = FALSE) {
+  .test_is_midexml(model)
+  return(.plot_train_val_metric(
+    model$mse_train_list,
+    model$mse_val_list,
+    metric_name = "MSE",
+    ylog = ylog
+  ))
+}
+
 #' Plot the log-likelihood of the random effect hlme during training
 #'
 #'
 #'
 #' @param model Trained MixedML model
-#' @param ylog Plot the y-value with a log scale. Default: TRUE.
 #' @return Log-likelihood plot
 #' @export
-plot_loglik <- function(model, ylog = TRUE) {
+plot_conv_loglik <- function(model) {
   .test_is_midexml(model)
-  stopifnot(is.logical(ylog))
-  return(plot(
-    seq_along(model$loglik_train_list),
+  return(.plot_train_val_metric(
     model$loglik_train_list,
-    type = "o",
-    xlab = "iterations",
-    ylab = "log-likelihood (hlme)",
-    ylog = ylog
+    model$loglik_val_list,
+    metric_name = "loglik",
+    ylog = FALSE
   ))
 }
 
 
-#' Plot the prediction of a MixedML model (best iteration)
+#' Plot the prediction of a MixedML model beside the true/target values
 #'
 #' @param model Trained MixedML model.
 #' @param subject_nb_or_list Number of subjects to plot (randomly selected) or
-#' list of subjects to plot.
+#' list of subjects to plot (amongst the train/val dataset).
 #' @param ylog Plot the y-value with a log scale. Default: TRUE.
 #' @return Prediction plot of the model.
 #' @export
-plot_best_iter <- function(model, subject_nb_or_list, ylog = FALSE) {
+plot_prediction_check <- function(model, subject_nb_or_list, ylog = FALSE) {
   stopifnot(inherits(model, MIXEDML_CLASS))
   stopifnot(is.integer(subject_nb_or_list))
   stopifnot(is.logical(ylog))
@@ -264,21 +287,27 @@ plot_best_iter <- function(model, subject_nb_or_list, ylog = FALSE) {
   time <- model$time
   target <- .get_y_label(model$fixed_spec)
   #
-  model$data[[subject]] <- as.factor(model$data[[subject]])
-  #
   type <- "type"
   type1 <- "target"
-  data_ <- model$data
-  data_[[type]] <- type1
+  data_tgt <- model$data
+  if (!is.null(model$data_val)) {
+    data_tgt <- rbind(data_tgt, model$data_val)
+  }
+  data_tgt[[type]] <- type1
   #
   type2 <- "pred."
-  data_tmp <- model$data
-  data_tmp[[type]] <- type2
-  data_tmp[[target]] <- model$pred_fixed + model$pred_rand
-  data_ <- rbind(data_, data_tmp)
+  data_pred <- data_tgt
+  data_pred[[type]] <- type2
+  data_pred[[target]] <- predict(
+    model,
+    data_pred,
+    no_random_value_as = NA,
+    all_info_hlme_prediction = TRUE
+  )
+  data_plot <- rbind(data_tgt, data_pred)
   if (length(subject_nb_or_list) == 1) {
     subject_nb_or_list <- sample(
-      unique(data_[[subject]]),
+      unique(data_plot[[subject]]),
       subject_nb_or_list
     )
     message("Subjects selected randomly: use set.seed to change the selection.")
@@ -286,11 +315,12 @@ plot_best_iter <- function(model, subject_nb_or_list, ylog = FALSE) {
     stopifnot(all(subject_nb_or_list %in% model$data[[subject]]))
   }
   #
-  idx_keep <- data_[[subject]] %in% subject_nb_or_list
-  data_ <- data_[idx_keep, ]
+  idx_keep <- data_plot[[subject]] %in% subject_nb_or_list
+  data_plot <- data_plot[idx_keep, ]
+  data_plot[[subject]] <- as.factor(data_plot[[subject]])
   return(
     ggplot(
-      data_,
+      data_plot,
       aes(
         x = .data[[time]],
         y = .data[[target]],

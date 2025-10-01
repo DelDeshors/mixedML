@@ -11,10 +11,10 @@ MIXEDML_COMPONENTS <- c(
   "time",
   "fixed_spec",
   "random_spec",
-  "best_fixed_model",
-  "best_random_model",
-  "best_loglik_train",
-  "best_loglik_val",
+  "fixed_model",
+  "random_model",
+  "loglik_train",
+  "loglik_val",
   "mse_train_list",
   "mse_val_list",
   "loglik_train_list",
@@ -23,9 +23,9 @@ MIXEDML_COMPONENTS <- c(
 )
 
 .get_model <- function() {
-  pframe <- parent.frame()
+  pframe <- as.list(parent.frame())
   stopifnot(all(MIXEDML_COMPONENTS %in% names(pframe)))
-  model <- as.list(pframe)[MIXEDML_COMPONENTS]
+  model <- pframe[MIXEDML_COMPONENTS]
   class(model) <- MIXEDML_CLASS
   return(model)
 }
@@ -116,41 +116,29 @@ mixedml_ctrls <- function(
 
 
 # model backups ----
-.save_backup <- function(fixed_model, random_model, output_dir, iteration_num) {
-  if (.is_python_model(fixed_model)) {
-    .save_py_object(
-      fixed_model,
-      sprintf("%s/%03d_fixed_model.joblib", output_dir, iteration_num)
-    )
-  } else {
-    saveRDS(
-      random_model,
-      sprintf("%s/%03d_fixed_model.Rds", output_dir, iteration_num)
-    )
+
+.joblib_from_rds <- function(mixedml_model_rds) {
+  return(sub("mixedml_model.Rds", "fixed_model.joblib", mixedml_model_rds))
+}
+
+save_mixedml <- function(model, mixedml_model_rds) {
+  if (.is_python_model(model$fixed_model)) {
+    fixed_model_joblib <- .joblib_from_rds(mixedml_model_rds)
+    .save_py_object(model$fixed_model, fixed_model_joblib)
+    model$fixed_model <- NULL
   }
-  saveRDS(
-    random_model,
-    sprintf("%s/%03d_random_model.Rds", output_dir, iteration_num)
-  )
-  return()
+  saveRDS(model, mixedml_model_rds)
+  return(invisible())
 }
 
 
-load_backup <- function(fixed_model_rds_or_joblib, random_model_rds) {
-  if (endsWith(fixed_model_rds_or_joblib, ".joblib")) {
-    fixed_model <- .load_py_object(fixed_model_rds_or_joblib)
-  } else if (endsWith(fixed_model_rds_or_joblib, ".Rds")) {
-    fixed_model <- readRDS(fixed_model_rds_or_joblib)
-  } else {
-    stop("Incorrect extension for fixed_model_rds_or_joblib argument.")
+load_mixedml <- function(mixedml_model_rds) {
+  model <- readRDS(mixedml_model_rds)
+  if (is.null(model$fixed_model)) {
+    fixed_model_joblib <- .joblib_from_rds(mixedml_model_rds)
+    model$fixed_model <- .load_py_object(fixed_model_joblib)
   }
-  output <- list(
-    fixed_model = fixed_model,
-    random_model = readRDS(random_model_rds)
-  )
-  class(output) <- MIXEDML_CLASS
-  .test_is_midexml(output)
-  return(output)
+  return(model)
 }
 
 
@@ -366,7 +354,6 @@ plot_best_iter <- function(model, subject_nb_or_list, ylog = FALSE) {
 #' @param esn_controls controls specific to the ESN models
 #' @param ensemble_controls controls specific to the Ensemble model
 #' @param fit_controls controls specific to the ESN models fit
-#' @param output_dir folder path where the models and log will be saved.
 #' The default use the date at start in the format "mixedML-%y%m%d-%H%M%S"
 #' (ex: mixedML-250709-100530)
 #' @return fitted MixedML model (best iteration)
@@ -382,8 +369,7 @@ reservoir_mixedml <- function(
   hlme_controls = hlme_ctrls(),
   esn_controls = esn_controls(),
   ensemble_controls = ensemble_controls(),
-  fit_controls = fit_controls(),
-  output_dir = paste0("mixedML-", format(Sys.time(), "%y%m%d-%H%M%S"))
+  fit_controls = fit_controls()
 ) {
   call <- match.call()
   .test_reservoir_mixedml(
@@ -400,8 +386,6 @@ reservoir_mixedml <- function(
     fit_controls
   )
   do_val <- (!is.null(data_val))
-  #
-  dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
   #
   target_name <- .get_y_label(fixed_spec)
   # we change the convergence criterions for faster iterations
@@ -428,7 +412,7 @@ reservoir_mixedml <- function(
   )
   conv_thresh <- mixedml_controls[["conv_thresh"]]
   patience <- mixedml_controls[["patience"]]
-  ##
+  # initialization (some are for .get_model to work) ----
   data_train <- data
   data_fixed <- data
   data_rand <- data
@@ -436,6 +420,7 @@ reservoir_mixedml <- function(
   istep <- 0
   mse_train_list <- c()
   mse_val_list <- c()
+  loglik_train <- NULL
   loglik_train_list <- c()
   loglik_val <- NULL
   loglik_val_list <- c()
@@ -521,10 +506,9 @@ reservoir_mixedml <- function(
       best_loglik_train <- loglik_train
       best_loglik_val <- loglik_val
     }
-    .save_backup(fixed_model, random_model, output_dir, istep)
     istep <- istep + 1
   }
-  # final model with saved convergence criteria
+  # final model with saved convergence criteria ----
   cat("Final convergence of HLME with strict convergence criterions.")
   best_random_model <- stats::update(
     best_random_model,
@@ -534,6 +518,11 @@ reservoir_mixedml <- function(
     convG = hlme_controls_final$convG
   )
   .check_convergence_hlme(best_random_model)
+  # updating with best iteartion values ----
+  fixed_model <- best_fixed_model
+  random_model <- best_random_model
+  loglik_train <- best_loglik_train
+  loglik_val <- best_loglik_val
   model <- .get_model()
   return(model)
 }

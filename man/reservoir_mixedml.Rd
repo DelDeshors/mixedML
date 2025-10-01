@@ -8,14 +8,14 @@ reservoir_mixedml(
   fixed_spec,
   random_spec,
   data,
+  data_val = NULL,
   subject,
   time,
   mixedml_controls = mixedml_ctrls(),
   hlme_controls = hlme_ctrls(),
   esn_controls = esn_controls(),
   ensemble_controls = ensemble_controls(),
-  fit_controls = fit_controls(),
-  output_dir = paste0("mixedML-", format(Sys.time(), "\%y\%m\%d-\%H\%M\%S"))
+  fit_controls = fit_controls()
 )
 }
 \arguments{
@@ -40,9 +40,7 @@ By default, an intercept is included. If no intercept, -1 should be the first te
 
 \item{ensemble_controls}{controls specific to the Ensemble model}
 
-\item{fit_controls}{controls specific to the ESN models fit}
-
-\item{output_dir}{folder path where the models and log will be saved.
+\item{fit_controls}{controls specific to the ESN models fit
 The default use the date at start in the format "mixedML-\%y\%m\%d-\%H\%M\%S"
 (ex: mixedML-250709-100530)}
 }

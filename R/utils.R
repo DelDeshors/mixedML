@@ -113,15 +113,14 @@ is.named.vector <- function(x) {
     stop(filename, " already exists!")
   }
   joblib <- reticulate::import("joblib")
-  with <- reticulate::import_builtins()$open
-  joblib$dump(obj, with(filename, "wb"))
+  joblib$dump(obj, filename)
   return()
 }
 
 .load_py_object <- function(filename) {
+  stopifnot(file.exists(filename))
   joblib <- reticulate::import("joblib")
-  with <- reticulate::import_builtins()$open
-  model <- joblib$load(with(filename, "rb"))
+  model <- joblib$load(filename)
   return(model)
 }
 

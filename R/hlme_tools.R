@@ -40,6 +40,9 @@ hlme_ctrls <- function(
 .check_cor_spec <- function(random_spec, var.time, cor) {
   # this should move into lcmm
   if (is.null(cor)) return()
+  warning(
+    "The predictions made by hlme on new data do not yet take into account the correlation"
+  )
   #
   cor_code <- as.character(cor)[1]
   if (!cor_code %in% c("AR", "BM")) {

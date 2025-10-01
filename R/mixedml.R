@@ -178,11 +178,6 @@ predict <- function(
   no_random_value_as = 0.,
   all_info_hlme_prediction = FALSE
 ) {
-  if (!is.null(model$random_model$call$cor)) {
-    warning(
-      "The prediction does not yet take into account the correlation relation in hlme"
-    )
-  }
   .test_predict(model, data)
   target_name <- .get_y_label(model$fixed_spec)
   data_rand <- data

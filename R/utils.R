@@ -109,6 +109,9 @@ is.named.vector <- function(x) {
 }
 
 .save_py_object <- function(obj, filename) {
+  if (file.exists(filename)) {
+    stop(filename, " already exists!")
+  }
   joblib <- reticulate::import("joblib")
   with <- reticulate::import_builtins()$open
   joblib$dump(obj, with(filename, "wb"))

@@ -4,10 +4,36 @@ library(ggplot2)
 
 MIXEDML_CLASS <- "MixedML_Model"
 
+MIXEDML_COMPONENTS <- c(
+  "data",
+  "data_val",
+  "subject",
+  "time",
+  "fixed_spec",
+  "random_spec",
+  "best_fixed_model",
+  "best_random_model",
+  "best_loglik_train",
+  "best_loglik_val",
+  "mse_train_list",
+  "mse_val_list",
+  "loglik_train_list",
+  "loglik_val_list",
+  "call"
+)
+
+.get_model <- function() {
+  pframe <- parent.frame()
+  stopifnot(all(MIXEDML_COMPONENTS %in% names(pframe)))
+  model <- as.list(pframe)[MIXEDML_COMPONENTS]
+  class(model) <- MIXEDML_CLASS
+  return(model)
+}
+
+
 .test_is_midexml <- function(model) {
   stopifnot(inherits(model, MIXEDML_CLASS))
-  stopifnot("fixed_model" %in% names(model))
-  stopifnot("random_model" %in% names(model))
+  stopifnot(setequal(names(model), MIXEDML_COMPONENTS))
   return()
 }
 
@@ -154,24 +180,26 @@ predict <- function(
   no_random_value_as = 0.,
   all_info_hlme_prediction = FALSE
 ) {
-  if (all_info_hlme_prediction) {
-    stop(
-      "Not implemented yet: so far the predictions stored in  model
-       (model$pred$pred_ss) are simply returned"
+  if (!is.null(model$random_model$call$cor)) {
+    warning(
+      "The prediction does not yet take into account the correlation relation in hlme"
     )
   }
   .test_predict(model, data)
+  target_name <- .get_y_label(model$fixed_spec)
+  data_rand <- data
   pred_fixed <- .predict_reservoir(model$fixed_model, data)
+  data_rand[[target_name]] <- data[[target_name]] - pred_fixed
   pred_rand <- .predict_random_hlme(
     model$random_model,
-    data,
+    data_rand,
     no_random_value_as,
     all_info_hlme_prediction
   )
   return(pred_fixed + pred_rand)
 }
 
-#' Plot the (MSE) convergence of the MixedML training
+#' Plot the (MSE) convergence of the MixedML training and validation
 #'
 #'
 #'
@@ -182,14 +210,31 @@ predict <- function(
 plot_conv <- function(model, ylog = TRUE) {
   .test_is_midexml(model)
   stopifnot(is.logical(ylog))
-  return(plot(
-    seq_along(model$mse_train_list),
-    model$mse_train_list,
-    type = "o",
-    xlab = "iterations",
-    ylab = "MSE",
-    ylog = ylog
-  ))
+  data_plot <- data.frame(
+    iteration = seq_along(model$mse_train_list),
+    MSE = model$mse_train_list,
+    group = "train"
+  )
+  if (!is.null(model$mse_val_list)) {
+    data_plot <- rbind(
+      data_plot,
+      data.frame(
+        iteration = seq_along(model$mse_val_list),
+        MSE = model$mse_val_list,
+        group = "val"
+      )
+    )
+  }
+  plt <- ggplot2::ggplot(
+    data = data_plot,
+    aes(x = iteration, y = MSE, color = group)
+  ) +
+    ggplot2::geom_line() +
+    geom_point()
+  if (ylog) {
+    plt <- plt + scale_y_log10()
+  }
+  return(plt)
 }
 
 #' Plot the log-likelihood of the random effect hlme during training
@@ -204,8 +249,8 @@ plot_loglik <- function(model, ylog = TRUE) {
   .test_is_midexml(model)
   stopifnot(is.logical(ylog))
   return(plot(
-    seq_along(model$loglik_list),
-    model$loglik_list,
+    seq_along(model$loglik_train_list),
+    model$loglik_train_list,
     type = "o",
     xlab = "iterations",
     ylab = "log-likelihood (hlme)",
@@ -340,6 +385,7 @@ reservoir_mixedml <- function(
   fit_controls = fit_controls(),
   output_dir = paste0("mixedML-", format(Sys.time(), "%y%m%d-%H%M%S"))
 ) {
+  call <- match.call()
   .test_reservoir_mixedml(
     fixed_spec,
     random_spec,
@@ -390,7 +436,9 @@ reservoir_mixedml <- function(
   istep <- 0
   mse_train_list <- c()
   mse_val_list <- c()
-  loglik_list <- c()
+  loglik_train_list <- c()
+  loglik_val <- NULL
+  loglik_val_list <- c()
   mse_min <- Inf
   # confusing name, might need to change:
   n_na_full <- .check_na_combinaison(
@@ -399,7 +447,7 @@ reservoir_mixedml <- function(
     random_spec,
     target_name
   )
-  # converegnce loop ----
+  # convergence loop ----
   while (TRUE) {
     start <- format(Sys.time(), "%H:%M:%S")
     cat(sprintf("step#%d\n", istep))
@@ -419,32 +467,39 @@ reservoir_mixedml <- function(
       mixedml_controls$no_random_value_as,
       mixedml_controls$all_info_hlme_prediction
     )
-    # train residuals/mse ----
+    # train residuals/mse and loglik----
     residuals_train <- data_train[, target_name] - (pred_fixed + pred_rand)
     ccases_resid <- complete.cases(residuals_train)
     stopifnot(n_na_full == sum(!ccases_resid))
     mse_train <- mean(residuals_train[ccases_resid]**2)
     cat(sprintf("\tMSE-train = %.4g\n", mse_train))
     mse_train_list <- c(mse_train_list, mse_train)
-    # val residuals/mse ----
+    #
+    loglik_train <- random_model$loglik
+    loglik_train_list <- c(loglik_train_list, loglik_train)
+    # val residuals/mse and loglik ----
     if (do_val) {
-      data_rand_val <- data_val
-      pred_fixed_val <- .predict_reservoir(fixed_model, data_val)
-      data_rand_val[[target_name]] <- data_val[[target_name]] - pred_fixed_val
-      pred_rand_val <- .predict_random_hlme(
-        random_model,
-        data_rand_val,
+      tmp_model <- .get_model()
+      pred_val <- predict(
+        tmp_model,
+        data_val,
         mixedml_controls$no_random_value_as,
         mixedml_controls$all_info_hlme_prediction
       )
-      residuals_val <- data_val[, target_name] -
-        (pred_fixed_val + pred_rand_val)
+      residuals_val <- data_val[, target_name] - pred_val
       mse_val <- mean(residuals_val[ccases_resid]**2, na.rm = TRUE)
       cat(sprintf("\tMSE-val = %.4g\n", mse_val))
       mse_val_list <- c(mse_val_list, mse_val)
+      #
+      hlme_val <- update(
+        random_model,
+        data = data_val,
+        B = random_model$best,
+        maxiter = 0
+      )
+      loglik_val <- hlme_val$loglik
+      loglik_val_list <- c(loglik_val_list, loglik_val)
     }
-    # loglik ----
-    loglik_list <- c(loglik_list, random_model$loglik)
     # convergence tests ----
     if (do_val) {
       mse_conv <- mse_val
@@ -461,41 +516,24 @@ reservoir_mixedml <- function(
     }
     if (mse_conv < mse_min) {
       mse_min <- mse_conv
-      best <- list(
-        "pred_fixed" = pred_fixed,
-        "pred_rand" = pred_rand,
-        "fixed_model" = fixed_model,
-        "random_model" = random_model
-      )
+      best_fixed_model <- fixed_model
+      best_random_model <- random_model
+      best_loglik_train <- loglik_train
+      best_loglik_val <- loglik_val
     }
     .save_backup(fixed_model, random_model, output_dir, istep)
     istep <- istep + 1
   }
   # final model with saved convergence criteria
   cat("Final convergence of HLME with strict convergence criterions.")
-  best$random_model <- stats::update(
-    best$random_model,
-    B = best$random_model$best,
+  best_random_model <- stats::update(
+    best_random_model,
+    B = best_random_model$best,
     convB = hlme_controls_final$convB,
     convL = hlme_controls_final$convL,
     convG = hlme_controls_final$convG
   )
-  .check_convergence_hlme(best$random_model)
-  output <- c(
-    list(
-      "data" = data_train,
-      "data_val" = data_val,
-      "subject" = subject,
-      "time" = time,
-      "fixed_spec" = fixed_spec,
-      "random_spec" = random_spec,
-      "mse_train_list" = mse_train_list,
-      "mse_val_list" = mse_val_list,
-      "loglik_list" = loglik_list,
-      "call" = match.call()
-    ),
-    best
-  )
-  class(output) <- MIXEDML_CLASS
-  return(output)
+  .check_convergence_hlme(best_random_model)
+  model <- .get_model()
+  return(model)
 }

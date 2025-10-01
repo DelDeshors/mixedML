@@ -35,7 +35,8 @@ Imports:
     reticulate,
     rlang,
     methods,
-    stats
+    stats,
+    ggplot2
 Remotes:
     quantsch/rd2md,
     r-lib/usethis

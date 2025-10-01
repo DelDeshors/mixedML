@@ -1,15 +1,19 @@
-data_ <- data_mixedml
 fixed_spec <- ym ~ 1 + x1 + x2 + time
 random_spec <- ~ 1 + x1 + x2 + time
 subject <- "ID"
 time <- "time"
+
+data_train <- data_mixedml[data_mixedml$ID < 9, ]
+data_val <- data_mixedml[data_mixedml$ID >= 9, ]
+
 
 test_that("mixedml works", {
   folder <- tempdir()
   mixed_ml_model <- reservoir_mixedml(
     fixed_spec = fixed_spec,
     random_spec = random_spec,
-    data = data_,
+    data = data_train,
+    data_val = data_val,
     subject = subject,
     time = time,
     mixedml_controls = mixedml_ctrls(
@@ -37,12 +41,12 @@ test_that("mixedml works", {
       scaler = "standard",
       n_procs = 1
     ),
-    fit_controls = fit_ctrls(warmup = 1),
-    output_dir = folder
+    fit_controls = fit_ctrls(warmup = 1)
   )
-  pred <- predict(mixed_ml_model, data_)
-  stopifnot(length(pred) == nrow(data_))
-  plot_conv(mixed_ml_model)
-  plot_best_iter(mixed_ml_model, subject_nb_or_list = 3)
+  pred <- predict(mixed_ml_model, data_val)
+  stopifnot(length(pred) == nrow(data_val))
+  plot_conv_mse(mixed_ml_model)
+  plot_conv_loglik(mixed_ml_model)
+  plot_prediction_check(mixed_ml_model, subject_nb_or_list = 3)
   unlink(folder, recursive = TRUE)
 })

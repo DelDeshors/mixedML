@@ -121,10 +121,14 @@ Then several controls are defined, using specific functions whose names correspo
 Here is an example using the `reservoir_mixedml` function (here is the [corresponding vignette](mixedML_reservoir.html):
 
 ```{r}
+data_train <- data_mixedml[data_mixedml$ID < 9, ]
+data_val <- data_mixedml[data_mixedml$ID >= 9, ]
+
 model_reservoir <- reservoir_mixedml(
   fixed_spec = ym ~ x1 + x2 + x3,
   random_spec = ~ x1 + x2,
-  data = data_mixedml,
+  data = data_train,
+  data_val = data_val,
   subject = "ID",
   time = "time",
   # parameters for MixedML method
@@ -134,8 +138,7 @@ model_reservoir <- reservoir_mixedml(
   # controls (extra-parameters) for the ML model
   esn_controls = esn_ctrls(units = 20, ridge = 1e-5),
   ensemble_controls = ensemble_ctrls(seed_list = c(1, 2, 3, 4, 5)),
-  fit_controls = fit_ctrls(warmup = 2),
-  output_dir = "mixedML_vignette"
+  fit_controls = fit_ctrls(warmup = 2)
 )
 ```
 
@@ -172,62 +175,88 @@ The function `load_backup` can be used to inspect the model and the predictions 
 print_help("predict")
 ```
 
+
+```{r}
+predict(
+  model = model_reservoir,
+  data = data_mixedml,
+  no_random_value_as = 0.,
+  all_info_hlme_prediction = FALSE
+)
+```
+
+
+
 ## `plot_conv`
 
 ```{r, echo=FALSE}
-print_help("plot_conv")
+print_help("plot_conv_mse")
 ```
 
 ```{r}
-plot_conv(model = model_reservoir)
+plot_conv_mse(model = model_reservoir, ylog = FALSE)
 ```
 
 
 ## `plot_loglik`
 
 ```{r, echo=FALSE}
-print_help("plot_loglik")
+print_help("plot_conv_loglik")
 ```
 
 ```{r}
-plot_loglik(model = model_reservoir)
+plot_conv_loglik(model = model_reservoir)
 ```
 
-## `plot_best_iter`
+## `plot_prediction_check`
 
 ```{r, echo=FALSE}
-print_help("plot_best_iter")
+print_help("plot_prediction_check")
 ```
 
 ```{r}
-plot_best_iter(model = model_reservoir, subject_nb_or_list = c(1, 2, 3, 4, 5))
+plot_prediction_check(model = model_reservoir, subject_nb_or_list = c(1, 2, 3, 4, 5))
 ```
 
 
-## `load_backup`
+## `save_mixedml`
 
-
-```{r}
-backup <- load_backup(
-  fixed_model_rds_or_joblib = "mixedML_vignette/007_fixed_model.joblib",
-  random_model_rds = "mixedML_vignette/007_random_model.Rds"
-)
-```
-
-```{r}
-backup$fixed_model
-```
-
-```{r}
-backup$random_model
-```
-
-```{r}
-predict(backup, data_mixedml)
+```{r, echo=FALSE}
+print_help("save_mixedml")
 ```
 
 
+```{r}
+save_mixedml(model_reservoir, mixedml_model_rds = "model_reservoir.Rds")
+```
+
+
+## `load_mixedml`
+
+
+```{r, echo=FALSE}
+print_help("load_mixedml")
+```
 
 ```{r}
-unlink("mixedML_vignette", recursive = TRUE)
+mixedml_model <- load_mixedml("model_reservoir.Rds")
+```
+
+```{r}
+mixedml_model$fixed_model
+```
+
+```{r}
+mixedml_model$random_model
+```
+
+```{r}
+predict(mixedml_model, data_mixedml)
+```
+
+
+
+```{r, echo=FALSE}
+unlink("model_reservoir.Rds")
+unlink("model_reservoir.Rds.joblib")
 ```

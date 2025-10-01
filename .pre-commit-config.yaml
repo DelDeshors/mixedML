@@ -32,7 +32,7 @@ repos:
         pass_filenames: true
 #  R precommit hooks
 -   repo: https://github.com/lorenzwalthert/precommit    #  R precommit hooks
-    rev: v0.4.3.9014
+    rev: v0.4.3.9015
     hooks:
     -   id: roxygenize
         stages: [pre-merge-commit]

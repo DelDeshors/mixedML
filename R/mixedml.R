@@ -32,9 +32,10 @@ MIXEDML_COMPONENTS <- c(
 
 
 .test_is_midexml <- function(model) {
+  # can work alone or in a "if" condition
   stopifnot(inherits(model, MIXEDML_CLASS))
   stopifnot(setequal(names(model), MIXEDML_COMPONENTS))
-  return()
+  return(TRUE)
 }
 
 #' Prepare the mixedml_controls
@@ -127,7 +128,7 @@ mixedml_ctrls <- function(
 #' @param mixedml_model_rds Name of the RDS fileNew data (same format as the one used for training)
 #' @export
 save_mixedml <- function(model, mixedml_model_rds) {
-  stopifnot(.test_is_midexml(model))
+  .test_is_midexml(model)
   if (.is_python_model(model$fixed_model)) {
     fixed_model_joblib <- .joblib_from_rds(mixedml_model_rds)
     .save_py_object(model$fixed_model, fixed_model_joblib)
@@ -183,7 +184,12 @@ predict <- function(
   .test_predict(model, data)
   target_name <- .get_y_label(model$fixed_spec)
   data_rand <- data
-  pred_fixed <- .predict_reservoir(model$fixed_model, data)
+  pred_fixed <- .predict_reservoir(
+    model$fixed_model,
+    data,
+    model$fixed_spec,
+    model$subject
+  )
   data_rand[[target_name]] <- data[[target_name]] - pred_fixed
   pred_rand <- .predict_random_hlme(
     model$random_model,
@@ -351,6 +357,7 @@ plot_prediction_check <- function(model, subject_nb_or_list, ylog = FALSE) {
   ensemble_controls,
   fit_controls
 ) {
+  stopifnot(length(.get_y_label(fixed_spec)) == 1)
   .check_sorted_data(data, subject, time)
   if (!is.null(data_val)) {
     stopifnot(setequal(colnames(data_val), colnames(data)))
@@ -430,13 +437,7 @@ reservoir_mixedml <- function(
     time,
     hlme_controls_iter
   )
-  fixed_model <- .initiate_esn(
-    fixed_spec,
-    subject,
-    esn_controls,
-    ensemble_controls,
-    fit_controls
-  )
+  fixed_model <- .initiate_esn(esn_controls, ensemble_controls, fit_controls)
   conv_thresh <- mixedml_controls[["conv_thresh"]]
   patience <- mixedml_controls[["patience"]]
   # initialization (some are for .get_model to work) ----
@@ -466,8 +467,13 @@ reservoir_mixedml <- function(
     # fitting fixed effects -----
     cat("\tfitting fixed effects...\n")
     data_fixed[[target_name]] <- data_train[[target_name]] - pred_rand
-    fixed_model <- .fit_reservoir(fixed_model, data_fixed)
-    pred_fixed <- .predict_reservoir(fixed_model, data_fixed)
+    fixed_model <- .fit_reservoir(fixed_model, data_fixed, fixed_spec, subject)
+    pred_fixed <- .predict_reservoir(
+      fixed_model,
+      data_fixed,
+      fixed_spec,
+      subject
+    )
     # fitting random effects -----
     cat("\tfitting random effects...\n")
     data_rand[[target_name]] <- data_train[[target_name]] - pred_fixed

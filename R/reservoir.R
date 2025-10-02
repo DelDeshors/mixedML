@@ -87,12 +87,10 @@ fit_ctrls <- function(warmup = 0) {
 
 
 .test_initiate_esn <- function(
-  fixed_spec,
   esn_controls,
   ensemble_controls,
   fit_controls
 ) {
-  stopifnot(length(.get_y_label(fixed_spec)) == 1)
   .check_controls_with_function(esn_controls, esn_ctrls)
   .check_controls_with_function(ensemble_controls, ensemble_ctrls)
   .check_controls_with_function(fit_controls, fit_ctrls)
@@ -102,13 +100,11 @@ fit_ctrls <- function(warmup = 0) {
 
 # recipes  ----
 .initiate_esn <- function(
-  fixed_spec,
-  subject,
   esn_controls = esn_ctrls(),
   ensemble_controls = ensemble_ctrls(),
   fit_controls = fit_ctrls()
 ) {
-  .test_initiate_esn(fixed_spec, esn_controls, ensemble_controls, fit_controls)
+  .test_initiate_esn(esn_controls, ensemble_controls, fit_controls)
   #
   retipy <- .load_package()
   # enforcing "stateful=TRUE" and "reset=TRUE"
@@ -125,21 +121,16 @@ fit_ctrls <- function(warmup = 0) {
     )
   )
   model <- do.call(retipy$JoblibReservoirEnsemble, controls)
-  # Adding the remaining attributes to the model so we can use them for fit and predict
-  .set_r_attr_to_py_obj(model, "fixed_spec", fixed_spec)
-  .set_r_attr_to_py_obj(model, "subject", subject)
   return(model)
 }
 
 
 # fitting/training ----
-.fit_reservoir <- function(model, data) {
+.fit_reservoir <- function(model, data, fixed_spec, subject) {
   # !!! offsetting is not implemented in LCMM
   # BUT for linear models, fitting "f(X)+offset" on Y is equivalent to
   # fitting f(X) on "Y-offset"
   # so that is the method used so far
-  fixed_spec <- .get_r_attr_from_py_obj(model, "fixed_spec")
-  subject <- .get_r_attr_from_py_obj(model, "subject")
   x_labels <- .get_x_labels(fixed_spec)
   y_label <- .get_y_label(fixed_spec)
   ccases <- complete.cases(data[x_labels])
@@ -156,12 +147,7 @@ fit_ctrls <- function(warmup = 0) {
 
 
 # prediction ----
-.predict_reservoir <- function(
-  model,
-  data
-) {
-  fixed_spec <- .get_r_attr_from_py_obj(model, "fixed_spec")
-  subject <- .get_r_attr_from_py_obj(model, "subject")
+.predict_reservoir <- function(model, data, fixed_spec, subject) {
   x_labels <- .get_x_labels(fixed_spec)
   ccases <- complete.cases(data[x_labels])
   data <- data[ccases, ]

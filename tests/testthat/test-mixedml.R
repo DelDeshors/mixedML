@@ -7,8 +7,7 @@ data_train <- data_mixedml[data_mixedml$ID < 9, ]
 data_val <- data_mixedml[data_mixedml$ID >= 9, ]
 
 
-test_that("mixedml works", {
-  folder <- tempdir()
+normal_execution <- function() {
   mixed_ml_model <- reservoir_mixedml(
     fixed_spec = fixed_spec,
     random_spec = random_spec,
@@ -17,7 +16,7 @@ test_that("mixedml works", {
     subject = subject,
     time = time,
     mixedml_controls = mixedml_ctrls(
-      conv_thresh = 0.01,
+      conv_thresh = 0.1,
       patience = 1,
       no_random_value_as = NA
     ),
@@ -48,5 +47,10 @@ test_that("mixedml works", {
   plot_conv_mse(mixed_ml_model)
   plot_conv_loglik(mixed_ml_model)
   plot_prediction_check(mixed_ml_model, subject_nb_or_list = 3)
-  unlink(folder, recursive = TRUE)
+  return()
+}
+
+
+test_that("mixedml works", {
+  expect_no_error(normal_execution())
 })

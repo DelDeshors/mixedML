@@ -5,8 +5,6 @@ time <- "time"
 
 .get_test_model <- function() {
   return(.initiate_esn(
-    fixed_spec = fixed_spec,
-    subject = subject,
     esn_controls = esn_ctrls(
       units = 10,
       sr = 0.1,
@@ -26,12 +24,9 @@ time <- "time"
 
 test_that("esn works", {
   model <- .get_test_model()
-  model <- .fit_reservoir(
-    model,
-    data_
-  )
+  model <- .fit_reservoir(model, data_, fixed_spec, subject)
   stopifnot(inherits(model, "reservoir_ensemble.JoblibReservoirEnsemble"))
-  pred <- .predict_reservoir(model, data_)
+  pred <- .predict_reservoir(model, data_, fixed_spec, subject)
   expect_vector(pred)
   x_labels <- .get_x_labels(fixed_spec)
   stopifnot(nrow(pred) == nrow(data_))

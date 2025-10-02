@@ -92,6 +92,9 @@ is.named.vector <- function(x) {
 
 
 .set_r_attr_to_py_obj <- function(py_obj, name, r_value) {
+  # Specific R objects (like formulas…) will be stored as PyCapsule
+  # and might cause problems with pickle.
+  # Use `class(reticulate::r_to_py(r_value))` to check it
   reticulate::py_set_attr(py_obj, name, reticulate::r_to_py(r_value))
   return()
 }
@@ -109,9 +112,6 @@ is.named.vector <- function(x) {
 }
 
 .save_py_object <- function(obj, filename) {
-  # Do not store specific R objects (like formulas…) into
-  # the reticulate/Python object, if you want it to be pickled.
-  # Else you will get a PyCapsule error.
   if (file.exists(filename)) {
     stop(filename, " already exists!")
   }

@@ -109,6 +109,9 @@ is.named.vector <- function(x) {
 }
 
 .save_py_object <- function(obj, filename) {
+  # Do not store specific R objects (like formulas…) into
+  # the reticulate/Python object, if you want it to be pickled.
+  # Else you will get a PyCapsule error.
   if (file.exists(filename)) {
     stop(filename, " already exists!")
   }

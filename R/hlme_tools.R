@@ -62,7 +62,6 @@ hlme_ctrls <- function(
 }
 
 .test_initiate_random_hlme <- function(random_spec, hlme_controls, var.time) {
-  stopifnot(length(.get_y_label(random_spec)) == 0)
   .check_controls_with_function(hlme_controls, hlme_ctrls)
   .check_controls_with_function(hlme_controls, hlme_ctrls)
   .check_cor_spec(random_spec, var.time, hlme_controls$cor)

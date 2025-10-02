@@ -357,7 +357,12 @@ plot_prediction_check <- function(model, subject_nb_or_list, ylog = FALSE) {
   ensemble_controls,
   fit_controls
 ) {
-  stopifnot(length(.get_y_label(fixed_spec)) == 1)
+  stopifnot(all(.get_x_labels(fixed_spec) %in% colnames(data)))
+  stopifnot(.get_y_label(fixed_spec) %in% colnames(data))
+  #
+  stopifnot(is.null(.get_y_label(random_spec)))
+  stopifnot(all(.get_x_labels(random_spec) %in% colnames(data)))
+  #
   .check_sorted_data(data, subject, time)
   if (!is.null(data_val)) {
     stopifnot(setequal(colnames(data_val), colnames(data)))
@@ -509,7 +514,7 @@ reservoir_mixedml <- function(
       cat(sprintf("\tMSE-val = %.4g\n", mse_val))
       mse_val_list <- c(mse_val_list, mse_val)
       #
-      hlme_val <- update(
+      hlme_val <- stats::update(
         random_model,
         data = data_val,
         B = random_model$best,

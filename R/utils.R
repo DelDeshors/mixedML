@@ -2,16 +2,21 @@
 
 .get_y_label <- function(spec) {
   stopifnot(rlang::is_bare_formula(spec))
-  return(all.vars(spec)[attr(terms(spec), "response")])
+  if (attr(terms(spec), "response") == 0) {
+    return(NULL)
+  }
+  y_label <- as.character(terms(spec)[[2]])
+  stopifnot(length(y_label) == 1)
+  return(y_label)
 }
 
 .get_x_labels <- function(spec, allow_interactions = FALSE) {
   stopifnot(rlang::is_bare_formula(spec))
-  x_labels <- attr(terms(spec), "term.labels")
   orders <- attr(terms(spec), "order")
   if ((!allow_interactions) && max(orders) > 1) {
     stop("Formula with interactions are not allowed for this model.")
   }
+  x_labels <- attr(terms(spec), "term.labels")
   return(x_labels)
 }
 

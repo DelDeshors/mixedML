@@ -80,10 +80,10 @@ is.named.vector <- function(x) {
   envname <- splt[[1]][[2]]
   if (envtype == "venv" && reticulate::virtualenv_exists(envname)) {
     reticulate::use_virtualenv(envname)
-    cat(sprintf("virtual environment \"%s\" activated!\n", envname))
+    message(sprintf("virtual environment \"%s\" activated!\n", envname))
   } else if (envtype == "conda" && reticulate::condaenv_exists(envname)) {
     reticulate::use_condaenv(envname)
-    cat(sprintf("conda environment \"%s\" activated!\n", envname))
+    message(sprintf("conda environment \"%s\" activated!\n", envname))
   } else {
     err()
   }

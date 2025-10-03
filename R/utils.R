@@ -70,20 +70,19 @@ is.named.vector <- function(x) {
 .activate_environment <- function() {
   name <- "MIXED_ML_PYTHON_ENV"
   value <- Sys.getenv(name)
-
   err <- function() {
     stop(sprintf(
-      'You need to setup the %s environement variable as "venv:name_of_env" or "conda:name_of_env".\n',
+      "You need to setup the %s environement variable with \"no environment\", ",
+      "\"venv:name_of_env\" or \"conda:name_of_env\".",
       name
     ))
-  }
-  if (!grepl(":", value)) {
-    err()
   }
   splt <- strsplit(value, ":")
   envtype <- splt[[1]][[1]]
   envname <- splt[[1]][[2]]
-  if (envtype == "venv" && reticulate::virtualenv_exists(envname)) {
+  if (envtype == "no environment") {
+    # nothing…
+  } else if (envtype == "venv" && reticulate::virtualenv_exists(envname)) {
     reticulate::use_virtualenv(envname)
     message(sprintf("virtual environment \"%s\" activated!\n", envname))
   } else if (envtype == "conda" && reticulate::condaenv_exists(envname)) {
@@ -92,10 +91,27 @@ is.named.vector <- function(x) {
   } else {
     err()
   }
+  return()
+}
+
+
+.modify_pypath <- function() {
   # necessary when loading a model saved with joblib
+  # also makes importing Python module easier
+  PACKAGE_NAME <- "mixedML" # pkgload::pkg_name() does not work with devtools::check
+  PYTHON_FOLDER <- "python"
+  py_path <- system.file(PYTHON_FOLDER, package = PACKAGE_NAME)
+  if (py_path == "") {
+    stop(
+      "Hi developper friend! Have you just renamed this package?
+      Please edit the PACKAGE_NAME variable in .modify_pypath function."
+    )
+  }
   pysys <- reticulate::import("sys")
-  instpath <- paste0(here::here(), "/inst/python/")
-  pysys$path <- c(pysys$path, instpath)
+  if (!py_path %in% pysys$path) {
+    message("Adding ", py_path, " to the reticulate/Python path.")
+    pysys$path <- c(pysys$path, py_path)
+  }
   return()
 }
 

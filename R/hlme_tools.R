@@ -132,6 +132,30 @@ hlme_ctrls <- function(
   return(random_hlme)
 }
 
+.fine_tune <- function(random_hlme, data, hlme_controls_final) {
+  # 2 objectives:
+  # - forcing an explicit "data" value to avoid since "data" is stored in the hlme call
+  #   but the value of "data" might not be the same in the context where you call update
+  #   (Yes I triggered this problem. Of course.)
+  # - cleaning the convX values in the updated call (using substitute)
+  #   (instead of having hlme_controls_final$convX)
+  sub_list <- hlme_controls_final[c("convB", "convL", "convG")]
+  sub_list$B <- random_hlme$best
+  call_hlme <- substitute(
+    stats::update(
+      random_hlme,
+      data = data,
+      B = B,
+      convB = convB,
+      convL = convL,
+      convG = convB
+    ),
+    sub_list
+  )
+  random_hlme <- eval(call_hlme)
+  return(random_hlme)
+}
+
 # convergence check ----
 .check_convergence_hlme <- function(random_hlme) {
   stopifnot(is.integer(random_hlme$conv))

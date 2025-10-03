@@ -1,6 +1,5 @@
 # reticulate ----
 .load_package <- function() {
-  .activate_environment()
   package <- "mixedML" # pkgload::pkg_name() does not work with devtools::check
   pyfolder <- "python"
   module <- "reservoir_ensemble"

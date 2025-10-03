@@ -145,7 +145,6 @@ save_mixedml <- function(model, mixedml_model_rds) {
 #' @return MixedMl model
 #' @export
 load_mixedml <- function(mixedml_model_rds) {
-  .activate_environment()
   model <- readRDS(mixedml_model_rds)
   if (is.null(model$fixed_model)) {
     fixed_model_joblib <- .joblib_from_rds(mixedml_model_rds)

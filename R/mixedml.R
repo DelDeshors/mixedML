@@ -543,17 +543,16 @@ reservoir_mixedml <- function(
       best_random_model <- random_model
       best_loglik_train <- loglik_train
       best_loglik_val <- loglik_val
+      best_data_rand <- data_rand
     }
     istep <- istep + 1
   }
   # final model with saved convergence criteria ----
   cat("Final convergence of HLME with strict convergence criterions.")
-  best_random_model <- stats::update(
+  best_random_model <- .fine_tune(
     best_random_model,
-    B = best_random_model$best,
-    convB = hlme_controls_final$convB,
-    convL = hlme_controls_final$convL,
-    convG = hlme_controls_final$convG
+    best_data_rand,
+    hlme_controls_final
   )
   .check_convergence_hlme(best_random_model)
   # updating with best iteartion values ----

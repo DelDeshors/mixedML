@@ -92,6 +92,10 @@ is.named.vector <- function(x) {
   } else {
     err()
   }
+  # necessary when loading a model saved with joblib
+  pysys <- reticulate::import("sys")
+  instpath <- paste0(here::here(), "/inst/python/")
+  pysys$path <- c(pysys$path, instpath)
   return()
 }
 

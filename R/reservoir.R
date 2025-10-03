@@ -1,15 +1,3 @@
-# reticulate ----
-.load_package <- function() {
-  package <- "mixedML" # pkgload::pkg_name() does not work with devtools::check
-  pyfolder <- "python"
-  module <- "reservoir_ensemble"
-  pypath <- system.file(pyfolder, package = package, mustWork = TRUE)
-  stopifnot(file.exists(sprintf("%s/%s.py", pypath, module)))
-  retipy <- reticulate::import_from_path(module, pypath, convert = TRUE)
-  return(retipy)
-}
-
-
 # controls ----
 
 #' Prepare the esn_controls
@@ -104,8 +92,9 @@ fit_ctrls <- function(warmup = 0) {
   fit_controls = fit_ctrls()
 ) {
   .test_initiate_esn(esn_controls, ensemble_controls, fit_controls)
-  #
-  retipy <- .load_package()
+  # sys.path is modified when activating the Python environment
+  # so the import is simply:
+  retipy <- reticulate::import("reservoir_ensemble")
   # enforcing "stateful=TRUE" and "reset=TRUE"
   enforcement <- list(stateful = TRUE, reset = TRUE)
   fit_controls <- c(fit_controls, enforcement)

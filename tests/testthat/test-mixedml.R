@@ -18,15 +18,18 @@ normal_execution <- function() {
     mixedml_controls = mixedml_ctrls(
       conv_thresh = 0.1,
       patience = 1,
-      no_random_value_as = NA
+      no_random_value_as = NA,
+      convB = 0.1,
+      convL = 0.1,
+      convG = 0.1
     ),
     hlme_controls = hlme_ctrls(
       maxiter = 5,
       idiag = TRUE,
       cor = AR(time),
-      convB = 0.01,
-      convL = 0.01,
-      convG = 0.01
+      convB = 0.0001,
+      convL = 0.0001,
+      convG = 0.0001
     ),
     esn_controls = esn_ctrls(
       units = 20,

@@ -172,8 +172,8 @@ hlme_ctrls <- function(
 # prediction ----
 
 ## utils ----
-.initiate_full_preds <- function(data, no_random_value_as) {
-  full_preds <- rep(no_random_value_as, nrow(data))
+.initiate_full_preds <- function(data) {
+  full_preds <- rep(NA, nrow(data))
   names(full_preds) <- row.names(data)
   rnames_pred <- row.names(data)
   return(full_preds)
@@ -210,20 +210,19 @@ hlme_ctrls <- function(
 .predict_newdata_ss <- function(
   random_hlme,
   data,
-  data_info,
-  no_random_value_as
+  data_info
 ) {
   # nolint start
   DATA <- data
   DATA_INFO <- data_info
   PRED_RE <- lcmm::predictRE(random_hlme, DATA_INFO)
-  FULL_PREDS <- .initiate_full_preds(data, no_random_value_as)
+  FULL_PREDS <- .initiate_full_preds(data)
   # nolint end
 
   # NOTE: with this method the observations with no NAs in Xs and NA in Y
   # will get a prediction, which is different from the library original behaviour
   # in model$pred$pred_ss
-  full_preds <- .initiate_full_preds(data, no_random_value_as)
+  full_preds <- .initiate_full_preds(data)
   # we work by subject to avoid the predictY error
   # predRE should contain as many rows as latent classes error
   # (number of rows > 1)
@@ -291,22 +290,20 @@ hlme_ctrls <- function(
 
 .predict_with_all_info <- function(
   random_hlme,
-  data,
-  no_random_value_as
+  data
 ) {
   full_preds <- .predict_newdata_ss(
     random_hlme,
     data = data,
-    data_info = data,
-    no_random_value_as
+    data_info = data
   )
   return(full_preds)
 }
 
 
 ## prediction with past information ----
-.predict_with_past_info <- function(random_hlme, data, no_random_value_as) {
-  full_preds <- .initiate_full_preds(data, no_random_value_as)
+.predict_with_past_info <- function(random_hlme, data) {
+  full_preds <- .initiate_full_preds(data)
   var.time <- random_hlme$var.time
   time_unq <- sort(unique(data[[var.time]]))
   for (i_time in time_unq[-1]) {
@@ -315,8 +312,7 @@ hlme_ctrls <- function(
     full_preds[rownames(actual_data)] <- .predict_newdata_ss(
       random_hlme,
       data = actual_data,
-      data_info = prev_data,
-      no_random_value_as
+      data_info = prev_data
     )
   }
   return(full_preds)
@@ -327,16 +323,14 @@ hlme_ctrls <- function(
 .predict_random_hlme <- function(
   random_hlme,
   data,
-  no_random_value_as,
   use_all_info
 ) {
   if (use_all_info) {
     return(.predict_with_all_info(
       random_hlme,
-      data,
-      no_random_value_as
+      data
     ))
   } else {
-    return(.predict_with_past_info(random_hlme, data, no_random_value_as))
+    return(.predict_with_past_info(random_hlme, data))
   }
 }

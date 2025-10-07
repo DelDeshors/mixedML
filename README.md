@@ -202,7 +202,6 @@ model_reservoir <- reservoir_mixedml(
   ensemble_controls = ensemble_ctrls(seed_list = c(1, 2, 3, 4, 5)),
   fit_controls = fit_ctrls(warmup = 2)
 )
-#> conda environment "01" activated!
 #> Warning in .check_na_combinaison(data_train, fixed_spec, random_spec, target_name): 
 #>          2 incomplete cases for the ML models
 #>          4 incomplete cases for the HLME model
@@ -211,87 +210,121 @@ model_reservoir <- reservoir_mixedml(
 #> step#0
 #>  fitting fixed effects...
 #>  fitting random effects...
+#> The 2 methods for predictY give the same results <3
 #>  MSE-train = 199
+#> The 2 methods for predictY give the same results <3
 #>  MSE-val = 172.8
 #> step#1
 #>  fitting fixed effects...
 #>  fitting random effects...
+#> The 2 methods for predictY give the same results <3
 #>  MSE-train = 146.8
+#> The 2 methods for predictY give the same results <3
 #>  MSE-val = 119.6
 #> step#2
 #>  fitting fixed effects...
 #>  fitting random effects...
+#> The 2 methods for predictY give the same results <3
 #>  MSE-train = 101.5
+#> The 2 methods for predictY give the same results <3
 #>  MSE-val = 89.26
 #> step#3
 #>  fitting fixed effects...
 #>  fitting random effects...
+#> The 2 methods for predictY give the same results <3
 #>  MSE-train = 61.82
+#> The 2 methods for predictY give the same results <3
 #>  MSE-val = 58.71
 #> step#4
 #>  fitting fixed effects...
 #>  fitting random effects...
+#> The 2 methods for predictY give the same results <3
 #>  MSE-train = 44.76
+#> The 2 methods for predictY give the same results <3
 #>  MSE-val = 53.82
 #> step#5
 #>  fitting fixed effects...
 #>  fitting random effects...
+#> The 2 methods for predictY give the same results <3
 #>  MSE-train = 39.42
+#> The 2 methods for predictY give the same results <3
 #>  MSE-val = 48.39
 #> step#6
 #>  fitting fixed effects...
 #>  fitting random effects...
+#> The 2 methods for predictY give the same results <3
 #>  MSE-train = 37.41
+#> The 2 methods for predictY give the same results <3
 #>  MSE-val = 58.27
 #> step#7
 #>  fitting fixed effects...
 #>  fitting random effects...
+#> The 2 methods for predictY give the same results <3
 #>  MSE-train = 28.01
+#> The 2 methods for predictY give the same results <3
 #>  MSE-val = 48.36
 #> step#8
 #>  fitting fixed effects...
 #>  fitting random effects...
+#> The 2 methods for predictY give the same results <3
 #>  MSE-train = 26
+#> The 2 methods for predictY give the same results <3
 #>  MSE-val = 43.82
 #> step#9
 #>  fitting fixed effects...
 #>  fitting random effects...
+#> The 2 methods for predictY give the same results <3
 #>  MSE-train = 25.48
+#> The 2 methods for predictY give the same results <3
 #>  MSE-val = 42.72
 #> step#10
 #>  fitting fixed effects...
 #>  fitting random effects...
+#> The 2 methods for predictY give the same results <3
 #>  MSE-train = 24.2
+#> The 2 methods for predictY give the same results <3
 #>  MSE-val = 42.34
 #> step#11
 #>  fitting fixed effects...
 #>  fitting random effects...
+#> The 2 methods for predictY give the same results <3
 #>  MSE-train = 22.87
+#> The 2 methods for predictY give the same results <3
 #>  MSE-val = 42.28
 #> step#12
 #>  fitting fixed effects...
 #>  fitting random effects...
+#> The 2 methods for predictY give the same results <3
 #>  MSE-train = 21.84
+#> The 2 methods for predictY give the same results <3
 #>  MSE-val = 42.24
 #> step#13
 #>  fitting fixed effects...
 #>  fitting random effects...
+#> The 2 methods for predictY give the same results <3
 #>  MSE-train = 20.97
+#> The 2 methods for predictY give the same results <3
 #>  MSE-val = 42.2
 #> step#14
 #>  fitting fixed effects...
 #>  fitting random effects...
+#> The 2 methods for predictY give the same results <3
 #>  MSE-train = 20.43
+#> The 2 methods for predictY give the same results <3
 #>  MSE-val = 42.37
 #> step#15
 #>  fitting fixed effects...
 #>  fitting random effects...
+#> The 2 methods for predictY give the same results <3
 #>  MSE-train = 20.31
+#> The 2 methods for predictY give the same results <3
 #>  MSE-val = 42.83
 #> step#16
 #>  fitting fixed effects...
 #>  fitting random effects...
+#> The 2 methods for predictY give the same results <3
 #>  MSE-train = 20.72
+#> The 2 methods for predictY give the same results <3
 #>  MSE-val = 43.7
 #> Final convergence of HLME with strict convergence criterions.
 ```
@@ -308,8 +341,7 @@ model_reservoir$random_model
 #>      fitted by maximum likelihood method 
 #>  
 #> hlme(fixed = ym ~ 1, random = ~x1 + x2, subject = "ID", idiag = TRUE, 
-#>     cor = NULL, data = data, convB = hlme_controls_final$convB, 
-#>     convL = hlme_controls_final$convL, convG = hlme_controls_final$convG, 
+#>     cor = NULL, data = data, convB = 1e-04, convL = 1e-04, convG = 1e-04, 
 #>     maxiter = 50, na.action = 1, posfix = 1, verbose = FALSE, 
 #>     var.time = "time", nproc = 1)
 #>  
@@ -324,15 +356,15 @@ model_reservoir$random_model
 #>  
 #> Iteration process: 
 #>      Convergence criteria satisfied 
-#>      Number of iterations:  40 
-#>      Convergence criteria: parameters= 2.1e-05 
-#>                          : likelihood= 2.3e-07 
-#>                          : second derivatives= 1.6e-13 
+#>      Number of iterations:  2 
+#>      Convergence criteria: parameters= 2.8e-09 
+#>                          : likelihood= 2.7e-08 
+#>                          : second derivatives= 1.5e-08 
 #>  
 #> Goodness-of-fit statistics: 
-#>      maximum log-likelihood: -99.08  
-#>      AIC: 206.16  
-#>      BIC: 206.48  
+#>      maximum log-likelihood: -127.37  
+#>      AIC: 262.75  
+#>      BIC: 263.06  
 #>  
 #> 
 ```
@@ -340,7 +372,7 @@ model_reservoir$random_model
 ``` r
 # (this model uses reticulate so it not very convenient as an example…)
 model_reservoir$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7dd8dbd79940>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x73b013055940>
 ```
 
 Also a `call` attribute exists, meaning one can trained the model with
@@ -367,16 +399,13 @@ Predict using a fitted model and new data
 **Usage**
 
 ``` r
-predict(model, data, no_random_value_as = 0, all_info_hlme_prediction = FALSE)
+predict(model, data, all_info_hlme_prediction = FALSE)
 ```
 
 **Arguments**
 
 - `model`: Trained MixedML model
 - `data`: New data (same format as the one used for training)
-- `no_random_value_as`: value to use during the training of the mixedML
-  model when a prediction of the random model is not possible (NA or 0).
-  This does not affect the prediction. Default: 0.
 - `all_info_hlme_prediction`: boolean to choose if all the information
   (past, present, future) is used for the hlme prediction (TRUE) or if
   only the past information is used (FALSE). Default: FALSE
@@ -389,17 +418,20 @@ prediction
 predict(
   model = model_reservoir,
   data = data_mixedml,
-  no_random_value_as = 0.,
   all_info_hlme_prediction = FALSE
 )
+#> The 2 methods for predictY give the same results <3
+#> The 2 methods for predictY give the same results <3
+#> The 2 methods for predictY give the same results <3
+#> The 2 methods for predictY give the same results <3
 #>    39    35    10     1    42    49    19    43     6    18    25    33    37 
-#>    NA 247.7 185.5 196.3 169.2  39.3    NA 106.9 108.3 119.4 238.6 218.8 204.1 
+#>    NA    NA 184.2 198.4 173.2    NA    NA 110.3 114.8 119.9    NA    NA 207.0 
 #>     2    31    16    15    26    13    34    23    22    11    50    46     7 
-#> 187.1 215.1  34.1 120.5 119.5  98.1 114.9 233.0 188.2 185.0 200.1  31.1 119.1 
+#> 199.5 211.7    NA 117.9 118.7 111.7 111.1    NA 192.5 187.6 194.5    NA 113.5 
 #>    40    44    28    38     4    14    24     9    17    32    45    30    12 
-#> 118.7 117.0 247.2 186.8 183.0 189.0 194.1  35.8 106.0 130.2 101.5 104.3 239.9 
+#> 118.4 115.5    NA 185.6 198.0 185.8 193.6    NA 104.0  99.6  99.6 101.5    NA 
 #>    48    36    29     5    47     8    20     3    41 
-#> 195.0 201.1 196.1 203.8  31.4  90.3  70.3  83.7  76.5
+#> 194.3 196.1 203.0 204.1    NA  88.6  87.6  92.9  82.3
 ```
 
 ## 8.2 `plot_conv`
@@ -480,6 +512,7 @@ Prediction plot of the model.
 
 ``` r
 plot_prediction_check(model = model_reservoir, subject_nb_or_list = c(1, 2, 3, 4, 5))
+#> The 2 methods for predictY give the same results <3
 #> Warning: Removed 4 rows containing missing values or values outside the scale range
 #> (`geom_point()`).
 ```
@@ -535,7 +568,7 @@ mixedml_model <- load_mixedml("model_reservoir.Rds")
 
 ``` r
 mixedml_model$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7dd8625325d0>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x73afd38a2490>
 ```
 
 ``` r
@@ -544,8 +577,7 @@ mixedml_model$random_model
 #>      fitted by maximum likelihood method 
 #>  
 #> hlme(fixed = ym ~ 1, random = ~x1 + x2, subject = "ID", idiag = TRUE, 
-#>     cor = NULL, data = data, convB = hlme_controls_final$convB, 
-#>     convL = hlme_controls_final$convL, convG = hlme_controls_final$convG, 
+#>     cor = NULL, data = data, convB = 1e-04, convL = 1e-04, convG = 1e-04, 
 #>     maxiter = 50, na.action = 1, posfix = 1, verbose = FALSE, 
 #>     var.time = "time", nproc = 1)
 #>  
@@ -560,27 +592,31 @@ mixedml_model$random_model
 #>  
 #> Iteration process: 
 #>      Convergence criteria satisfied 
-#>      Number of iterations:  40 
-#>      Convergence criteria: parameters= 2.1e-05 
-#>                          : likelihood= 2.3e-07 
-#>                          : second derivatives= 1.6e-13 
+#>      Number of iterations:  2 
+#>      Convergence criteria: parameters= 2.8e-09 
+#>                          : likelihood= 2.7e-08 
+#>                          : second derivatives= 1.5e-08 
 #>  
 #> Goodness-of-fit statistics: 
-#>      maximum log-likelihood: -99.08  
-#>      AIC: 206.16  
-#>      BIC: 206.48  
+#>      maximum log-likelihood: -127.37  
+#>      AIC: 262.75  
+#>      BIC: 263.06  
 #>  
 #> 
 ```
 
 ``` r
 predict(mixedml_model, data_mixedml)
+#> The 2 methods for predictY give the same results <3
+#> The 2 methods for predictY give the same results <3
+#> The 2 methods for predictY give the same results <3
+#> The 2 methods for predictY give the same results <3
 #>    39    35    10     1    42    49    19    43     6    18    25    33    37 
-#>    NA 247.7 185.5 196.3 169.2  39.3    NA 106.9 108.3 119.4 238.6 218.8 204.1 
+#>    NA    NA 184.2 198.4 173.2    NA    NA 110.3 114.8 119.9    NA    NA 207.0 
 #>     2    31    16    15    26    13    34    23    22    11    50    46     7 
-#> 187.1 215.1  34.1 120.5 119.5  98.1 114.9 233.0 188.2 185.0 200.1  31.1 119.1 
+#> 199.5 211.7    NA 117.9 118.7 111.7 111.1    NA 192.5 187.6 194.5    NA 113.5 
 #>    40    44    28    38     4    14    24     9    17    32    45    30    12 
-#> 118.7 117.0 247.2 186.8 183.0 189.0 194.1  35.8 106.0 130.2 101.5 104.3 239.9 
+#> 118.4 115.5    NA 185.6 198.0 185.8 193.6    NA 104.0  99.6  99.6 101.5    NA 
 #>    48    36    29     5    47     8    20     3    41 
-#> 195.0 201.1 196.1 203.8  31.4  90.3  70.3  83.7  76.5
+#> 194.3 196.1 203.0 204.1    NA  88.6  87.6  92.9  82.3
 ```

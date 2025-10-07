@@ -18,7 +18,6 @@ normal_execution <- function() {
     mixedml_controls = mixedml_ctrls(
       conv_thresh = 0.1,
       patience = 1,
-      no_random_value_as = NA,
       convB = 0.1,
       convL = 0.1,
       convG = 0.1

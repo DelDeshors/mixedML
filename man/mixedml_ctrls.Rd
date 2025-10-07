@@ -7,7 +7,6 @@
 mixedml_ctrls(
   patience = 2,
   conv_thresh = 0.01,
-  no_random_value_as = NA,
   all_info_hlme_prediction = TRUE,
   convB = 0.01,
   convL = 0.01,
@@ -19,11 +18,6 @@ mixedml_ctrls(
 
 \item{conv_thresh}{Minimal difference of MSE to consider an improvement.
 \code{conv_thresh=0.01} means an improvement of at least 1\% of the MSE is necessary. Default: 0.01}
-
-\item{no_random_value_as}{value to use during the training of the mixedML model
-when a prediction of the random model is not possible (NA or 0).
-This does not affect the prediction.
-Default: NA}
 
 \item{all_info_hlme_prediction}{boolean to choose if all the information
 (past, present, future) is used for the hlme prediction (TRUE) or if only the past

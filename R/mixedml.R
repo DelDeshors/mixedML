@@ -44,10 +44,6 @@ MIXEDML_COMPONENTS <- c(
 #' @param patience Number of iterations without improvement before the training is stopped. Default: 2
 #' @param conv_thresh Minimal difference of MSE to consider an improvement.
 #' `conv_thresh=0.01` means an improvement of at least 1% of the MSE is necessary. Default: 0.01
-#' @param no_random_value_as value to use during the training of the mixedML model
-#' when a prediction of the random model is not possible (NA or 0).
-#' This does not affect the prediction.
-#' Default: NA
 #' @param all_info_hlme_prediction boolean to choose if all the information
 #' (past, present, future) is used for the hlme prediction (TRUE) or if only the past
 #' information is used (FALSE). Default: TRUE
@@ -65,7 +61,6 @@ MIXEDML_COMPONENTS <- c(
 mixedml_ctrls <- function(
   patience = 2,
   conv_thresh = 0.01,
-  no_random_value_as = NA,
   all_info_hlme_prediction = TRUE,
   convB = 0.01, # nolint
   convL = 0.01, # nolint
@@ -75,9 +70,6 @@ mixedml_ctrls <- function(
   patience <- as.integer(patience)
   stopifnot(is.single.numeric(conv_thresh))
   stopifnot(0 < conv_thresh)
-  #
-  stopifnot(length(no_random_value_as) == 1)
-  stopifnot(is.na(no_random_value_as) || (no_random_value_as == 0))
   #
   control <- as.list(environment())
   return(control)
@@ -167,9 +159,6 @@ load_mixedml <- function(mixedml_model_rds) {
 #'
 #' @param model Trained MixedML model
 #' @param data New data (same format as the one used for training)
-#' @param no_random_value_as value to use during the training of the mixedML model
-#' when a prediction of the random model is not possible (NA or 0).
-#' This does not affect the prediction. Default: 0.
 #' @param all_info_hlme_prediction boolean to choose if all the information
 #' (past, present, future) is used for the hlme prediction (TRUE) or if only the past
 #' information is used (FALSE). Default: FALSE
@@ -178,7 +167,6 @@ load_mixedml <- function(mixedml_model_rds) {
 predict <- function(
   model,
   data,
-  no_random_value_as = 0.,
   all_info_hlme_prediction = FALSE
 ) {
   .test_predict(model, data)
@@ -194,7 +182,6 @@ predict <- function(
   pred_rand <- .predict_random_hlme(
     model$random_model,
     data_rand,
-    no_random_value_as,
     all_info_hlme_prediction
   )
   return(pred_fixed + pred_rand)
@@ -304,7 +291,6 @@ plot_prediction_check <- function(model, subject_nb_or_list, ylog = FALSE) {
   data_pred[[target]] <- predict(
     model,
     data_pred,
-    no_random_value_as = NA,
     all_info_hlme_prediction = TRUE
   )
   data_plot <- rbind(data_tgt, data_pred)
@@ -487,7 +473,6 @@ reservoir_mixedml <- function(
     pred_rand <- .predict_random_hlme(
       random_model,
       data_rand,
-      mixedml_controls$no_random_value_as,
       mixedml_controls$all_info_hlme_prediction
     )
     # train residuals/mse and loglik----
@@ -506,7 +491,6 @@ reservoir_mixedml <- function(
       pred_val <- predict(
         tmp_model,
         data_val,
-        mixedml_controls$no_random_value_as,
         mixedml_controls$all_info_hlme_prediction
       )
       residuals_val <- data_val[, target_name] - pred_val

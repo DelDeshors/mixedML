@@ -54,8 +54,7 @@
   # prediction with all info ----
   pred <- .predict_with_all_info(
     random_hlme = model,
-    data = data_mixedml,
-    no_random_value_as = NA
+    data = data_mixedml
   )
   expect_vector(pred, ptype = NULL, size = nrow(data_mixedml))
   expect_type(pred, "double")
@@ -65,8 +64,7 @@
   # prediction with past info ----
   pred <- .predict_with_past_info(
     random_hlme = model,
-    data = data_mixedml,
-    no_random_value_as = NA
+    data = data_mixedml
   )
   stopifnot(length(pred) == nrow(data_mixedml))
   expect_vector(pred, ptype = NULL, size = nrow(data_mixedml))

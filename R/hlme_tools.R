@@ -212,6 +212,10 @@ hlme_ctrls <- function(
   data,
   data_info
 ) {
+  # NOTE: with this method the observations with no NAs in Xs and NA in Y
+  # will get a prediction, which is different from the library original behaviour
+  # in model$pred$pred_ss
+
   # nolint start
   DATA <- data
   DATA_INFO <- data_info
@@ -219,13 +223,7 @@ hlme_ctrls <- function(
   FULL_PREDS <- .initiate_full_preds(data)
   # nolint end
 
-  # NOTE: with this method the observations with no NAs in Xs and NA in Y
-  # will get a prediction, which is different from the library original behaviour
-  # in model$pred$pred_ss
   full_preds <- .initiate_full_preds(data)
-  # we work by subject to avoid the predictY error
-  # predRE should contain as many rows as latent classes error
-  # (number of rows > 1)
   subject <- random_hlme$call$subject
   time <- random_hlme$var.time
   x_labels <- random_hlme$Xnames2[random_hlme$Xnames2 != "intercept"]
@@ -234,7 +232,7 @@ hlme_ctrls <- function(
   data <- data[complete.cases(data[x_labels]), ]
   # we need all the Xs and the Y to compute de random effect and correlation
   data_info <- data_info[complete.cases(data_info[c(x_labels, y_label)]), ]
-  # common subject
+  # common subjects
   comsubj <- intersect(data[[subject]], data_info[[subject]])
   for (subj in comsubj) {
     # we work by isolating subject, this is how the functions have been designed

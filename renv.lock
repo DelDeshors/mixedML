@@ -1999,7 +1999,7 @@
       "RemoteRepo": "lcmm",
       "RemoteUsername": "CecileProust-Lima",
       "RemoteRef": "HEAD",
-      "RemoteSha": "c415dcd3ee6880e95f1048f079430931017ae8c5",
+      "RemoteSha": "c67431e0006643069e2ed6fc89e91ffc1e4f1d2c",
       "Author": "Cecile Proust-Lima [aut, cre], Viviane Philipps [aut], Amadou Diakite [ctb], Benoit Liquet [ctb], Alan Genz [ctb] (Author of hrmsym subroutine), John Burkardt [ctb] (Author of alnorm subroutine)",
       "Maintainer": "Cecile Proust-Lima <cecile.proust-lima@inserm.fr>"
     },

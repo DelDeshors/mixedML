@@ -40,9 +40,6 @@ hlme_ctrls <- function(
 .check_cor_spec <- function(random_spec, var.time, cor) {
   # this should move into lcmm
   if (is.null(cor)) return()
-  warning(
-    "The predictions made by hlme on new data do not yet take into account the correlation"
-  )
   #
   cor_code <- as.character(cor)[1]
   if (!cor_code %in% c("AR", "BM")) {
@@ -185,49 +182,65 @@ hlme_ctrls <- function(
 .predict_newdata_ss <- function(
   random_hlme,
   data,
-  data_re,
+  data_info,
   no_random_value_as
 ) {
   # NOTE: with this method the observations with no NAs in Xs and NA in Y
   # will get a prediction, which is different from the library original behaviour
   # in model$pred$pred_ss
   full_preds <- .initiate_full_preds(data, no_random_value_as)
-  # predictRE calls the training of the model with iteration 0 in order to
-  # access model$pred_ss
-  # so the data which raise an error for training
-  # will also raise an error for predictRE
-  # Erreur dans matYXord[, 4 + ng] : nombre de dimensions incorrect
-  try_predict_re <- try(
-    lcmm::predictRE(random_hlme, data_re),
-    silent = TRUE
-  )
-  if (is.data.frame(try_predict_re)) {
-    # we work by subject to avoid the
-    # predRE should contain as many rows as latent classes error
-    # (number of rows > 1)
-    subject <- colnames(try_predict_re)[1]
-    for (subj in try_predict_re[[subject]]) {
-      # isolating data_subj makes it easier to "merge" later with full_pred
-      # the results are the same (there can be micro-tiny numerical difference)
-      data_subj <- data[data[[subject]] == subj, ]
-      ui_subj <- try_predict_re[try_predict_re[[subject]] == subj, ]
-      # we can still have the
-      # "predRE should contain as many rows as latent classes" error
-      # (number of rows == 0 because of NAs)
-      try_predict_y <- try(
-        lcmm::predictY(
-          random_hlme,
-          newdata = data_subj,
-          predRE = ui_subj
-        ),
-        silent = TRUE
-      )
-      if (is.list(try_predict_y)) {
-        full_preds[rownames(try_predict_y$times)] <- try_predict_y$pred[, 1]
-      }
+  # we work by subject to avoid the predictY error
+  # predRE should contain as many rows as latent classes error
+  # (number of rows > 1)
+  subject <- random_hlme$call$subject
+  time <- random_hlme$var.time
+  xnames <- random_hlme$Xnames2[random_hlme$Xnames2 != "intercept"]
+  for (subj in unique(data[[subject]])) {
+    # we work by isolating subject, this is how the functions have been designed
+    # (trus me I know the dev)
+    data_subj <- data[data[[subject]] == subj, ]
+    ccase_subj <- complete.cases(data_subj[xnames])
+    data_subj_ccase <- data_subj[ccase_subj, ]
+    if (nrow(data_subj_ccase) == 0) {
+      next()
     }
+    times_subj_ccase <- sort(unique(data_subj_ccase[[time]]))
+    data_info_subj <- data_info[data_info[[subject]] == subj, ]
+    # random effects----
+    try_predict_re_subj <- try(
+      lcmm::predictRE(random_hlme, data_info_subj),
+      silent = TRUE
+    )
+    if (!is.data.frame(try_predict_re_subj)) {
+      next()
+    }
+    # correlations ----
+    try_predict_cor_subj <- try(
+      lcmm::predictCor(random_hlme, data_info_subj, times_subj_ccase),
+      silent = TRUE
+    )
+    if (!is.matrix(try_predict_cor_subj)) {
+      warning(
+        "Case not anticipated: can compute predRE but not predCor!\n",
+        try_predict_cor_subj
+      )
+    }
+    # final prediction ----
+    try_predict_y <- try(
+      lcmm::predictY(
+        random_hlme,
+        newdata = data_subj_ccase,
+        predRE = try_predict_re_subj,
+        predCor = try_predict_cor_subj
+      ),
+      silent = TRUE
+    )
+    if (!is.list(try_predict_y)) {
+      stop("Case not anticipated: should be able to compute predictY")
+    }
+    #
+    full_preds[rownames(try_predict_y$times)] <- try_predict_y$pred[, 1]
   }
-
   return(full_preds)
 }
 
@@ -242,7 +255,7 @@ hlme_ctrls <- function(
   full_preds <- .predict_newdata_ss(
     random_hlme,
     data = data,
-    data_re = data,
+    data_info = data,
     no_random_value_as
   )
   return(full_preds)
@@ -260,7 +273,7 @@ hlme_ctrls <- function(
     full_preds[rownames(actual_data)] <- .predict_newdata_ss(
       random_hlme,
       data = actual_data,
-      data_re = prev_data,
+      data_info = prev_data,
       no_random_value_as
     )
   }

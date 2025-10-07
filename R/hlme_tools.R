@@ -179,12 +179,47 @@ hlme_ctrls <- function(
   return(full_preds)
 }
 
+.predict_cor <- function(model, data, times) {
+  if (is.null(model$call$cor)) {
+    return(NULL)
+  }
+  return(lcmm::predictCor(model, data, times))
+}
+
+.predict_y <- function(model, newdata, pred_re, pred_cor) {
+  if (is.null(pred_cor)) {
+    return(
+      lcmm::predictY(
+        model,
+        newdata,
+        predRE = pred_re
+      )
+    )
+  } else {
+    return(
+      lcmm::predictY(
+        model,
+        newdata,
+        predRE = pred_re,
+        predCor = pred_cor
+      )
+    )
+  }
+}
+
 .predict_newdata_ss <- function(
   random_hlme,
   data,
   data_info,
   no_random_value_as
 ) {
+  # nolint start
+  DATA <- data
+  DATA_INFO <- data_info
+  PRED_RE <- lcmm::predictRE(random_hlme, DATA_INFO)
+  FULL_PREDS <- .initiate_full_preds(data, no_random_value_as)
+  # nolint end
+
   # NOTE: with this method the observations with no NAs in Xs and NA in Y
   # will get a prediction, which is different from the library original behaviour
   # in model$pred$pred_ss
@@ -194,53 +229,60 @@ hlme_ctrls <- function(
   # (number of rows > 1)
   subject <- random_hlme$call$subject
   time <- random_hlme$var.time
-  xnames <- random_hlme$Xnames2[random_hlme$Xnames2 != "intercept"]
-  for (subj in unique(data[[subject]])) {
+  x_labels <- random_hlme$Xnames2[random_hlme$Xnames2 != "intercept"]
+  y_label <- .get_y_label(random_hlme$call$fixed)
+  # we need all the Xs to compute the predictions
+  data <- data[complete.cases(data[x_labels]), ]
+  # we need all the Xs and the Y to compute de random effect and correlation
+  data_info <- data_info[complete.cases(data_info[c(x_labels, y_label)]), ]
+  # common subject
+  comsubj <- intersect(data[[subject]], data_info[[subject]])
+  for (subj in comsubj) {
     # we work by isolating subject, this is how the functions have been designed
-    # (trus me I know the dev)
+    # (trust me I know the dev)
     data_subj <- data[data[[subject]] == subj, ]
-    ccase_subj <- complete.cases(data_subj[xnames])
-    data_subj_ccase <- data_subj[ccase_subj, ]
-    if (nrow(data_subj_ccase) == 0) {
-      next()
-    }
-    times_subj_ccase <- sort(unique(data_subj_ccase[[time]]))
     data_info_subj <- data_info[data_info[[subject]] == subj, ]
-    # random effects----
-    try_predict_re_subj <- try(
-      lcmm::predictRE(random_hlme, data_info_subj),
-      silent = TRUE
-    )
-    if (!is.data.frame(try_predict_re_subj)) {
-      next()
-    }
-    # correlations ----
-    try_predict_cor_subj <- try(
-      lcmm::predictCor(random_hlme, data_info_subj, times_subj_ccase),
-      silent = TRUE
-    )
-    if (!is.matrix(try_predict_cor_subj)) {
-      warning(
-        "Case not anticipated: can compute predRE but not predCor!\n",
-        try_predict_cor_subj
-      )
-    }
-    # final prediction ----
-    try_predict_y <- try(
-      lcmm::predictY(
-        random_hlme,
-        newdata = data_subj_ccase,
-        predRE = try_predict_re_subj,
-        predCor = try_predict_cor_subj
-      ),
-      silent = TRUE
-    )
-    if (!is.list(try_predict_y)) {
-      stop("Case not anticipated: should be able to compute predictY")
-    }
-    #
-    full_preds[rownames(try_predict_y$times)] <- try_predict_y$pred[, 1]
+    times_subj <- unique(data_subj[[time]])
+    pred_re <- lcmm::predictRE(random_hlme, data_info_subj)
+    pred_cor <- .predict_cor(random_hlme, data_info_subj, times_subj)
+    pred_y <- .predict_y(random_hlme, data_subj, pred_re, pred_cor)
+    full_preds[rownames(pred_y$times)] <- pred_y$pred[, 1]
+    # nolint start
+    # DATA_SUBJ <- DATA[DATA[[subject]] == subj, ]
+    # PRED_RE_SUBJ <- PRED_RE[PRED_RE[[subject]] == subj, ]
+    # PRED_Y <- .predict_y(random_hlme, DATA_SUBJ, PRED_RE_SUBJ, pred_cor)
+    # if (!identical(pred_y, PRED_Y)) {
+    #   browser()
+    # }
+    # nolint end
   }
+  # nolint start
+  for (subj in PRED_RE[[subject]]) {
+    # we work by isolating subject, this is how the functions have been designed
+    # (trust me I know the dev)
+    DATA_SUBJ <- DATA[DATA[[subject]] == subj, ]
+    DATA_INFO_SUBJ <- DATA_INFO[DATA_INFO[[subject]] == subj, ]
+    PRED_RE_SUBJ <- PRED_RE[PRED_RE[[subject]] == subj, ]
+    TIME_SUBJ_CC <- DATA_SUBJ[complete.cases(DATA_SUBJ[x_labels]), ][[time]]
+
+    pred_cor <- .predict_cor(random_hlme, DATA_INFO_SUBJ, TIME_SUBJ_CC)
+    PRED_Y <- try(
+      .predict_y(random_hlme, DATA_SUBJ, PRED_RE_SUBJ, pred_cor),
+      silent = TRUE
+    )
+    if (!is.list(PRED_Y)) {
+      # browser()
+      # happens when DATA_SUBJ has NAs or is empty
+    } else {
+      FULL_PREDS[rownames(PRED_Y$times)] <- PRED_Y$pred[, 1]
+    }
+  }
+  if (!identical(FULL_PREDS, full_preds)) {
+    # browser()
+  } else {
+    message("The 2 methods for predictY give the same results <3")
+  }
+  # nolint end
   return(full_preds)
 }
 

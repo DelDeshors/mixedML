@@ -159,6 +159,7 @@ load_mixedml <- function(mixedml_model_rds) {
 .test_predict <- function(model, data) {
   .test_is_midexml(model)
   stopifnot(names(data) == names(model$random_model$data))
+  .check_sorted_data(data, model$subject, model$time)
   return()
 }
 

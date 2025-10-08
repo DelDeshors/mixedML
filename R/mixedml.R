@@ -42,8 +42,8 @@ MIXEDML_COMPONENTS <- c(
 #'
 #'
 #' @param patience Number of iterations without improvement before the training is stopped. Default: 2
-#' @param conv_thresh Minimal difference of MSE to consider an improvement.
-#' `conv_thresh=0.01` means an improvement of at least 1% of the MSE is necessary. Default: 0.01
+#' @param min_mse_gain Minimal difference of MSE to consider an improvement.
+#' `min_mse_gain=1.` means an improvement of at least 1. of the MSE is necessary. Default: 1.
 #' @param all_info_hlme_prediction boolean to choose if all the information
 #' (past, present, future) is used for the hlme prediction (TRUE) or if only the past
 #' information is used (FALSE). Default: TRUE
@@ -60,7 +60,7 @@ MIXEDML_COMPONENTS <- c(
 #' @export
 mixedml_ctrls <- function(
   patience = 2,
-  conv_thresh = 0.01,
+  min_mse_gain = 1,
   all_info_hlme_prediction = TRUE,
   convB = 0.01, # nolint
   convL = 0.01, # nolint
@@ -68,8 +68,8 @@ mixedml_ctrls <- function(
 ) {
   stopifnot(is.single.integer(patience) & 0 <= patience)
   patience <- as.integer(patience)
-  stopifnot(is.single.numeric(conv_thresh))
-  stopifnot(0 < conv_thresh)
+  stopifnot(is.single.numeric(min_mse_gain))
+  stopifnot(0 < min_mse_gain)
   #
   control <- as.list(environment())
   return(control)
@@ -123,14 +123,14 @@ save_mixedml <- function(model, mixedml_model_rds, overwrite = FALSE) {
   .test_is_midexml(model)
   if (.is_python_model(model$fixed_model)) {
     fixed_model_joblib <- .joblib_from_rds(mixedml_model_rds)
-    if (overwrite) {
-      file.remove(fixed_model_joblib, showWarnings = FALSE)
+    if (file.exists(fixed_model_joblib) && overwrite) {
+      file.remove(fixed_model_joblib)
     }
     .save_py_object(model$fixed_model, fixed_model_joblib)
     model$fixed_model <- NULL
   }
-  if (overwrite) {
-    file.remove(mixedml_model_rds, showWarnings = FALSE)
+  if (file.exists(mixedml_model_rds) && overwrite) {
+    file.remove(mixedml_model_rds)
   }
   saveRDS(model, mixedml_model_rds)
   return(invisible())
@@ -436,7 +436,7 @@ reservoir_mixedml <- function(
     hlme_controls_iter
   )
   fixed_model <- .initiate_esn(esn_controls, ensemble_controls, fit_controls)
-  conv_thresh <- mixedml_controls[["conv_thresh"]]
+  min_mse_gain <- mixedml_controls[["min_mse_gain"]]
   patience <- mixedml_controls[["patience"]]
   # initialization (some are for .get_model to work) ----
   data_train <- data
@@ -451,6 +451,7 @@ reservoir_mixedml <- function(
   loglik_val <- NULL
   loglik_val_list <- c()
   mse_min <- Inf
+  thresh <- Inf
   # confusing name, might need to change:
   n_na_full <- .check_na_combinaison(
     data_train,
@@ -458,7 +459,7 @@ reservoir_mixedml <- function(
     random_spec,
     target_name
   )
-  backup <- tempfile(fileext = "Rds")
+  backup <- tempfile(fileext = ".Rds")
   # convergence loop ----
   while (TRUE) {
     start <- format(Sys.time(), "%H:%M:%S")
@@ -521,15 +522,21 @@ reservoir_mixedml <- function(
     } else {
       mse_conv <- mse_train
     }
-    if (mse_conv < mse_min - conv_thresh) {
+    ## patience threshold ----
+    if (mse_conv < thresh - min_mse_gain) {
+      cat("\t(improvement)\n")
+      thresh <- mse_conv
       count_conv <- 0
     } else {
       count_conv <- count_conv + 1
-      if (count_conv > patience) {
+      cat(sprintf("\t(no improvement #%d)\n", count_conv))
+      if (count_conv == patience) {
         break
       }
     }
+    ## improvement test ----
     if (mse_conv < mse_min) {
+      cat("\t(saving best model)\n")
       mse_min <- mse_conv
       # must save it since we have a reference to the Python model
       # so we cannot use `best_fixed_model <- fixed_model`
@@ -547,14 +554,12 @@ reservoir_mixedml <- function(
   }
   #
   best_model <- load_mixedml(backup)
+  fixed_model <- best_model$fixed_model
+  random_model <- best_model$random_model
   # final model with saved convergence criteria ----
   cat("Final convergence of HLME with strict convergence criterions.")
-  best_model$random_model <- .fine_tune(
-    best_model$random_model,
-    best_data_rand,
-    hlme_controls_final
-  )
-  .check_convergence_hlme(best_model$random_model)
+  random_model <- .fine_tune(random_model, best_data_rand, hlme_controls_final)
+  .check_convergence_hlme(random_model)
 
   # nolint start ----
   xlab <- .get_x_labels(fixed_spec)
@@ -582,5 +587,6 @@ reservoir_mixedml <- function(
   A2 <- best_data_rand[[target_name]]
   stopifnot(identical(A1, A2))
   # nolint end ----
-  return(best_model)
+  model <- .get_model()
+  return(model)
 }

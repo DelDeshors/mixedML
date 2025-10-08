@@ -4,7 +4,7 @@
 \alias{save_mixedml}
 \title{Save a MixedML model}
 \usage{
-save_mixedml(model, mixedml_model_rds)
+save_mixedml(model, mixedml_model_rds, overwrite = FALSE)
 }
 \arguments{
 \item{model}{Trained MixedML model}

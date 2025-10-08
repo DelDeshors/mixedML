@@ -194,13 +194,13 @@ model_reservoir <- reservoir_mixedml(
   subject = "ID",
   time = "time",
   # parameters for MixedML method
-  mixedml_controls = mixedml_ctrls(),
+  mixedml_controls = mixedml_ctrls(min_mse_gain = 0.1, patience = 10),
   # controls (extra-parameters) for the hlme model
   hlme_controls = hlme_ctrls(maxiter = 50, idiag = TRUE),
   # controls (extra-parameters) for the ML model
   esn_controls = esn_ctrls(units = 20, ridge = 1e-5),
   ensemble_controls = ensemble_ctrls(seed_list = c(1, 2, 3, 4, 5)),
-  fit_controls = fit_ctrls(warmup = 2)
+  fit_controls = fit_ctrls(warmup = 1)
 )
 #> Warning in .check_na_combinaison(data_train, fixed_spec, random_spec, target_name): 
 #>          2 incomplete cases for the ML models
@@ -210,122 +210,303 @@ model_reservoir <- reservoir_mixedml(
 #> step#0
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> The 2 methods for predictY give the same results <3
-#>  MSE-train = 199
-#> The 2 methods for predictY give the same results <3
-#>  MSE-val = 172.8
+#> check 1 is OK !
+#> check 2 is OK !
+#>  MSE-train = 85.38
+#> check 1 is OK !
+#>  MSE-val = 296.1
+#>  (improvement)
+#>  (saving best model)
 #> step#1
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> The 2 methods for predictY give the same results <3
-#>  MSE-train = 146.8
-#> The 2 methods for predictY give the same results <3
-#>  MSE-val = 119.6
+#> check 1 is OK !
+#> check 2 is OK !
+#>  MSE-train = 77.51
+#> check 1 is OK !
+#>  MSE-val = 183.1
+#>  (improvement)
+#>  (saving best model)
 #> step#2
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> The 2 methods for predictY give the same results <3
-#>  MSE-train = 101.5
-#> The 2 methods for predictY give the same results <3
-#>  MSE-val = 89.26
+#> check 1 is OK !
+#> check 2 is OK !
+#>  MSE-train = 70.84
+#> check 1 is OK !
+#>  MSE-val = 116.2
+#>  (improvement)
+#>  (saving best model)
 #> step#3
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> The 2 methods for predictY give the same results <3
-#>  MSE-train = 61.82
-#> The 2 methods for predictY give the same results <3
-#>  MSE-val = 58.71
+#> check 1 is OK !
+#> check 2 is OK !
+#>  MSE-train = 59.75
+#> check 1 is OK !
+#>  MSE-val = 71.43
+#>  (improvement)
+#>  (saving best model)
 #> step#4
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> The 2 methods for predictY give the same results <3
-#>  MSE-train = 44.76
-#> The 2 methods for predictY give the same results <3
-#>  MSE-val = 53.82
+#> check 1 is OK !
+#> check 2 is OK !
+#>  MSE-train = 49
+#> check 1 is OK !
+#>  MSE-val = 45.37
+#>  (improvement)
+#>  (saving best model)
 #> step#5
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> The 2 methods for predictY give the same results <3
-#>  MSE-train = 39.42
-#> The 2 methods for predictY give the same results <3
-#>  MSE-val = 48.39
+#> check 1 is OK !
+#> check 2 is OK !
+#>  MSE-train = 44.6
+#> check 1 is OK !
+#>  MSE-val = 32.97
+#>  (improvement)
+#>  (saving best model)
 #> step#6
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> The 2 methods for predictY give the same results <3
-#>  MSE-train = 37.41
-#> The 2 methods for predictY give the same results <3
-#>  MSE-val = 58.27
+#> check 1 is OK !
+#> check 2 is OK !
+#>  MSE-train = 40.23
+#> check 1 is OK !
+#>  MSE-val = 24.51
+#>  (improvement)
+#>  (saving best model)
 #> step#7
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> The 2 methods for predictY give the same results <3
-#>  MSE-train = 28.01
-#> The 2 methods for predictY give the same results <3
-#>  MSE-val = 48.36
+#> check 1 is OK !
+#> check 2 is OK !
+#>  MSE-train = 37.03
+#> check 1 is OK !
+#>  MSE-val = 18.62
+#>  (improvement)
+#>  (saving best model)
 #> step#8
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> The 2 methods for predictY give the same results <3
-#>  MSE-train = 26
-#> The 2 methods for predictY give the same results <3
-#>  MSE-val = 43.82
+#> check 1 is OK !
+#> check 2 is OK !
+#>  MSE-train = 33.69
+#> check 1 is OK !
+#>  MSE-val = 14.39
+#>  (improvement)
+#>  (saving best model)
 #> step#9
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> The 2 methods for predictY give the same results <3
-#>  MSE-train = 25.48
-#> The 2 methods for predictY give the same results <3
-#>  MSE-val = 42.72
+#> check 1 is OK !
+#> check 2 is OK !
+#>  MSE-train = 30.91
+#> check 1 is OK !
+#>  MSE-val = 11.56
+#>  (improvement)
+#>  (saving best model)
 #> step#10
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> The 2 methods for predictY give the same results <3
-#>  MSE-train = 24.2
-#> The 2 methods for predictY give the same results <3
-#>  MSE-val = 42.34
+#> check 1 is OK !
+#> check 2 is OK !
+#>  MSE-train = 27.85
+#> check 1 is OK !
+#>  MSE-val = 9.402
+#>  (improvement)
+#>  (saving best model)
 #> step#11
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> The 2 methods for predictY give the same results <3
-#>  MSE-train = 22.87
-#> The 2 methods for predictY give the same results <3
-#>  MSE-val = 42.28
+#> check 1 is OK !
+#> check 2 is OK !
+#>  MSE-train = 25.07
+#> check 1 is OK !
+#>  MSE-val = 7.859
+#>  (improvement)
+#>  (saving best model)
 #> step#12
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> The 2 methods for predictY give the same results <3
-#>  MSE-train = 21.84
-#> The 2 methods for predictY give the same results <3
-#>  MSE-val = 42.24
+#> check 1 is OK !
+#> check 2 is OK !
+#>  MSE-train = 22.28
+#> check 1 is OK !
+#>  MSE-val = 6.621
+#>  (improvement)
+#>  (saving best model)
 #> step#13
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> The 2 methods for predictY give the same results <3
-#>  MSE-train = 20.97
-#> The 2 methods for predictY give the same results <3
-#>  MSE-val = 42.2
+#> check 1 is OK !
+#> check 2 is OK !
+#>  MSE-train = 19.3
+#> check 1 is OK !
+#>  MSE-val = 5.57
+#>  (improvement)
+#>  (saving best model)
 #> step#14
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> The 2 methods for predictY give the same results <3
-#>  MSE-train = 20.43
-#> The 2 methods for predictY give the same results <3
-#>  MSE-val = 42.37
+#> check 1 is OK !
+#> check 2 is OK !
+#>  MSE-train = 16.74
+#> check 1 is OK !
+#>  MSE-val = 4.915
+#>  (improvement)
+#>  (saving best model)
 #> step#15
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> The 2 methods for predictY give the same results <3
-#>  MSE-train = 20.31
-#> The 2 methods for predictY give the same results <3
-#>  MSE-val = 42.83
+#> check 1 is OK !
+#> check 2 is OK !
+#>  MSE-train = 14.05
+#> check 1 is OK !
+#>  MSE-val = 4.331
+#>  (improvement)
+#>  (saving best model)
 #> step#16
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> The 2 methods for predictY give the same results <3
-#>  MSE-train = 20.72
-#> The 2 methods for predictY give the same results <3
-#>  MSE-val = 43.7
+#> check 1 is OK !
+#> check 2 is OK !
+#>  MSE-train = 11.5
+#> check 1 is OK !
+#>  MSE-val = 3.83
+#>  (improvement)
+#>  (saving best model)
+#> step#17
+#>  fitting fixed effects...
+#>  fitting random effects...
+#> check 1 is OK !
+#> check 2 is OK !
+#>  MSE-train = 8.912
+#> check 1 is OK !
+#>  MSE-val = 3.315
+#>  (improvement)
+#>  (saving best model)
+#> step#18
+#>  fitting fixed effects...
+#>  fitting random effects...
+#> check 1 is OK !
+#> check 2 is OK !
+#>  MSE-train = 6.313
+#> check 1 is OK !
+#>  MSE-val = 2.91
+#>  (improvement)
+#>  (saving best model)
+#> step#19
+#>  fitting fixed effects...
+#>  fitting random effects...
+#> check 1 is OK !
+#> check 2 is OK !
+#>  MSE-train = 3.57
+#> check 1 is OK !
+#>  MSE-val = 2.241
+#>  (improvement)
+#>  (saving best model)
+#> step#20
+#>  fitting fixed effects...
+#>  fitting random effects...
+#> check 1 is OK !
+#> check 2 is OK !
+#>  MSE-train = 2.736
+#> check 1 is OK !
+#>  MSE-val = 1.274
+#>  (improvement)
+#>  (saving best model)
+#> step#21
+#>  fitting fixed effects...
+#>  fitting random effects...
+#> check 1 is OK !
+#> check 2 is OK !
+#>  MSE-train = 4.699
+#> check 1 is OK !
+#>  MSE-val = 2.361
+#>  (no improvement #1)
+#> step#22
+#>  fitting fixed effects...
+#>  fitting random effects...
+#> check 1 is OK !
+#> check 2 is OK !
+#>  MSE-train = 6.087
+#> check 1 is OK !
+#>  MSE-val = 3.373
+#>  (no improvement #2)
+#> step#23
+#>  fitting fixed effects...
+#>  fitting random effects...
+#> check 1 is OK !
+#> check 2 is OK !
+#>  MSE-train = 7.583
+#> check 1 is OK !
+#>  MSE-val = 4.677
+#>  (no improvement #3)
+#> step#24
+#>  fitting fixed effects...
+#>  fitting random effects...
+#> check 1 is OK !
+#> check 2 is OK !
+#>  MSE-train = 8.396
+#> check 1 is OK !
+#>  MSE-val = 5.886
+#>  (no improvement #4)
+#> step#25
+#>  fitting fixed effects...
+#>  fitting random effects...
+#> check 1 is OK !
+#> check 2 is OK !
+#>  MSE-train = 7.41
+#> check 1 is OK !
+#>  MSE-val = 5.855
+#>  (no improvement #5)
+#> step#26
+#>  fitting fixed effects...
+#>  fitting random effects...
+#> check 1 is OK !
+#> check 2 is OK !
+#>  MSE-train = 5.943
+#> check 1 is OK !
+#>  MSE-val = 4.325
+#>  (no improvement #6)
+#> step#27
+#>  fitting fixed effects...
+#>  fitting random effects...
+#> check 1 is OK !
+#> check 2 is OK !
+#>  MSE-train = 5.273
+#> check 1 is OK !
+#>  MSE-val = 3.688
+#>  (no improvement #7)
+#> step#28
+#>  fitting fixed effects...
+#>  fitting random effects...
+#> check 1 is OK !
+#> check 2 is OK !
+#>  MSE-train = 5.097
+#> check 1 is OK !
+#>  MSE-val = 4.091
+#>  (no improvement #8)
+#> step#29
+#>  fitting fixed effects...
+#>  fitting random effects...
+#> check 1 is OK !
+#> check 2 is OK !
+#>  MSE-train = 4.891
+#> check 1 is OK !
+#>  MSE-val = 3.9
+#>  (no improvement #9)
+#> step#30
+#>  fitting fixed effects...
+#>  fitting random effects...
+#> check 1 is OK !
+#> check 2 is OK !
+#>  MSE-train = 4.465
+#> check 1 is OK !
+#>  MSE-val = 3.738
+#>  (no improvement #10)
 #> Final convergence of HLME with strict convergence criterions.
 ```
 
@@ -357,14 +538,14 @@ model_reservoir$random_model
 #> Iteration process: 
 #>      Convergence criteria satisfied 
 #>      Number of iterations:  2 
-#>      Convergence criteria: parameters= 2.8e-09 
-#>                          : likelihood= 2.7e-08 
-#>                          : second derivatives= 1.5e-08 
+#>      Convergence criteria: parameters= 8.6e-05 
+#>                          : likelihood= 7.9e-07 
+#>                          : second derivatives= 3.9e-10 
 #>  
 #> Goodness-of-fit statistics: 
-#>      maximum log-likelihood: -127.37  
-#>      AIC: 262.75  
-#>      BIC: 263.06  
+#>      maximum log-likelihood: -103.19  
+#>      AIC: 214.37  
+#>      BIC: 214.69  
 #>  
 #> 
 ```
@@ -372,7 +553,7 @@ model_reservoir$random_model
 ``` r
 # (this model uses reticulate so it not very convenient as an example…)
 model_reservoir$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x73b013055940>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x79a8c042df90>
 ```
 
 Also a `call` attribute exists, meaning one can trained the model with
@@ -420,18 +601,22 @@ predict(
   data = data_mixedml,
   all_info_hlme_prediction = FALSE
 )
-#> The 2 methods for predictY give the same results <3
-#> The 2 methods for predictY give the same results <3
-#> The 2 methods for predictY give the same results <3
-#> The 2 methods for predictY give the same results <3
+#> Warning in .predict_newdata_ss(random_hlme, data = actual_data, data_info =
+#> prev_data): check that DATA_SUBJ has NAs or is empty
+#> Warning in .predict_newdata_ss(random_hlme, data = actual_data, data_info =
+#> prev_data): check that DATA_SUBJ has NAs or is empty
+#> check 1 is OK !
+#> check 1 is OK !
+#> check 1 is OK !
+#> check 1 is OK !
 #>    39    35    10     1    42    49    19    43     6    18    25    33    37 
-#>    NA    NA 184.2 198.4 173.2    NA    NA 110.3 114.8 119.9    NA    NA 207.0 
+#>    NA    NA 188.1 200.7 178.0    NA    NA  99.5 107.8 113.1    NA    NA 216.2 
 #>     2    31    16    15    26    13    34    23    22    11    50    46     7 
-#> 199.5 211.7    NA 117.9 118.7 111.7 111.1    NA 192.5 187.6 194.5    NA 113.5 
+#> 204.4 214.2    NA 101.8 101.4 102.3 106.3    NA 206.4 194.2 195.5    NA 107.0 
 #>    40    44    28    38     4    14    24     9    17    32    45    30    12 
-#> 118.4 115.5    NA 185.6 198.0 185.8 193.6    NA 104.0  99.6  99.6 101.5    NA 
+#> 110.3 111.6    NA 191.8 203.3 188.6 197.1    NA  91.9  90.5  93.9  94.2    NA 
 #>    48    36    29     5    47     8    20     3    41 
-#> 194.3 196.1 203.0 204.1    NA  88.6  87.6  92.9  82.3
+#> 198.5 200.2 215.5 207.0    NA  75.7  77.6  80.6  79.2
 ```
 
 ## 8.2 `plot_conv`
@@ -456,7 +641,7 @@ plot_conv_mse(model, ylog = FALSE)
 Convergence plot
 
 ``` r
-plot_conv_mse(model = model_reservoir, ylog = FALSE)
+plot_conv_mse(model = model_reservoir, ylog = TRUE)
 ```
 
 <img src="man/figures/README-unnamed-chunk-15-1.png" width="100%" />
@@ -512,7 +697,8 @@ Prediction plot of the model.
 
 ``` r
 plot_prediction_check(model = model_reservoir, subject_nb_or_list = c(1, 2, 3, 4, 5))
-#> The 2 methods for predictY give the same results <3
+#> check 1 is OK !
+#> check 2 is OK !
 #> Warning: Removed 4 rows containing missing values or values outside the scale range
 #> (`geom_point()`).
 ```
@@ -528,7 +714,7 @@ Save a MixedML model
 **Usage**
 
 ``` r
-save_mixedml(model, mixedml_model_rds)
+save_mixedml(model, mixedml_model_rds, overwrite = FALSE)
 ```
 
 **Arguments**
@@ -568,7 +754,7 @@ mixedml_model <- load_mixedml("model_reservoir.Rds")
 
 ``` r
 mixedml_model$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x73afd38a2490>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x79a8c042efd0>
 ```
 
 ``` r
@@ -593,30 +779,34 @@ mixedml_model$random_model
 #> Iteration process: 
 #>      Convergence criteria satisfied 
 #>      Number of iterations:  2 
-#>      Convergence criteria: parameters= 2.8e-09 
-#>                          : likelihood= 2.7e-08 
-#>                          : second derivatives= 1.5e-08 
+#>      Convergence criteria: parameters= 8.6e-05 
+#>                          : likelihood= 7.9e-07 
+#>                          : second derivatives= 3.9e-10 
 #>  
 #> Goodness-of-fit statistics: 
-#>      maximum log-likelihood: -127.37  
-#>      AIC: 262.75  
-#>      BIC: 263.06  
+#>      maximum log-likelihood: -103.19  
+#>      AIC: 214.37  
+#>      BIC: 214.69  
 #>  
 #> 
 ```
 
 ``` r
 predict(mixedml_model, data_mixedml)
-#> The 2 methods for predictY give the same results <3
-#> The 2 methods for predictY give the same results <3
-#> The 2 methods for predictY give the same results <3
-#> The 2 methods for predictY give the same results <3
+#> Warning in .predict_newdata_ss(random_hlme, data = actual_data, data_info =
+#> prev_data): check that DATA_SUBJ has NAs or is empty
+#> Warning in .predict_newdata_ss(random_hlme, data = actual_data, data_info =
+#> prev_data): check that DATA_SUBJ has NAs or is empty
+#> check 1 is OK !
+#> check 1 is OK !
+#> check 1 is OK !
+#> check 1 is OK !
 #>    39    35    10     1    42    49    19    43     6    18    25    33    37 
-#>    NA    NA 184.2 198.4 173.2    NA    NA 110.3 114.8 119.9    NA    NA 207.0 
+#>    NA    NA 188.1 200.7 178.0    NA    NA  99.5 107.8 113.1    NA    NA 216.2 
 #>     2    31    16    15    26    13    34    23    22    11    50    46     7 
-#> 199.5 211.7    NA 117.9 118.7 111.7 111.1    NA 192.5 187.6 194.5    NA 113.5 
+#> 204.4 214.2    NA 101.8 101.4 102.3 106.3    NA 206.4 194.2 195.5    NA 107.0 
 #>    40    44    28    38     4    14    24     9    17    32    45    30    12 
-#> 118.4 115.5    NA 185.6 198.0 185.8 193.6    NA 104.0  99.6  99.6 101.5    NA 
+#> 110.3 111.6    NA 191.8 203.3 188.6 197.1    NA  91.9  90.5  93.9  94.2    NA 
 #>    48    36    29     5    47     8    20     3    41 
-#> 194.3 196.1 203.0 204.1    NA  88.6  87.6  92.9  82.3
+#> 198.5 200.2 215.5 207.0    NA  75.7  77.6  80.6  79.2
 ```

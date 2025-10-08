@@ -16,8 +16,8 @@ normal_execution <- function() {
     subject = subject,
     time = time,
     mixedml_controls = mixedml_ctrls(
-      conv_thresh = 0.1,
-      patience = 1,
+      min_mse_gain = 0.1,
+      patience = 3,
       convB = 0.1,
       convL = 0.1,
       convG = 0.1

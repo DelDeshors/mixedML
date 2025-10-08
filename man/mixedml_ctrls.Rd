@@ -6,7 +6,7 @@
 \usage{
 mixedml_ctrls(
   patience = 2,
-  conv_thresh = 0.01,
+  min_mse_gain = 1,
   all_info_hlme_prediction = TRUE,
   convB = 0.01,
   convL = 0.01,
@@ -16,8 +16,8 @@ mixedml_ctrls(
 \arguments{
 \item{patience}{Number of iterations without improvement before the training is stopped. Default: 2}
 
-\item{conv_thresh}{Minimal difference of MSE to consider an improvement.
-\code{conv_thresh=0.01} means an improvement of at least 1\% of the MSE is necessary. Default: 0.01}
+\item{min_mse_gain}{Minimal difference of MSE to consider an improvement.
+\code{min_mse_gain=1.} means an improvement of at least 1. of the MSE is necessary. Default: 1.}
 
 \item{all_info_hlme_prediction}{boolean to choose if all the information
 (past, present, future) is used for the hlme prediction (TRUE) or if only the past

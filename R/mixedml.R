@@ -119,12 +119,18 @@ mixedml_ctrls <- function(
 #' @param model Trained MixedML model
 #' @param mixedml_model_rds Name of the RDS fileNew data (same format as the one used for training)
 #' @export
-save_mixedml <- function(model, mixedml_model_rds) {
+save_mixedml <- function(model, mixedml_model_rds, overwrite = FALSE) {
   .test_is_midexml(model)
   if (.is_python_model(model$fixed_model)) {
     fixed_model_joblib <- .joblib_from_rds(mixedml_model_rds)
+    if (overwrite) {
+      file.remove(fixed_model_joblib, showWarnings = FALSE)
+    }
     .save_py_object(model$fixed_model, fixed_model_joblib)
     model$fixed_model <- NULL
+  }
+  if (overwrite) {
+    file.remove(mixedml_model_rds, showWarnings = FALSE)
   }
   saveRDS(model, mixedml_model_rds)
   return(invisible())
@@ -396,6 +402,7 @@ reservoir_mixedml <- function(
   ensemble_controls = ensemble_controls(),
   fit_controls = fit_controls()
 ) {
+  # please see .get_model to understand the choice of the variables names
   call <- match.call()
   .test_reservoir_mixedml(
     fixed_spec,
@@ -451,6 +458,7 @@ reservoir_mixedml <- function(
     random_spec,
     target_name
   )
+  backup <- tempfile(fileext = "Rds")
   # convergence loop ----
   while (TRUE) {
     start <- format(Sys.time(), "%H:%M:%S")
@@ -523,27 +531,56 @@ reservoir_mixedml <- function(
     }
     if (mse_conv < mse_min) {
       mse_min <- mse_conv
-      best_fixed_model <- fixed_model
+      # must save it since we have a reference to the Python model
+      # so we cannot use `best_fixed_model <- fixed_model`
+      # (`best_fixed_model` points to the model that keeps being updated)
+      save_mixedml(.get_model(), backup, overwrite = TRUE)
       best_random_model <- random_model
-      best_loglik_train <- loglik_train
-      best_loglik_val <- loglik_val
+      # saving for fine tuning
       best_data_rand <- data_rand
+      # nolint start ----
+      best_pred_fixed <- pred_fixed
+      best_data_fixed <- data_fixed
+      # nolint end ----
     }
     istep <- istep + 1
   }
+  #
+  best_model <- load_mixedml(backup)
   # final model with saved convergence criteria ----
   cat("Final convergence of HLME with strict convergence criterions.")
-  best_random_model <- .fine_tune(
-    best_random_model,
+  best_model$random_model <- .fine_tune(
+    best_model$random_model,
     best_data_rand,
     hlme_controls_final
   )
-  .check_convergence_hlme(best_random_model)
-  # updating with best iteartion values ----
-  fixed_model <- best_fixed_model
-  random_model <- best_random_model
-  loglik_train <- best_loglik_train
-  loglik_val <- best_loglik_val
-  model <- .get_model()
-  return(model)
+  .check_convergence_hlme(best_model$random_model)
+
+  # nolint start ----
+  xlab <- .get_x_labels(fixed_spec)
+
+  A1 <- best_data_fixed[xlab]
+  A2 <- data_train[xlab]
+  stopifnot(identical(A1, A2))
+
+  A1 <- best_data_fixed[xlab]
+  A2 <- data_train[xlab]
+  stopifnot(identical(A1, A2))
+
+  PRED_FIXED <- .predict_reservoir(
+    best_model$fixed_model,
+    data_fixed,
+    fixed_spec,
+    subject
+  )
+
+  A1 <- PRED_FIXED
+  A2 <- best_pred_fixed
+  stopifnot(identical(A1, A2))
+
+  A1 <- data_train[[target_name]] - PRED_FIXED
+  A2 <- best_data_rand[[target_name]]
+  stopifnot(identical(A1, A2))
+  # nolint end ----
+  return(best_model)
 }

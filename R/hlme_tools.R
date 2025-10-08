@@ -216,12 +216,12 @@ hlme_ctrls <- function(
   # will get a prediction, which is different from the library original behaviour
   # in model$pred$pred_ss
 
-  # nolint start
+  # nolint start ----
   DATA <- data
   DATA_INFO <- data_info
   PRED_RE <- lcmm::predictRE(random_hlme, DATA_INFO)
   FULL_PREDS <- .initiate_full_preds(data)
-  # nolint end
+  # nolint end ----
 
   full_preds <- .initiate_full_preds(data)
   subject <- random_hlme$call$subject
@@ -244,16 +244,17 @@ hlme_ctrls <- function(
     pred_cor <- .predict_cor(random_hlme, data_info_subj, times_subj)
     pred_y <- .predict_y(random_hlme, data_subj, pred_re, pred_cor)
     full_preds[rownames(pred_y$times)] <- pred_y$pred[, 1]
-    # nolint start
-    # DATA_SUBJ <- DATA[DATA[[subject]] == subj, ]
-    # PRED_RE_SUBJ <- PRED_RE[PRED_RE[[subject]] == subj, ]
-    # PRED_Y <- .predict_y(random_hlme, DATA_SUBJ, PRED_RE_SUBJ, pred_cor)
-    # if (!identical(pred_y, PRED_Y)) {
-    #   browser()
-    # }
-    # nolint end
+    # nolint start ----
+    DATA_SUBJ <- DATA[DATA[[subject]] == subj, ]
+    PRED_RE_SUBJ <- PRED_RE[PRED_RE[[subject]] == subj, ]
+    PRED_Y <- .predict_y(random_hlme, DATA_SUBJ, PRED_RE_SUBJ, pred_cor)
+    if (!identical(pred_y, PRED_Y)) {
+      # browser()
+      stop()
+    }
+    # nolint end ----
   }
-  # nolint start
+  # nolint start ----
   for (subj in PRED_RE[[subject]]) {
     # we work by isolating subject, this is how the functions have been designed
     # (trust me I know the dev)
@@ -269,17 +270,32 @@ hlme_ctrls <- function(
     )
     if (!is.list(PRED_Y)) {
       # browser()
-      # happens when DATA_SUBJ has NAs or is empty
+      warning("check that DATA_SUBJ has NAs or is empty")
     } else {
       FULL_PREDS[rownames(PRED_Y$times)] <- PRED_Y$pred[, 1]
     }
   }
   if (!identical(FULL_PREDS, full_preds)) {
     # browser()
+    stop()
   } else {
-    message("The 2 methods for predictY give the same results <3")
+    message("check 1 is OK !")
   }
-  # nolint end
+  ####
+  inter_names <- intersect(rownames(random_hlme$pred), rownames(DATA))
+  if (identical(DATA, DATA_INFO) && length(inter_names) > 0) {
+    # using all info
+    # and DATA is train data so is stored in random_hlme$pred
+    pred1 <- random_hlme$pred[inter_names, "pred_ss"]
+    pred2 <- full_preds[inter_names]
+    if (max(abs(pred1 - pred2)) > 1e-8) {
+      # browser()
+      stop()
+    } else {
+      message("check 2 is OK !")
+    }
+  }
+  # nolint end ----
   return(full_preds)
 }
 

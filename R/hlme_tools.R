@@ -279,7 +279,7 @@ hlme_ctrls <- function(
     # browser()
     stop()
   } else {
-    message("check 1 is OK !")
+    warning("check 1 is OK !")
   }
   ####
   inter_names <- intersect(rownames(random_hlme$pred), rownames(DATA))
@@ -292,7 +292,7 @@ hlme_ctrls <- function(
       # browser()
       stop()
     } else {
-      message("check 2 is OK !")
+      warning("check 2 is OK !")
     }
   }
   # nolint end ----

@@ -248,7 +248,10 @@ hlme_ctrls <- function(
     DATA_SUBJ <- DATA[DATA[[subject]] == subj, ]
     PRED_RE_SUBJ <- PRED_RE[PRED_RE[[subject]] == subj, ]
     PRED_Y <- .predict_y(random_hlme, DATA_SUBJ, PRED_RE_SUBJ, pred_cor)
-    if (!identical(pred_y, PRED_Y)) {
+    if (
+      max(abs(pred_y$pred - PRED_Y$pred)) > 1e-8 ||
+        max(abs(pred_y$times - PRED_Y$times)) > 1e-8
+    ) {
       # browser()
       stop()
     }

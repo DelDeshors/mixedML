@@ -9,7 +9,9 @@
 #' @param lr Neurons leak rate. Must be in \eqn{[0,1]}.
 #' @param sr Spectral radius of recurrent weight matrix.
 #' @param ridge Regularization parameter \eqn{\lambda}.
+#' @param input_scaling Input gain. (So far only a float can be used).
 #' @param feedback Is readout connected to reservoir through feedback?
+#' @param input_to_readout  If True, the input is directly fed to the readout.
 #' @return esn_controls
 #' @export
 esn_ctrls <- function(
@@ -17,14 +19,22 @@ esn_ctrls <- function(
   lr = 1.0,
   sr = 0.1,
   ridge = 0.0,
-  feedback = FALSE
+  input_scaling = 1.0,
+  feedback = FALSE,
+  input_to_readout = FALSE
 ) {
   stopifnot(is.single.integer(units))
   units <- as.integer(units)
   stopifnot(is.single.numeric(lr))
   stopifnot(is.single.numeric(sr))
   stopifnot(is.single.numeric(ridge))
+  stopifnot(
+    is.numeric(input_scaling) &&
+      length(input_scaling) == 1 &&
+      input_scaling > 0.
+  )
   stopifnot(is.logical(feedback))
+  stopifnot(is.logical(input_to_readout))
   return(as.list(environment()))
 }
 

@@ -22,7 +22,7 @@ MIXEDML_COMPONENTS <- c(
   "call"
 )
 
-.get_model <- function() {
+.get_model_snapshot <- function() {
   pframe <- as.list(parent.frame())
   stopifnot(all(MIXEDML_COMPONENTS %in% names(pframe)))
   model <- pframe[MIXEDML_COMPONENTS]
@@ -402,7 +402,7 @@ reservoir_mixedml <- function(
   ensemble_controls = ensemble_controls(),
   fit_controls = fit_controls()
 ) {
-  # please see .get_model to understand the choice of the variables names
+  # please see .get_model_snapshot to understand the choice of the variables names
   call <- match.call()
   .test_reservoir_mixedml(
     fixed_spec,
@@ -438,7 +438,7 @@ reservoir_mixedml <- function(
   fixed_model <- .initiate_esn(esn_controls, ensemble_controls, fit_controls)
   min_mse_gain <- mixedml_controls[["min_mse_gain"]]
   patience <- mixedml_controls[["patience"]]
-  # initialization (some are for .get_model to work) ----
+  # initialization (some are for .get_model_snapshot to work) ----
   data_train <- data
   data_fixed <- data
   data_rand <- data
@@ -496,7 +496,7 @@ reservoir_mixedml <- function(
     loglik_train_list <- c(loglik_train_list, loglik_train)
     # val residuals/mse and loglik ----
     if (do_val) {
-      tmp_model <- .get_model()
+      tmp_model <- .get_model_snapshot()
       pred_val <- predict(
         tmp_model,
         data_val,
@@ -541,7 +541,7 @@ reservoir_mixedml <- function(
       # must save it since we have a reference to the Python model
       # so we cannot use `best_fixed_model <- fixed_model`
       # (`best_fixed_model` points to the model that keeps being updated)
-      save_mixedml(.get_model(), backup, overwrite = TRUE)
+      save_mixedml(.get_model_snapshot(), backup, overwrite = TRUE)
       best_random_model <- random_model
       # saving for fine tuning
       best_data_rand <- data_rand
@@ -587,6 +587,6 @@ reservoir_mixedml <- function(
   A2 <- best_data_rand[[target_name]]
   stopifnot(identical(A1, A2))
   # nolint end ----
-  model <- .get_model()
+  model <- .get_model_snapshot()
   return(model)
 }

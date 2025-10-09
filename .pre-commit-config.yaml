@@ -19,6 +19,7 @@ repos:
         args: [--fix=lf]
     -   id: no-commit-to-branch
         args: [--branch, staging, --branch, main]
+        stages: [pre-commit]
     -   id: file-contents-sorter
         files: '^\.Rbuildignore$'
 # R formating
@@ -94,7 +95,7 @@ repos:
     hooks:
     -   id: Rtesting
         name: Rtesting
-        stages: [pre-push]
+        stages: [pre-merge-commit]
         entry: Rscript tests/precommit_testthat.R
         language: system
         pass_filenames: false
@@ -103,7 +104,7 @@ repos:
     hooks:
     -   id: readme-md-rendered
         name: readme-md-rendered
-        stages: [pre-commit]
+        stages: [pre-merge-commit]
         entry: Rscript vignettes/check_readme_update.R
         files: '(README.*|vignettes/mixedML.Rmd)'
         language: system
@@ -112,7 +113,7 @@ repos:
 -   repo: local
     hooks:
     -   id: pytest
-        stages: [pre-push]
+        stages: [pre-merge-commit]
         name: pytest
         entry: python -m pytest  # python -m changes PYTHONPATH
         language: system

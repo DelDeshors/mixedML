@@ -23,11 +23,24 @@ MIXEDML_COMPONENTS <- c(
 )
 
 .get_model_snapshot <- function() {
+  # must only be called in main loop
+  # (where the MIXEDML_COMPONENTS variables are defined)
   pframe <- as.list(parent.frame())
   stopifnot(all(MIXEDML_COMPONENTS %in% names(pframe)))
   model <- pframe[MIXEDML_COMPONENTS]
   class(model) <- MIXEDML_CLASS
   return(model)
+}
+
+.update_model_snapshot_lists <- function(model_snapshot, new_model_snapshot) {
+  nm <- new_model_snapshot
+  for (n in names(nm)) {
+    if (is.vector(nm[[n]]) && length(nm[[n]]) > 1) {
+      stopifnot(all(model_snapshot[[n]] %in% nm[[n]]))
+      model_snapshot[[n]] <- nm[[n]]
+    }
+  }
+  return(model_snapshot)
 }
 
 
@@ -554,12 +567,15 @@ reservoir_mixedml <- function(
   }
   #
   best_model <- load_mixedml(backup)
-  fixed_model <- best_model$fixed_model
-  random_model <- best_model$random_model
+  best_model <- .update_model_snapshot_lists(best_model, .get_model_snapshot())
   # final model with saved convergence criteria ----
   cat("Final convergence of HLME with strict convergence criterions.")
-  random_model <- .fine_tune(random_model, best_data_rand, hlme_controls_final)
-  .check_convergence_hlme(random_model)
+  best_model$random_model <- .fine_tune(
+    best_model$random_model,
+    best_data_rand,
+    hlme_controls_final
+  )
+  .check_convergence_hlme(best_model$random_model)
 
   # nolint start ----
   xlab <- .get_x_labels(fixed_spec)
@@ -587,6 +603,5 @@ reservoir_mixedml <- function(
   A2 <- best_data_rand[[target_name]]
   stopifnot(identical(A1, A2))
   # nolint end ----
-  model <- .get_model_snapshot()
-  return(model)
+  return(best_model)
 }

@@ -4,7 +4,15 @@
 \alias{esn_ctrls}
 \title{Prepare the esn_controls}
 \usage{
-esn_ctrls(units = 100, lr = 1, sr = 0.1, ridge = 0, feedback = FALSE)
+esn_ctrls(
+  units = 100,
+  lr = 1,
+  sr = 0.1,
+  ridge = 0,
+  input_scaling = 1,
+  feedback = FALSE,
+  input_to_readout = FALSE
+)
 }
 \arguments{
 \item{units}{Number of reservoir units.}
@@ -15,7 +23,11 @@ esn_ctrls(units = 100, lr = 1, sr = 0.1, ridge = 0, feedback = FALSE)
 
 \item{ridge}{Regularization parameter \eqn{\lambda}.}
 
+\item{input_scaling}{Input gain. (So far only a float can be used).}
+
 \item{feedback}{Is readout connected to reservoir through feedback?}
+
+\item{input_to_readout}{If True, the input is directly fed to the readout.}
 }
 \value{
 esn_controls

@@ -203,9 +203,14 @@ predict <- function(model, data, all_info_hlme_prediction = FALSE) {
 }
 
 
-# no doc yet and probably some refactoring possible with predict
-# (since I copied it to create this function…)
+#' Return the negative log-likelihood of the model regarding new data
+#'
+#' @param model Trained MixedML model
+#' @param data New data (same format as the one used for training)
+#' @return Negative log-likelihood of the HLME model
+#' @export
 get_loglik <- function(model, data) {
+  # (might be refactored with predict)
   .test_predict(model, data)
   target_name <- .get_y_label(model$fixed_spec)
   data_rand <- data

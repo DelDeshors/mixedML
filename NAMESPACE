@@ -3,6 +3,7 @@
 export(ensemble_ctrls)
 export(esn_ctrls)
 export(fit_ctrls)
+export(get_loglik)
 export(hlme_ctrls)
 export(load_mixedml)
 export(mixedml_ctrls)

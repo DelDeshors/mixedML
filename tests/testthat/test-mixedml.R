@@ -46,6 +46,8 @@ normal_execution <- function() {
   )
   pred <- predict(mixed_ml_model, data_val)
   stopifnot(length(pred) == nrow(data_val))
+  loglik <- get_loglik(mixed_ml_model, data_train)
+  stopifnot(loglik == mixed_ml_model$random_model$loglik)
   plot_conv_mse(mixed_ml_model)
   plot_conv_loglik(mixed_ml_model)
   plot_prediction_check(mixed_ml_model, subject_nb_or_list = 3)

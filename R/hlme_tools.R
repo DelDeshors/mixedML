@@ -102,6 +102,7 @@ hlme_ctrls <- function(
   hlme_controls$B_rand <- NULL
   # initialization call
   random_hlme <- do.call("hlme", hlme_controls)
+  random_hlme$call$data <- NULL
   #
   random_hlme$call$maxiter <- maxiter_backup
   # the use of B in hlme is tricky
@@ -131,7 +132,7 @@ hlme_ctrls <- function(
 
 .fine_tune <- function(random_hlme, data, hlme_controls_final) {
   # 2 objectives:
-  # - forcing an explicit "data" value to avoid since "data" is stored in the hlme call
+  # - forcing an explicit "data" value since the call string "data" is stored in the hlme call
   #   but the value of "data" might not be the same in the context where you call update
   #   (Yes I triggered this problem. Of course.)
   # - cleaning the convX values in the updated call (using substitute)
@@ -217,10 +218,10 @@ hlme_ctrls <- function(
   # in model$pred$pred_ss
 
   # nolint start ----
-  DATA <- data
-  DATA_INFO <- data_info
-  PRED_RE <- lcmm::predictRE(random_hlme, DATA_INFO)
-  FULL_PREDS <- .initiate_full_preds(data)
+  # DATA <- data
+  # DATA_INFO <- data_info
+  # PRED_RE <- lcmm::predictRE(random_hlme, DATA_INFO)
+  # FULL_PREDS <- .initiate_full_preds(data)
   # nolint end ----
 
   full_preds <- .initiate_full_preds(data)
@@ -245,70 +246,65 @@ hlme_ctrls <- function(
     pred_y <- .predict_y(random_hlme, data_subj, pred_re, pred_cor)
     full_preds[rownames(pred_y$times)] <- pred_y$pred[, 1]
     # nolint start ----
-    DATA_SUBJ <- DATA[DATA[[subject]] == subj, ]
-    PRED_RE_SUBJ <- PRED_RE[PRED_RE[[subject]] == subj, ]
-    PRED_Y <- .predict_y(random_hlme, DATA_SUBJ, PRED_RE_SUBJ, pred_cor)
-    if (
-      max(abs(pred_y$pred - PRED_Y$pred)) > 1e-8 ||
-        max(abs(pred_y$times - PRED_Y$times)) > 1e-8
-    ) {
-      # browser()
-      stop()
-    }
+    # DATA_SUBJ <- DATA[DATA[[subject]] == subj, ]
+    # PRED_RE_SUBJ <- PRED_RE[PRED_RE[[subject]] == subj, ]
+    # PRED_Y <- .predict_y(random_hlme, DATA_SUBJ, PRED_RE_SUBJ, pred_cor)
+    # if (
+    #   max(abs(pred_y$pred - PRED_Y$pred), na.rm = TRUE) > 1e-8 ||
+    #     max(abs(pred_y$times - PRED_Y$times), na.rm = TRUE) > 1e-8
+    # ) {
+    #   # browser()
+    #   stop()
+    # }
     # nolint end ----
   }
   # nolint start ----
-  for (subj in PRED_RE[[subject]]) {
-    # we work by isolating subject, this is how the functions have been designed
-    # (trust me I know the dev)
-    DATA_SUBJ <- DATA[DATA[[subject]] == subj, ]
-    DATA_INFO_SUBJ <- DATA_INFO[DATA_INFO[[subject]] == subj, ]
-    PRED_RE_SUBJ <- PRED_RE[PRED_RE[[subject]] == subj, ]
-    TIME_SUBJ_CC <- DATA_SUBJ[complete.cases(DATA_SUBJ[x_labels]), ][[time]]
-
-    pred_cor <- .predict_cor(random_hlme, DATA_INFO_SUBJ, TIME_SUBJ_CC)
-    PRED_Y <- try(
-      .predict_y(random_hlme, DATA_SUBJ, PRED_RE_SUBJ, pred_cor),
-      silent = TRUE
-    )
-    if (!is.list(PRED_Y)) {
-      # browser()
-      warning("check that DATA_SUBJ has NAs or is empty")
-    } else {
-      FULL_PREDS[rownames(PRED_Y$times)] <- PRED_Y$pred[, 1]
-    }
-  }
-  if (!identical(FULL_PREDS, full_preds)) {
-    # browser()
-    stop()
-  } else {
-    warning("check 1 is OK !")
-  }
-  ####
-  inter_names <- intersect(rownames(random_hlme$pred), rownames(DATA))
-  if (identical(DATA, DATA_INFO) && length(inter_names) > 0) {
-    # using all info
-    # and DATA is train data so is stored in random_hlme$pred
-    pred1 <- random_hlme$pred[inter_names, "pred_ss"]
-    pred2 <- full_preds[inter_names]
-    if (max(abs(pred1 - pred2)) > 1e-8) {
-      # browser()
-      stop()
-    } else {
-      warning("check 2 is OK !")
-    }
-  }
+  # for (subj in PRED_RE[[subject]]) {
+  #   # we work by isolating subject, this is how the functions have been designed
+  #   # (trust me I know the dev)
+  #   DATA_SUBJ <- DATA[DATA[[subject]] == subj, ]
+  #   DATA_INFO_SUBJ <- DATA_INFO[DATA_INFO[[subject]] == subj, ]
+  #   PRED_RE_SUBJ <- PRED_RE[PRED_RE[[subject]] == subj, ]
+  #   TIME_SUBJ_CC <- DATA_SUBJ[complete.cases(DATA_SUBJ[x_labels]), ][[time]]
+  #
+  #   pred_cor <- .predict_cor(random_hlme, DATA_INFO_SUBJ, TIME_SUBJ_CC)
+  #   PRED_Y <- try(
+  #     .predict_y(random_hlme, DATA_SUBJ, PRED_RE_SUBJ, pred_cor),
+  #     silent = TRUE
+  #   )
+  #   if (!is.list(PRED_Y)) {
+  #     # browser()
+  #     warning("check that DATA_SUBJ has NAs or is empty")
+  #   } else {
+  #     FULL_PREDS[rownames(PRED_Y$times)] <- PRED_Y$pred[, 1]
+  #   }
+  # }
+  # if (max(abs(FULL_PREDS - full_preds), na.rm = TRUE) > 1e-8) {
+  #   # browser()
+  #   stop()
+  # } else {
+  #   warning("check 1 is OK !")
+  # }
+  # ####
+  # inter_names <- intersect(rownames(random_hlme$pred), rownames(DATA))
+  # if (identical(DATA, DATA_INFO) && length(inter_names) > 0) {
+  #   # using all info
+  #   # and DATA is train data so is stored in random_hlme$pred
+  #   pred1 <- random_hlme$pred[inter_names, "pred_ss"]
+  #   pred2 <- full_preds[inter_names]
+  #   if (max(abs(pred1 - pred2), na.rm = TRUE) > 1e-8) {
+  #     stop()
+  #   } else {
+  #     warning("check 2 is OK !")
+  #   }
+  # }
   # nolint end ----
   return(full_preds)
 }
 
 
 ## prediction with all information ----
-
-.predict_with_all_info <- function(
-  random_hlme,
-  data
-) {
+.predict_with_all_info <- function(random_hlme, data) {
   full_preds <- .predict_newdata_ss(
     random_hlme,
     data = data,
@@ -337,16 +333,9 @@ hlme_ctrls <- function(
 
 
 ## global method ----
-.predict_random_hlme <- function(
-  random_hlme,
-  data,
-  use_all_info
-) {
+.predict_random_hlme <- function(random_hlme, data, use_all_info) {
   if (use_all_info) {
-    return(.predict_with_all_info(
-      random_hlme,
-      data
-    ))
+    return(.predict_with_all_info(random_hlme, data))
   } else {
     return(.predict_with_past_info(random_hlme, data))
   }

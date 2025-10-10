@@ -74,6 +74,7 @@ repos:
     -   id: black
         name: black
         entry: black
+        stages: [pre-commit]
         language: system
         types: [python]
         require_serial: true
@@ -83,6 +84,7 @@ repos:
     -   id: mypy
         name: mypy
         entry: mypy inst/python
+        stages: [pre-commit]
         language: system
         types: [python]
         require_serial: true
@@ -92,22 +94,22 @@ repos:
     rev: 7.3.0
     hooks:
     -   id: flake8
+        stages: [pre-commit]
 # R testing
 -   repo: local
     hooks:
     -   id: Rtesting
         name: Rtesting
-        stages: [pre-commit]
+        stages: [pre-push, post-merge]
         entry: Rscript tests/precommit_testthat.R
         language: system
         pass_filenames: false
-        files: '\.R$'
 # README.md check
 -   repo: local
     hooks:
     -   id: readme-md-rendered
         name: readme-md-rendered
-        stages: [pre-commit]
+        stages: [pre-push, post-merge]
         entry: Rscript vignettes/check_readme_update.R
         language: system
         files: '(README.*|vignettes/mixedML.Rmd)'
@@ -116,12 +118,11 @@ repos:
 -   repo: local
     hooks:
     -   id: pytest
-        stages: [pre-commit]
+        stages: [pre-push, post-merge]
         name: pytest
         entry: python -m pytest  # python -m changes PYTHONPATH
         language: system
         pass_filenames: false
-        files: '\.py$'
 ci:
     autoupdate_schedule: weekly
     skip: [pkgdown]

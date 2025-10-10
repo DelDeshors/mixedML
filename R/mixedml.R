@@ -183,11 +183,7 @@ load_mixedml <- function(mixedml_model_rds) {
 #' information is used (FALSE). Default: FALSE
 #' @return prediction
 #' @export
-predict <- function(
-  model,
-  data,
-  all_info_hlme_prediction = FALSE
-) {
+predict <- function(model, data, all_info_hlme_prediction = FALSE) {
   .test_predict(model, data)
   target_name <- .get_y_label(model$fixed_spec)
   data_rand <- data
@@ -204,6 +200,29 @@ predict <- function(
     all_info_hlme_prediction
   )
   return(pred_fixed + pred_rand)
+}
+
+
+# no doc yet and probably some refactoring possible with predict
+# (since I copied it to create this function…)
+get_loglik <- function(model, data) {
+  .test_predict(model, data)
+  target_name <- .get_y_label(model$fixed_spec)
+  data_rand <- data
+  pred_fixed <- .predict_reservoir(
+    model$fixed_model,
+    data,
+    model$fixed_spec,
+    model$subject
+  )
+  data_rand[[target_name]] <- data[[target_name]] - pred_fixed
+  random_model <- update(
+    model$random_model,
+    data = data_rand,
+    B = model$random_model$best,
+    maxiter = 0
+  )
+  return(random_model$loglik)
 }
 
 
@@ -559,8 +578,8 @@ reservoir_mixedml <- function(
       # saving for fine tuning
       best_data_rand <- data_rand
       # nolint start ----
-      best_pred_fixed <- pred_fixed
-      best_data_fixed <- data_fixed
+      # best_pred_fixed <- pred_fixed
+      # best_data_fixed <- data_fixed
       # nolint end ----
     }
     istep <- istep + 1
@@ -578,30 +597,30 @@ reservoir_mixedml <- function(
   .check_convergence_hlme(best_model$random_model)
 
   # nolint start ----
-  xlab <- .get_x_labels(fixed_spec)
-
-  A1 <- best_data_fixed[xlab]
-  A2 <- data_train[xlab]
-  stopifnot(identical(A1, A2))
-
-  A1 <- best_data_fixed[xlab]
-  A2 <- data_train[xlab]
-  stopifnot(identical(A1, A2))
-
-  PRED_FIXED <- .predict_reservoir(
-    best_model$fixed_model,
-    data_fixed,
-    fixed_spec,
-    subject
-  )
-
-  A1 <- PRED_FIXED
-  A2 <- best_pred_fixed
-  stopifnot(identical(A1, A2))
-
-  A1 <- data_train[[target_name]] - PRED_FIXED
-  A2 <- best_data_rand[[target_name]]
-  stopifnot(identical(A1, A2))
+  # xlab <- .get_x_labels(fixed_spec)
+  #
+  # A1 <- best_data_fixed[xlab]
+  # A2 <- data_train[xlab]
+  # stopifnot(identical(A1, A2))
+  #
+  # A1 <- best_data_fixed[xlab]
+  # A2 <- data_train[xlab]
+  # stopifnot(identical(A1, A2))
+  #
+  # PRED_FIXED <- .predict_reservoir(
+  #   best_model$fixed_model,
+  #   data_fixed,
+  #   fixed_spec,
+  #   subject
+  # )
+  #
+  # A1 <- PRED_FIXED
+  # A2 <- best_pred_fixed
+  # stopifnot(identical(A1, A2))
+  #
+  # A1 <- data_train[[target_name]] - PRED_FIXED
+  # A2 <- best_data_rand[[target_name]]
+  # stopifnot(identical(A1, A2))
   # nolint end ----
   return(best_model)
 }

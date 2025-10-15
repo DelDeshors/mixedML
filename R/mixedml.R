@@ -500,9 +500,9 @@ reservoir_mixedml <- function(
   # convergence loop ----
   while (TRUE) {
     start <- format(Sys.time(), "%H:%M:%S")
-    cat(sprintf("step#%d\n", istep))
+    message(sprintf("step#%d\n", istep))
     # fitting fixed effects -----
-    cat("\tfitting fixed effects...\n")
+    message("\tfitting fixed effects...\n")
     data_fixed[[target_name]] <- data_train[[target_name]] - pred_rand
     fixed_model <- .fit_reservoir(fixed_model, data_fixed, fixed_spec, subject)
     pred_fixed <- .predict_reservoir(
@@ -512,7 +512,7 @@ reservoir_mixedml <- function(
       subject
     )
     # fitting random effects -----
-    cat("\tfitting random effects...\n")
+    message("\tfitting random effects...\n")
     data_rand[[target_name]] <- data_train[[target_name]] - pred_fixed
     random_model <- try(
       .fit_random_hlme(random_model, data_rand),
@@ -540,7 +540,7 @@ reservoir_mixedml <- function(
     ccases_resid <- complete.cases(residuals_train)
     stopifnot(n_na_full == sum(!ccases_resid))
     mse_train <- mean(residuals_train[ccases_resid]**2)
-    cat(sprintf("\tMSE-train = %.4g\n", mse_train))
+    message(sprintf("\tMSE-train = %.4g\n", mse_train))
     mse_train_list <- c(mse_train_list, mse_train)
     #
     loglik_train <- random_model$loglik
@@ -555,7 +555,7 @@ reservoir_mixedml <- function(
       )
       residuals_val <- data_val[, target_name] - pred_val
       mse_val <- mean(residuals_val[ccases_resid]**2, na.rm = TRUE)
-      cat(sprintf("\tMSE-val = %.4g\n", mse_val))
+      message(sprintf("\tMSE-val = %.4g\n", mse_val))
       mse_val_list <- c(mse_val_list, mse_val)
       #
       hlme_val <- stats::update(
@@ -575,19 +575,19 @@ reservoir_mixedml <- function(
     }
     ## patience threshold ----
     if (mse_conv < thresh - min_mse_gain) {
-      cat("\t(improvement)\n")
+      message("\t(improvement)\n")
       thresh <- mse_conv
       count_conv <- 0
     } else {
       count_conv <- count_conv + 1
-      cat(sprintf("\t(no improvement #%d)\n", count_conv))
+      message(sprintf("\t(no improvement #%d)\n", count_conv))
       if (count_conv == patience) {
         break
       }
     }
     ## improvement test ----
     if (mse_conv < mse_min) {
-      cat("\t(saving best model)\n")
+      message("\t(saving best model)\n")
       mse_min <- mse_conv
       # must save it since we have a reference to the Python model
       # so we cannot use `best_fixed_model <- fixed_model`
@@ -607,7 +607,7 @@ reservoir_mixedml <- function(
   best_model <- load_mixedml(backup)
   best_model <- .update_model_snapshot_lists(best_model, .get_model_snapshot())
   # final model with saved convergence criteria ----
-  cat("Final convergence of HLME with strict convergence criterions.")
+  message("Final convergence of HLME with strict convergence criterions.")
   best_model$random_model <- .fine_tune(
     best_model$random_model,
     best_data_rand,

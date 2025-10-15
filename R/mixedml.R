@@ -514,13 +514,27 @@ reservoir_mixedml <- function(
     # fitting random effects -----
     cat("\tfitting random effects...\n")
     data_rand[[target_name]] <- data_train[[target_name]] - pred_fixed
-    random_model <- .fit_random_hlme(random_model, data_rand)
-    .check_convergence_hlme(random_model)
-    pred_rand <- .predict_random_hlme(
-      random_model,
-      data_rand,
-      mixedml_controls$all_info_hlme_prediction
+    random_model <- try(
+      .fit_random_hlme(random_model, data_rand),
+      silent = FALSE
     )
+    if (inherits(random_model, "try-error")) {
+      warning("Aborting the training loop!")
+      break()
+    }
+    .check_convergence_hlme(random_model)
+    pred_rand <- try(
+      .predict_random_hlme(
+        random_model,
+        data_rand,
+        mixedml_controls$all_info_hlme_prediction
+      ),
+      silent = FALSE
+    )
+    if (inherits(pred_rand, "try-error")) {
+      warning("Aborting the training loop!")
+      break()
+    }
     # train residuals/mse and loglik----
     residuals_train <- data_train[, target_name] - (pred_fixed + pred_rand)
     ccases_resid <- complete.cases(residuals_train)

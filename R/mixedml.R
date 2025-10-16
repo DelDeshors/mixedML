@@ -105,18 +105,20 @@ mixedml_ctrls <- function(
   #
   ccases_full <- ccases_fixed & ccases_rand & ccases_target
   n_na_full <- sum(!ccases_full)
-  warning(sprintf(
-    "
+  if (n_na_full > 0) {
+    warning(sprintf(
+      "
          %d incomplete cases for the ML models
          %d incomplete cases for the HLME model
          %d NA values in target
          => %d/%d observations could not be used to train (either no fixed preds, random preds or target).",
-    n_na_fixed,
-    n_na_rand,
-    n_na_target,
-    n_na_full,
-    nrow(data)
-  ))
+      n_na_fixed,
+      n_na_rand,
+      n_na_target,
+      n_na_full,
+      nrow(data)
+    ))
+  }
   return(n_na_full)
 }
 

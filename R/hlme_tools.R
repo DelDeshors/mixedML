@@ -60,7 +60,6 @@ hlme_ctrls <- function(
 
 .test_initiate_random_hlme <- function(random_spec, hlme_controls, var.time) {
   .check_controls_with_function(hlme_controls, hlme_ctrls)
-  .check_controls_with_function(hlme_controls, hlme_ctrls)
   .check_cor_spec(random_spec, var.time, hlme_controls$cor)
   return()
 }

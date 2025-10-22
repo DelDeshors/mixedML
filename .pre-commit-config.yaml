@@ -23,14 +23,17 @@ repos:
     -   id: file-contents-sorter
         files: '^\.Rbuildignore$'
 # R formating
--   repo: local
-    hooks:
-    -   id: airformat
-        name: airformat
-        entry: air format
-        language: system
-        types: [r]
-        pass_filenames: true
+# since a temporary folder is used, the air.toml file is not found
+# so the preferences are not used
+# instead we used this trick: https://posit-dev.github.io/air/integration-github-actions.html#format-with---check
+#-   repo: local
+#    hooks:
+#    -   id: airformat
+#        name: airformat
+#        entry: air format
+#        language: system
+#        types: [r]
+#        pass_filenames: true
 #  R precommit hooks
 -   repo: https://github.com/lorenzwalthert/precommit    #  R precommit hooks
     rev: v0.4.3.9015

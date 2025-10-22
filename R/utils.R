@@ -58,11 +58,7 @@ is.named.vector <- function(x) {
   if (!setequal(names_controls, params_function)) {
     control_name <- as.character(as.list(match.call())[["controls"]])
     function_name <- as.character(as.list(match.call())[["controls_function"]])
-    stop(sprintf(
-      "\"%s\" should be set with the function \"%s\"\n",
-      control_name,
-      function_name
-    ))
+    stop(sprintf("\"%s\" should be set with the function \"%s\"\n", control_name, function_name))
   }
 }
 
@@ -131,9 +127,7 @@ is.named.vector <- function(x) {
 
 
 .is_python_model <- function(obj) {
-  return(
-    inherits(obj, "python.builtin.object") && !reticulate::py_is_null_xptr(obj)
-  )
+  return(inherits(obj, "python.builtin.object") && !reticulate::py_is_null_xptr(obj))
 }
 
 .save_py_object <- function(obj, filename) {

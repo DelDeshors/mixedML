@@ -28,11 +28,7 @@ esn_ctrls <- function(
   stopifnot(is.single.numeric(lr))
   stopifnot(is.single.numeric(sr))
   stopifnot(is.single.numeric(ridge))
-  stopifnot(
-    is.numeric(input_scaling) &&
-      length(input_scaling) == 1 &&
-      input_scaling > 0.
-  )
+  stopifnot(is.numeric(input_scaling) && length(input_scaling) == 1 && input_scaling > 0.)
   stopifnot(is.logical(feedback))
   stopifnot(is.logical(input_to_readout))
   return(as.list(environment()))
@@ -49,12 +45,7 @@ esn_ctrls <- function(
 #' @param n_procs Number of processor to use. 1 means no multiprocessing. Default: 1.
 #' @return ensemble_controls
 #' @export
-ensemble_ctrls <- function(
-  seed_list = c(1, 2, 3),
-  aggregator = "median",
-  scaler = "standard",
-  n_procs = 1
-) {
+ensemble_ctrls <- function(seed_list = c(1, 2, 3), aggregator = "median", scaler = "standard", n_procs = 1) {
   stopifnot(is.integer(seed_list))
   seed_list <- as.integer(seed_list) # real integer for reticulate
   stopifnot(is.character(aggregator))
@@ -83,11 +74,7 @@ fit_ctrls <- function(warmup = 0) {
 }
 
 
-.test_initiate_esn <- function(
-  esn_controls,
-  ensemble_controls,
-  fit_controls
-) {
+.test_initiate_esn <- function(esn_controls, ensemble_controls, fit_controls) {
   .check_controls_with_function(esn_controls, esn_ctrls)
   .check_controls_with_function(ensemble_controls, ensemble_ctrls)
   .check_controls_with_function(fit_controls, fit_ctrls)
@@ -112,11 +99,7 @@ fit_ctrls <- function(warmup = 0) {
 
   controls <- c(
     ensemble_controls,
-    list(
-      esn_controls = esn_controls,
-      fit_controls = fit_controls,
-      predict_controls = predict_controls
-    )
+    list(esn_controls = esn_controls, fit_controls = fit_controls, predict_controls = predict_controls)
   )
   model <- do.call(retipy$JoblibReservoirEnsemble, controls)
   return(model)
@@ -134,11 +117,7 @@ fit_ctrls <- function(warmup = 0) {
   ccases <- complete.cases(data[x_labels])
   data <- data[ccases, ]
   #
-  controls <- list(
-    X = as.matrix(data[x_labels]),
-    y = as.matrix(data[y_label]),
-    subject_col = as.array(data[[subject]])
-  )
+  controls <- list(X = as.matrix(data[x_labels]), y = as.matrix(data[y_label]), subject_col = as.array(data[[subject]]))
   do.call(model$fit, controls)
   return(model)
 }
@@ -149,10 +128,7 @@ fit_ctrls <- function(warmup = 0) {
   x_labels <- .get_x_labels(fixed_spec)
   ccases <- complete.cases(data[x_labels])
   data <- data[ccases, ]
-  controls <- list(
-    X = as.matrix(data[x_labels]),
-    subject_col = as.array(data[[subject]])
-  )
+  controls <- list(X = as.matrix(data[x_labels]), subject_col = as.array(data[[subject]]))
   pred_fixed <- do.call(model$predict, controls)
   stopifnot(ncol(pred_fixed) == 1)
   stopifnot(all(!is.na(pred_fixed[, 1])))

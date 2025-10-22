@@ -5,18 +5,8 @@ time <- "time"
 
 .get_test_model <- function() {
   return(.initiate_esn(
-    esn_controls = esn_ctrls(
-      units = 10,
-      sr = 0.1,
-      lr = 0.2,
-      ridge = 0.001
-    ),
-    ensemble_controls = ensemble_ctrls(
-      seed_list = c(1L, 2L),
-      aggregator = "median",
-      scaler = "standard",
-      n_procs = 2L
-    ),
+    esn_controls = esn_ctrls(units = 10, sr = 0.1, lr = 0.2, ridge = 0.001),
+    ensemble_controls = ensemble_ctrls(seed_list = c(1L, 2L), aggregator = "median", scaler = "standard", n_procs = 2L),
     fit_controls = fit_ctrls(warmup = 0)
   ))
 }

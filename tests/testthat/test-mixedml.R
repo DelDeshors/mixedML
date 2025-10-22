@@ -15,27 +15,16 @@ normal_execution <- function() {
     data_val = data_val,
     subject = subject,
     time = time,
-    mixedml_controls = mixedml_ctrls(
-      min_mse_gain = 0.1,
-      patience = 3,
-      convB = 0.1,
-      convL = 0.1,
-      convG = 0.1
-    ),
+    mixedml_controls = mixedml_ctrls(min_mse_gain = 0.1, patience = 3, convB = 0.1, convL = 0.1, convG = 0.1),
     hlme_controls = hlme_ctrls(
       maxiter = 5,
       idiag = TRUE,
-      cor = AR(time),
+      cor = "AR(time)",
       convB = 0.0001,
       convL = 0.0001,
       convG = 0.0001
     ),
-    esn_controls = esn_ctrls(
-      units = 20,
-      lr = 0.1,
-      sr = 1.3,
-      ridge = 1e-3
-    ),
+    esn_controls = esn_ctrls(units = 20, lr = 0.1, sr = 1.3, ridge = 1e-3),
     ensemble_controls = ensemble_ctrls(
       seed_list = c(666, 667),
       aggregator = "median",

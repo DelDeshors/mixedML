@@ -5,8 +5,9 @@
 #' Please see the [documentation](https://cecileproust-lima.github.io/lcmm/reference/hlme.html)
 #' of the `hlme` function of the `lcmm` package.
 #' @return hlme_controls
-#' @param cor brownian motion or autoregressive process modeling the correlation
-#' between the observations. "BM" or "AR" should be specified, followed by the time variable between brackets.
+#' @param cor brownian motion ("BM") or autoregressive process ("AR") modeling the correlation
+#' between the observations. NOTE that for this tool, the only accepted form is a string (ex: cor="BM(time)"),
+#' which is different from the hlme call (ex: cor=BM(time)). NULL is still accepted.
 #' @param idiag logical for the structure of the variance-covariance matrix of the random-effects.
 #' If FALSE, a non structured matrix of variance-covariance is considered (by default).
 #' If TRUE a diagonal matrix of variance-covariance is considered.
@@ -31,36 +32,65 @@ hlme_ctrls <- function(
   convG = 0.0001, # nolint
   verbose = FALSE
 ) {
-  # the use of cor in lcmm is very tricky…
-  cor <- substitute(cor)
+  cor <- .homogenize_cor(cor)
   return(as.list(environment()))
 }
 
 
-.check_cor_spec <- function(random_spec, var.time, cor) {
-  # this should move into lcmm
-  if (is.null(cor)) return()
-  #
-  cor_code <- as.character(cor)[1]
-  if (!cor_code %in% c("AR", "BM")) {
-    stop(sprintf('Please use one of %s to define \"cor\"', c("AR", "BM")))
+.homogenize_cor <- function(cor) {
+  errmsg <- "The \"cor\" parameter does not have an authorized format"
+  if (inherits(try(cor, silent = TRUE), "try-error")) {
+    # the "cor=AR(time)" notation
+    # must be tried first since to avoid crashing the other commands.
+    stop(errmsg)
   }
-  cor_time <- as.character(cor)[2]
-  #
+  if (is.character(cor)) {
+    return(str2lang(cor))
+  }
+  if (is.null(cor)) {
+    return(cor)
+  }
+  stop(errmsg)
+  return()
+}
+
+.check_cor_call <- function(random_spec, var.time, cor) {
+  if (is.null(cor)) {
+    return()
+  }
+  errmsg <- paste0(
+    "\"cor\" must be specified using \"AR(time)\" or \"BM(time)\", ",
+    "with \"time\" begin used in \"random_spec\" and equal to \"var.time\".\n",
+    "But it is equal to \"",
+    cor,
+    "\".\n",
+    "If you want to use a variable to define it, you should consider a string or quote notation."
+  )
+  if (!is.call(cor)) {
+    stop(errmsg)
+  }
+  cor_char <- as.character(cor)
+  if (length(cor_char) != 2) {
+    stop(errmsg)
+  }
+  cor_code <- cor_char[[1]]
+  if (!(cor_code %in% c("AR", "BM"))) {
+    stop(errmsg)
+  }
+  cor_time <- cor_char[[2]]
   if (!(cor_time %in% .get_x_labels(random_spec, allow_interactions = TRUE))) {
-    stop("the time value defined in \"cor\", should be used in \"random_spec\"")
+    stop(errmsg)
   }
-  if (!(cor_time == var.time)) {
-    stop(
-      "the time value defined in \"cor\", should equal to the one defined in \"time\""
-    )
+  if (cor_time != var.time) {
+    stop(errmsg)
   }
   return()
 }
 
+
 .test_initiate_random_hlme <- function(random_spec, hlme_controls, var.time) {
   .check_controls_with_function(hlme_controls, hlme_ctrls)
-  .check_cor_spec(random_spec, var.time, hlme_controls$cor)
+  .check_cor_call(random_spec, var.time, hlme_controls$cor)
   return()
 }
 
@@ -75,14 +105,7 @@ hlme_ctrls <- function(
 #' @param var.time var.time
 #' @param hlme_controls hlme_controls
 #' @return HLME model
-.initiate_random_hlme <- function(
-  target_name,
-  random_spec,
-  data,
-  subject,
-  var.time,
-  hlme_controls
-) {
+.initiate_random_hlme <- function(target_name, random_spec, data, subject, var.time, hlme_controls) {
   .test_initiate_random_hlme(random_spec, hlme_controls, var.time)
   # preparing the hlme formula inputs
   hlme_controls$fixed <- stats::reformulate("1", response = target_name)
@@ -110,10 +133,7 @@ hlme_ctrls <- function(
     idx_varcov <- grepl("^varcov ", names(random_hlme$best))
     n_rand_var <- sum(idx_varcov)
     if (length(b_backup) != n_rand_var) {
-      stop(sprintf(
-        "B should only contains %d random-effects \"varcov\" values.",
-        n_rand_var
-      ))
+      stop(sprintf("B should only contains %d random-effects \"varcov\" values.", n_rand_var))
     }
     random_hlme$best[idx_varcov] <- b_backup
   }
@@ -139,14 +159,7 @@ hlme_ctrls <- function(
   sub_list <- hlme_controls_final[c("convB", "convL", "convG")]
   sub_list$B <- random_hlme$best
   call_hlme <- substitute(
-    stats::update(
-      random_hlme,
-      data = data,
-      B = B,
-      convB = convB,
-      convL = convL,
-      convG = convB
-    ),
+    stats::update(random_hlme, data = data, B = B, convB = convB, convL = convL, convG = convB),
     sub_list
   )
   random_hlme <- eval(call_hlme)
@@ -188,30 +201,13 @@ hlme_ctrls <- function(
 
 .predict_y <- function(model, newdata, pred_re, pred_cor) {
   if (is.null(pred_cor)) {
-    return(
-      lcmm::predictY(
-        model,
-        newdata,
-        predRE = pred_re
-      )
-    )
+    return(lcmm::predictY(model, newdata, predRE = pred_re))
   } else {
-    return(
-      lcmm::predictY(
-        model,
-        newdata,
-        predRE = pred_re,
-        predCor = pred_cor
-      )
-    )
+    return(lcmm::predictY(model, newdata, predRE = pred_re, predCor = pred_cor))
   }
 }
 
-.predict_newdata_ss <- function(
-  random_hlme,
-  data,
-  data_info
-) {
+.predict_newdata_ss <- function(random_hlme, data, data_info) {
   # NOTE: with this method the observations with no NAs in Xs and NA in Y
   # will get a prediction, which is different from the library original behaviour
   # in model$pred$pred_ss
@@ -304,11 +300,7 @@ hlme_ctrls <- function(
 
 ## prediction with all information ----
 .predict_with_all_info <- function(random_hlme, data) {
-  full_preds <- .predict_newdata_ss(
-    random_hlme,
-    data = data,
-    data_info = data
-  )
+  full_preds <- .predict_newdata_ss(random_hlme, data = data, data_info = data)
   return(full_preds)
 }
 
@@ -321,11 +313,7 @@ hlme_ctrls <- function(
   for (i_time in time_unq[-1]) {
     actual_data <- data[data[var.time] == i_time, ]
     prev_data <- data[data[var.time] < i_time, ]
-    full_preds[rownames(actual_data)] <- .predict_newdata_ss(
-      random_hlme,
-      data = actual_data,
-      data_info = prev_data
-    )
+    full_preds[rownames(actual_data)] <- .predict_newdata_ss(random_hlme, data = actual_data, data_info = prev_data)
   }
   return(full_preds)
 }

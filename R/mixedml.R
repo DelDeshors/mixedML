@@ -88,6 +88,45 @@ mixedml_ctrls <- function(
   return(control)
 }
 
+#' Prepare the earlystopping controls
+#' #' @param patience Number of iterations without improvement before the training is stopped. Default: 2
+#' @param min_mse_gain Minimal difference of MSE to consider an improvement.
+#' `min_mse_gain=1.` means an improvement of at least 1. of the MSE is necessary. Default: 1.
+#' @return earlystopping_controls
+#' @export
+earlystopping_ctrls <- function(patience = 2, min_mse_gain = 1) {
+  stopifnot(is.single.integer(patience) && 0 <= patience)
+  patience <- as.integer(patience)
+  control <- as.list(environment())
+  return(control)
+}
+
+#' Prepare the aborting metric controls
+#' @param metric_name Name of the metric to check. Must be one of "mse_val", "mse_train", "loglik_val", "loglik_train"
+#' Default: "mse_val"
+#' @param value Value tu compare the metric to. The test will be adapted depending on the kind of metric.
+#' Default: 0.
+#' @param check_iter Iteration at which the check is done. `check_iter = 0` means that not check will be done.
+#' Default: 0.
+#' @return aborting_metric_controls
+#' @export
+aborting_metric_ctrls <- function(metric_name = "mse_val", value = 0., check_iter = 0) {
+  stopifnot(metric_name % in% c("mse_val", "mse_train", "loglik_val", "loglik_train"))
+  stopifnot(is.single.integer(value))
+  stopifnot(is.single.integer(check_iter) && 0 <= check_iter)
+  if (startsWith(metric_name, "mse")) {
+    check <- function(x) {
+      return(x <= value)
+    }
+  } else if (startsWith(metric_name, "loglik")) {
+    check <- function(x) {
+      return(x >= value)
+    }
+  }
+  control <- as.list(environment())
+  return(control)
+}
+
 
 .check_na_combinaison <- function(data, fixed_spec, random_spec, target_name) {
   # can be moved into a function

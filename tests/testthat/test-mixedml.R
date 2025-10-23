@@ -15,7 +15,12 @@ normal_execution <- function() {
     data_val = data_val,
     subject = subject,
     time = time,
-    mixedml_controls = mixedml_ctrls(min_mse_gain = 0.1, patience = 3, convB = 0.1, convL = 0.1, convG = 0.1),
+    mixedml_controls = mixedml_ctrls(
+      earlystopping_controls = earlystopping_ctrls(min_mse_gain = 0.1, patience = 3),
+      convB = 0.1,
+      convL = 0.1,
+      convG = 0.1
+    ),
     hlme_controls = hlme_ctrls(
       maxiter = 5,
       idiag = TRUE,

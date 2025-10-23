@@ -13,6 +13,8 @@ MIXEDML_COMPONENTS <- c(
   "random_spec",
   "fixed_model",
   "random_model",
+  "mse_train",
+  "mse_val",
   "loglik_train",
   "loglik_val",
   "mse_train_list",
@@ -26,7 +28,17 @@ MIXEDML_COMPONENTS <- c(
   # must only be called in main loop
   # (where the MIXEDML_COMPONENTS variables are defined)
   pframe <- as.list(parent.frame())
-  stopifnot(all(MIXEDML_COMPONENTS %in% names(pframe)))
+  sdiff <- setdiff(MIXEDML_COMPONENTS, names(pframe))
+  if (length(sdiff) > 0) {
+    # the warning is temporary, while the package is still evolving
+    warning(
+      "Dev warning: these components defined in MIXEDML_COMPONENTS are ",
+      "not present in the execution environment: ",
+      paste(sdiff, collapse = ", ")
+    )
+    pframe[sdiff] <- NA
+  }
+  #
   model <- pframe[MIXEDML_COMPONENTS]
   class(model) <- MIXEDML_CLASS
   return(model)
@@ -72,17 +84,19 @@ MIXEDML_COMPONENTS <- c(
 #' @return mixedml_controls
 #' @export
 mixedml_ctrls <- function(
-  patience = 2,
-  min_mse_gain = 1,
+  earlystopping_controls = earlystopping_ctrls(),
+  aborting_metric_controls = aborting_metric_ctrls(),
   all_info_hlme_prediction = TRUE,
   convB = 0.01, # nolint
   convL = 0.01, # nolint
   convG = 0.01 # nolint
 ) {
-  stopifnot(is.single.integer(patience) & 0 <= patience)
-  patience <- as.integer(patience)
-  stopifnot(is.single.numeric(min_mse_gain))
-  stopifnot(0 < min_mse_gain)
+  .check_controls_with_function(earlystopping_controls, earlystopping_ctrls)
+  .check_controls_with_function(aborting_metric_controls, aborting_metric_ctrls)
+  stopifnot(is.logical(all_info_hlme_prediction))
+  stopifnot(is.single.numeric(convB) && convB > 0)
+  stopifnot(is.single.numeric(convL) && convL > 0)
+  stopifnot(is.single.numeric(convG) && convG > 0)
   #
   control <- as.list(environment())
   return(control)
@@ -97,6 +111,8 @@ mixedml_ctrls <- function(
 earlystopping_ctrls <- function(patience = 2, min_mse_gain = 1) {
   stopifnot(is.single.integer(patience) && 0 <= patience)
   patience <- as.integer(patience)
+  stopifnot(is.single.numeric(min_mse_gain))
+  stopifnot(0 < min_mse_gain)
   control <- as.list(environment())
   return(control)
 }
@@ -111,22 +127,31 @@ earlystopping_ctrls <- function(patience = 2, min_mse_gain = 1) {
 #' @return aborting_metric_controls
 #' @export
 aborting_metric_ctrls <- function(metric_name = "mse_val", value = 0., check_iter = 0) {
-  stopifnot(metric_name % in% c("mse_val", "mse_train", "loglik_val", "loglik_train"))
+  stopifnot(metric_name %in% c("mse_val", "mse_train", "loglik_val", "loglik_train"))
   stopifnot(is.single.integer(value))
   stopifnot(is.single.integer(check_iter) && 0 <= check_iter)
-  if (startsWith(metric_name, "mse")) {
-    check <- function(x) {
-      return(x <= value)
-    }
-  } else if (startsWith(metric_name, "loglik")) {
-    check <- function(x) {
-      return(x >= value)
-    }
-  }
   control <- as.list(environment())
   return(control)
 }
 
+# nolint start
+# .get_metric_abort_function <- function(aborting_metric_ctrls, metric_name, value) {
+#   if (startsWith(metric_name, "mse")) {
+#     test <-
+#     return(function(..., metric, threshold) {
+#       return(metric > threshold)
+#     }
+#     )
+#   } else if (startsWith(metric_name, "loglik")) {
+#     return(function(..., metric, threshold) {
+#       return(metric < threshold)
+#     }
+#     )
+#   }
+#   warning("Aborting the training due to the defined
+#   return()
+# }
+# nolint end
 
 .check_na_combinaison <- function(data, fixed_spec, random_spec, target_name) {
   # can be moved into a function
@@ -359,19 +384,7 @@ plot_prediction_check <- function(model, subject_nb_or_list, ylog = FALSE) {
 
 # recipe: HLME/Reservoir ----
 
-.test_reservoir_mixedml <- function(
-  fixed_spec,
-  random_spec,
-  data,
-  data_val,
-  subject,
-  time,
-  mixedml_controls,
-  hlme_controls,
-  esn_controls,
-  ensemble_controls,
-  fit_controls
-) {
+.test_reservoir_mixedml <- function(fixed_spec, random_spec, data, data_val, subject, time, mixedml_controls) {
   stopifnot(all(.get_x_labels(fixed_spec) %in% colnames(data)))
   stopifnot(.get_y_label(fixed_spec) %in% colnames(data))
   #
@@ -427,19 +440,7 @@ reservoir_mixedml <- function(
 ) {
   # please see .get_model_snapshot to understand the choice of the variables names
   call <- match.call()
-  .test_reservoir_mixedml(
-    fixed_spec,
-    random_spec,
-    data,
-    data_val,
-    subject,
-    time,
-    mixedml_controls,
-    hlme_controls,
-    esn_controls,
-    ensemble_controls,
-    fit_controls
-  )
+  .test_reservoir_mixedml(fixed_spec, random_spec, data, data_val, subject, time, mixedml_controls)
   do_val <- (!is.null(data_val))
   #
   target_name <- .get_y_label(fixed_spec)
@@ -450,24 +451,23 @@ reservoir_mixedml <- function(
   hlme_controls_iter$convB <- mixedml_controls$convB
   hlme_controls_iter$convL <- mixedml_controls$convL
   hlme_controls_iter$convG <- mixedml_controls$convG
+  # initialization ----
   random_model <- .initiate_random_hlme(target_name, random_spec, data, subject, time, hlme_controls_iter)
   fixed_model <- .initiate_esn(esn_controls, ensemble_controls, fit_controls)
-  min_mse_gain <- mixedml_controls[["min_mse_gain"]]
-  patience <- mixedml_controls[["patience"]]
-  # initialization (some are for .get_model_snapshot to work) ----
+  min_mse_gain <- mixedml_controls$earlystopping_controls$min_mse_gain
+  patience <- mixedml_controls$earlystopping_controls$patience
+  estop_thesh <- Inf
+  #
   data_train <- data
   data_fixed <- data
   data_rand <- data
   pred_rand <- rep(0, nrow(data))
-  istep <- 0
+  istep <- 1
   mse_train_list <- c()
   mse_val_list <- c()
-  loglik_train <- NULL
   loglik_train_list <- c()
-  loglik_val <- NULL
   loglik_val_list <- c()
   mse_min <- Inf
-  thresh <- Inf
   # confusing name, might need to change:
   n_na_full <- .check_na_combinaison(data_train, fixed_spec, random_spec, target_name)
   backup <- tempfile(fileext = ".Rds")
@@ -478,14 +478,22 @@ reservoir_mixedml <- function(
     # fitting fixed effects -----
     message("\tfitting fixed effects...")
     data_fixed[[target_name]] <- data_train[[target_name]] - pred_rand
-    fixed_model <- .fit_reservoir(fixed_model, data_fixed, fixed_spec, subject)
-    pred_fixed <- .predict_reservoir(fixed_model, data_fixed, fixed_spec, subject)
+    fixed_model <- try(.fit_reservoir(fixed_model, data_fixed, fixed_spec, subject), silent = TRUE)
+    if (inherits(fixed_model, "try-error")) {
+      warning("Training of the the ML model failed: aborting the training loop!")
+      break()
+    }
+    pred_fixed <- try(.predict_reservoir(fixed_model, data_fixed, fixed_spec, subject), silent = TRUE)
+    if (inherits(pred_fixed, "try-error")) {
+      warning("Prediction with the ML model failed: aborting the training loop!")
+      break()
+    }
     # fitting random effects -----
     message("\tfitting random effects...")
     data_rand[[target_name]] <- data_train[[target_name]] - pred_fixed
     random_model <- try(.fit_random_hlme(random_model, data_rand), silent = FALSE)
     if (inherits(random_model, "try-error")) {
-      warning("Aborting the training loop!")
+      warning("Training of the HLME model failed: aborting the training loop!")
       break()
     }
     .check_convergence_hlme(random_model)
@@ -494,7 +502,7 @@ reservoir_mixedml <- function(
       silent = FALSE
     )
     if (inherits(pred_rand, "try-error")) {
-      warning("Aborting the training loop!")
+      warning("Prediction with the HLME model failed: aborting the training loop!")
       break()
     }
     # train residuals/mse and loglik----
@@ -527,9 +535,9 @@ reservoir_mixedml <- function(
       mse_conv <- mse_train
     }
     ## patience threshold ----
-    if (mse_conv < thresh - min_mse_gain) {
+    if (mse_conv < estop_thesh - min_mse_gain) {
       message("\t(improvement)")
-      thresh <- mse_conv
+      estop_thesh <- mse_conv
       count_conv <- 0
     } else {
       count_conv <- count_conv + 1
@@ -555,6 +563,10 @@ reservoir_mixedml <- function(
       # nolint end ----
     }
     istep <- istep + 1
+  }
+  #
+  if (!file.exists(backup)) {
+    stop("The model could not be trained")
   }
   #
   best_model <- load_mixedml(backup)

@@ -421,9 +421,9 @@ reservoir_mixedml <- function(
   time,
   mixedml_controls = mixedml_ctrls(),
   hlme_controls = hlme_ctrls(),
-  esn_controls = esn_controls(),
-  ensemble_controls = ensemble_controls(),
-  fit_controls = fit_controls()
+  esn_controls = esn_ctrls(),
+  ensemble_controls = ensemble_ctrls(),
+  fit_controls = fit_ctrls()
 ) {
   # please see .get_model_snapshot to understand the choice of the variables names
   call <- match.call()

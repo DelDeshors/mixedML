@@ -132,7 +132,10 @@ model_reservoir <- reservoir_mixedml(
   subject = "ID",
   time = "time",
   # parameters for MixedML method
-  mixedml_controls = mixedml_ctrls(min_mse_gain = 0.1, patience = 10),
+  mixedml_controls = mixedml_ctrls(
+    earlystopping_controls = earlystopping_ctrls(min_mse_gain = 0.1, patience = 10),
+    all_info_hlme_prediction = TRUE
+  ),
   # controls (extra-parameters) for the hlme model
   hlme_controls = hlme_ctrls(maxiter = 50, idiag = TRUE),
   # controls (extra-parameters) for the ML model

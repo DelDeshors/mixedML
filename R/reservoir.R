@@ -83,11 +83,7 @@ fit_ctrls <- function(warmup = 0) {
 
 
 # recipes  ----
-.initiate_esn <- function(
-  esn_controls = esn_ctrls(),
-  ensemble_controls = ensemble_ctrls(),
-  fit_controls = fit_ctrls()
-) {
+.initiate_esn <- function(esn_controls, ensemble_controls, fit_controls) {
   .test_initiate_esn(esn_controls, ensemble_controls, fit_controls)
   # sys.path is modified when activating the Python environment
   # so the import is simply:

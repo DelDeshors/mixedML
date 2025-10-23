@@ -85,14 +85,14 @@ MIXEDML_COMPONENTS <- c(
 #' @export
 mixedml_ctrls <- function(
   earlystopping_controls = earlystopping_ctrls(),
-  aborting_metric_controls = aborting_metric_ctrls(),
+  aborting_controls = aborting_ctrls(),
   all_info_hlme_prediction = TRUE,
   convB = 0.01, # nolint
   convL = 0.01, # nolint
   convG = 0.01 # nolint
 ) {
   .check_controls_with_function(earlystopping_controls, earlystopping_ctrls)
-  .check_controls_with_function(aborting_metric_controls, aborting_metric_ctrls)
+  .check_controls_with_function(aborting_controls, aborting_ctrls)
   stopifnot(is.logical(all_info_hlme_prediction))
   stopifnot(is.single.numeric(convB) && convB > 0)
   stopifnot(is.single.numeric(convL) && convL > 0)
@@ -117,41 +117,19 @@ earlystopping_ctrls <- function(patience = 2, min_mse_gain = 1) {
   return(control)
 }
 
-#' Prepare the aborting metric controls
-#' @param metric_name Name of the metric to check. Must be one of "mse_val", "mse_train", "loglik_val", "loglik_train"
-#' Default: "mse_val"
-#' @param value Value tu compare the metric to. The test will be adapted depending on the kind of metric.
+#' Prepare the aborting controls
+#' @param mse_value Value tu compare the metric to. The test will be adapted depending on the kind of metric.
 #' Default: 0.
 #' @param check_iter Iteration at which the check is done. `check_iter = 0` means that not check will be done.
 #' Default: 0.
-#' @return aborting_metric_controls
+#' @return aborting_controls
 #' @export
-aborting_metric_ctrls <- function(metric_name = "mse_val", value = 0., check_iter = 0) {
-  stopifnot(metric_name %in% c("mse_val", "mse_train", "loglik_val", "loglik_train"))
-  stopifnot(is.single.integer(value))
-  stopifnot(is.single.integer(check_iter) && 0 <= check_iter)
+aborting_ctrls <- function(mse_value = 0., check_iter = 0) {
+  stopifnot(is.single.numeric(mse_value) && mse_value >= 0)
+  stopifnot(is.single.integer(check_iter) && check_iter >= 0)
   control <- as.list(environment())
   return(control)
 }
-
-# nolint start
-# .get_metric_abort_function <- function(aborting_metric_ctrls, metric_name, value) {
-#   if (startsWith(metric_name, "mse")) {
-#     test <-
-#     return(function(..., metric, threshold) {
-#       return(metric > threshold)
-#     }
-#     )
-#   } else if (startsWith(metric_name, "loglik")) {
-#     return(function(..., metric, threshold) {
-#       return(metric < threshold)
-#     }
-#     )
-#   }
-#   warning("Aborting the training due to the defined
-#   return()
-# }
-# nolint end
 
 .check_na_combinaison <- function(data, fixed_spec, random_spec, target_name) {
   # can be moved into a function
@@ -454,9 +432,13 @@ reservoir_mixedml <- function(
   # initialization ----
   random_model <- .initiate_random_hlme(target_name, random_spec, data, subject, time, hlme_controls_iter)
   fixed_model <- .initiate_esn(esn_controls, ensemble_controls, fit_controls)
+  #
   min_mse_gain <- mixedml_controls$earlystopping_controls$min_mse_gain
   patience <- mixedml_controls$earlystopping_controls$patience
   estop_thesh <- Inf
+  #
+  abort_mse <- mixedml_controls$aborting_controls$mse_value
+  abort_iter <- mixedml_controls$aborting_controls$check_iter
   #
   data_train <- data
   data_fixed <- data
@@ -534,7 +516,14 @@ reservoir_mixedml <- function(
     } else {
       mse_conv <- mse_train
     }
-    ## patience threshold ----
+    ## aborting test ----
+    if (istep == abort_iter) {
+      if (mse_conv > abort_mse) {
+        warning("Conditions defined in aborting_controls: aborting training loop!")
+        break
+      }
+    }
+    ## improving / early stopping test ----
     if (mse_conv < estop_thesh - min_mse_gain) {
       message("\t(improvement)")
       estop_thesh <- mse_conv
@@ -543,6 +532,7 @@ reservoir_mixedml <- function(
       count_conv <- count_conv + 1
       message(sprintf("\t(no improvement #%d)", count_conv))
       if (count_conv == patience) {
+        warning("Conditions defined in early_stopping: aborting training loop!")
         break
       }
     }

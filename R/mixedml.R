@@ -73,13 +73,13 @@ MIXEDML_COMPONENTS <- c(
 #' (past, present, future) is used for the hlme prediction (TRUE) or if only the past
 #' information is used (FALSE). Default: TRUE
 #' @param convB optional iterations models threshold for the convergence criterion based on the
-#' parameter stability. Used during the MixedML iterations.
+#' parameter stability. Used during the MixedML iterations to speed up the HLME model training.
 #' By default, convB=0.01.
 #' @param convL optional threshold for the convergence criterion based on the
-#' log-likelihood stability. Used during the MixedML iterations.
+#' log-likelihood stability. Used during the MixedML iterations to speed up the HLME model training.
 #' By default, convL=0.01.
 #' @param convG optional threshold for the convergence criterion based on the
-#' derivatives. Used during the MixedML iterations.
+#' derivatives. Used during the MixedML iterations to speed up the HLME model training.
 #' By default, convG=0.10.
 #' @return mixedml_controls
 #' @export
@@ -566,7 +566,7 @@ reservoir_mixedml <- function(
   }
   #
   if (!file.exists(backup)) {
-    stop("The model could not be trained")
+    stop("The model could not be trained or could not predict at all!")
   }
   #
   best_model <- load_mixedml(backup)

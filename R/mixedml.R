@@ -565,7 +565,10 @@ reservoir_mixedml <- function(
   message("Final convergence of HLME with strict convergence criterions.")
   best_model$random_model <- .fine_tune(best_model$random_model, best_data_rand, hlme_controls_final)
   .check_convergence_hlme(best_model$random_model)
-
+  # NOTE: after updating the random model, the stored MSE/loglik could also be updated
+  # It is likely a matter 0.01% difference but it could confuse the user (it confused me!)
+  # This should not be done before a refactoring to isolate the fixed>residual>random operation in a specific function
+  #
   # nolint start ----
   # xlab <- .get_x_labels(fixed_spec)
   #

@@ -93,8 +93,7 @@ mixedml_ctrls <- function(
   convL = 0.01, # nolint
   convG = 0.01 # nolint
 ) {
-  .check_controls_with_function(earlystopping_controls, earlystopping_ctrls)
-  .check_controls_with_function(aborting_controls, aborting_ctrls)
+  .check_training_stop_controls(earlystopping_controls, aborting_controls)
   stopifnot(is.logical(all_info_hlme_prediction))
   stopifnot(is.single.numeric(convB) && convB > 0)
   stopifnot(is.single.numeric(convL) && convL > 0)
@@ -104,13 +103,19 @@ mixedml_ctrls <- function(
   return(control)
 }
 
-#' Prepare the earlystopping controls
-#' #' @param patience Number of iterations without improvement before the training is stopped. Default: 2
+#' Prepare the earlystopping controls. The earlystopping controls are used to stop the training
+#' when convergence is reached.
+#' If no improvement of the MSE greater than `min_mse_gain` is observed during `patience` iterations,
+#' then the training is stopped.
+#' If a validation dataset is provided, the MSE on the validation dataset is used for the early stopping.
+#' Otherwise, the MSE on the training dataset is used.
+#' By default, early stopping is disabled.
+#' @param patience Number of iterations without improvement before the training is stopped. Default: Inf.
 #' @param min_mse_gain Minimal difference of MSE to consider an improvement.
-#' `min_mse_gain=1.` means an improvement of at least 1. of the MSE is necessary. Default: 1.
+#' `min_mse_gain=1.` means an improvement of at least 1. of the MSE is necessary. Default: Inf.
 #' @return earlystopping_controls
 #' @export
-earlystopping_ctrls <- function(patience = 2, min_mse_gain = 1) {
+earlystopping_ctrls <- function(patience = Inf, min_mse_gain = Inf) {
   stopifnot(is.single.integer(patience) && 0 <= patience)
   patience <- as.integer(patience)
   stopifnot(is.single.numeric(min_mse_gain))
@@ -119,19 +124,32 @@ earlystopping_ctrls <- function(patience = 2, min_mse_gain = 1) {
   return(control)
 }
 
-#' Prepare the aborting controls
-#' @param mse_value Value tu compare the metric to. The test will be adapted depending on the kind of metric.
-#' Default: 0.
-#' @param check_iter Iteration at which the check is done. `check_iter = 0` means that not check will be done.
-#' Default: 0.
+#' Prepare the aborting controls. The aborting controls are used to stop the training of unpromising models.
+#' If the MSE is still above `mse_value` value at iteration `check_iter` then the training is stopped.
+#' @param mse_value Value to compare the MSE to. Default: Inf.
+#' @param check_iter Iteration at which the check is done. Default: Inf.
 #' @return aborting_controls
 #' @export
-aborting_ctrls <- function(mse_value = 0., check_iter = 0) {
+aborting_ctrls <- function(mse_value = Inf, check_iter = Inf) {
   stopifnot(is.single.numeric(mse_value) && mse_value >= 0)
   stopifnot(is.single.integer(check_iter) && check_iter >= 0)
   control <- as.list(environment())
   return(control)
 }
+
+
+.check_training_stop_controls <- function(earlystopping_controls, aborting_controls) {
+  .check_controls_with_function(earlystopping_controls, earlystopping_ctrls)
+  .check_controls_with_function(aborting_controls, aborting_ctrls)
+  # at least one stopping criterion must be enabled
+  test1 <- all(is.finite(c(earlystopping_controls$patience, earlystopping_controls$min_mse_gain)))
+  test2 <- all(is.finite(c(aborting_controls$mse_value, aborting_controls$check_iter)))
+  if (!(test1 || test2)) {
+    stop("Both earlystopping_controls and aborting_controls are disabled: the training loop will run indefinitely!")
+  }
+  return()
+}
+
 
 .check_na_combinaison <- function(data, fixed_spec, random_spec, target_name) {
   # can be moved into a function

@@ -59,7 +59,9 @@ MIXEDML_COMPONENTS <- c(
 .test_is_midexml <- function(model) {
   # can work alone or in a "if" condition
   stopifnot(inherits(model, MIXEDML_CLASS))
-  stopifnot(setequal(names(model), MIXEDML_COMPONENTS))
+  if (!all(names(model) %in% MIXEDML_COMPONENTS)) {
+    warning("Dev warning: the provided model is likely from an older MixedML version!")
+  }
   return(TRUE)
 }
 

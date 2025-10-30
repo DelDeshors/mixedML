@@ -468,7 +468,7 @@ model_reservoir$random_model
 ``` r
 # (this model uses reticulate so it not very convenient as an example…)
 model_reservoir$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x757dd17b9f90>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x71d21e685f90>
 ```
 
 Also a `call` attribute exists, meaning one can trained the model with
@@ -659,7 +659,7 @@ mixedml_model <- load_mixedml("model_reservoir.Rds")
 
 ``` r
 mixedml_model$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x757dd17b96d0>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x71d21e6856d0>
 ```
 
 ``` r

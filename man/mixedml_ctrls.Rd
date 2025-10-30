@@ -5,8 +5,8 @@
 \title{Prepare the mixedml_controls}
 \usage{
 mixedml_ctrls(
-  patience = 2,
-  min_mse_gain = 1,
+  earlystopping_controls = earlystopping_ctrls(),
+  aborting_controls = aborting_ctrls(),
   all_info_hlme_prediction = TRUE,
   convB = 0.01,
   convL = 0.01,
@@ -14,25 +14,24 @@ mixedml_ctrls(
 )
 }
 \arguments{
-\item{patience}{Number of iterations without improvement before the training is stopped. Default: 2}
+\item{earlystopping_controls}{controls specific to the early stopping criterion. Please see earlystopping_ctrls().}
 
-\item{min_mse_gain}{Minimal difference of MSE to consider an improvement.
-\code{min_mse_gain=1.} means an improvement of at least 1. of the MSE is necessary. Default: 1.}
+\item{aborting_controls}{controls specific to the aborting criterion. Please see aborting_ctrls().}
 
 \item{all_info_hlme_prediction}{boolean to choose if all the information
 (past, present, future) is used for the hlme prediction (TRUE) or if only the past
 information is used (FALSE). Default: TRUE}
 
 \item{convB}{optional iterations models threshold for the convergence criterion based on the
-parameter stability. Used during the MixedML iterations.
+parameter stability. Used during the MixedML iterations to speed up the HLME model training.
 By default, convB=0.01.}
 
 \item{convL}{optional threshold for the convergence criterion based on the
-log-likelihood stability. Used during the MixedML iterations.
+log-likelihood stability. Used during the MixedML iterations to speed up the HLME model training.
 By default, convL=0.01.}
 
 \item{convG}{optional threshold for the convergence criterion based on the
-derivatives. Used during the MixedML iterations.
+derivatives. Used during the MixedML iterations to speed up the HLME model training.
 By default, convG=0.10.}
 }
 \value{

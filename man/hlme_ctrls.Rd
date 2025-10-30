@@ -17,8 +17,9 @@ hlme_ctrls(
 )
 }
 \arguments{
-\item{cor}{brownian motion or autoregressive process modeling the correlation
-between the observations. "BM" or "AR" should be specified, followed by the time variable between brackets.}
+\item{cor}{brownian motion ("BM") or autoregressive process ("AR") modeling the correlation
+between the observations. NOTE that for this tool, the only accepted form is a string (ex: cor="BM(time)"),
+which is different from the hlme call (ex: cor=BM(time)). NULL is still accepted.}
 
 \item{idiag}{logical for the structure of the variance-covariance matrix of the random-effects.
 If FALSE, a non structured matrix of variance-covariance is considered (by default).

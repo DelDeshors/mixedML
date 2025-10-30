@@ -1,4 +1,4 @@
-# formula sides ----
+# formulas and variable names ----
 
 .get_y_label <- function(spec) {
   stopifnot(rlang::is_bare_formula(spec))
@@ -64,7 +64,9 @@ is.named.vector <- function(x) {
   }
 }
 
+
 # reticulate ----
+
 .activate_environment <- function() {
   name <- "MIXED_ML_PYTHON_ENV"
   value <- Sys.getenv(name)

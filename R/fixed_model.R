@@ -23,9 +23,10 @@ predict_fixed_model.default <- function(model, data, fixed_spec, subject) {
 
 # check methods ----
 # these functions stop with an error message if the checks fail
-# the ideal would have been to do these check at the S3 method level
+# the ideal would have been to do these checks at the S3 method level
 # but since it is not possible to run any code after the UseMethod() call,
-# we have to do these checks in separate functions called from try_* functions
+# and we want to have these checks for all S3 methods,
+# we have to do these checks in the try_* functions called in the training loop
 
 check_fit_fixed_model <- function(initial_fixed_model, fitted_fixed_model) {
   if (!inherits(fitted_fixed_model, class(initial_fixed_model)[1])) {

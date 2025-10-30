@@ -30,6 +30,8 @@
   stopifnot(is.character(time))
   stopifnot(time %in% names(data))
   #
+  data <- data[c(subject, time)]
+  data <- data[complete.cases(data), ]
   data_order <- order(data[, subject], data[, time])
   if (!all(data_order == seq_along(data_order))) {
     stop("Please sort the data by subject and time beforehand!")

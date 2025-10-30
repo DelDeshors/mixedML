@@ -67,10 +67,8 @@ MIXEDML_COMPONENTS <- c(
 
 #' Prepare the mixedml_controls
 #'
-#'
-#' @param patience Number of iterations without improvement before the training is stopped. Default: 2
-#' @param min_mse_gain Minimal difference of MSE to consider an improvement.
-#' `min_mse_gain=1.` means an improvement of at least 1. of the MSE is necessary. Default: 1.
+#' @param earlystopping_controls controls specific to the early stopping criterion. Please see earlystopping_ctrls().
+#' @param aborting_controls controls specific to the aborting criterion. Please see aborting_ctrls().
 #' @param all_info_hlme_prediction boolean to choose if all the information
 #' (past, present, future) is used for the hlme prediction (TRUE) or if only the past
 #' information is used (FALSE). Default: TRUE
@@ -112,14 +110,14 @@ mixedml_ctrls <- function(
 #' By default, early stopping is disabled.
 #' @param patience Number of iterations without improvement before the training is stopped. Default: Inf.
 #' @param min_mse_gain Minimal difference of MSE to consider an improvement.
-#' `min_mse_gain=1.` means an improvement of at least 1. of the MSE is necessary. Default: Inf.
+#' `min_mse_gain=1.` means an improvement of at least 1. of the MSE is necessary. Default: 0.
 #' @return earlystopping_controls
 #' @export
-earlystopping_ctrls <- function(patience = Inf, min_mse_gain = Inf) {
+earlystopping_ctrls <- function(patience = Inf, min_mse_gain = 0.) {
   stopifnot(is.single.integer(patience) && 0 <= patience)
   patience <- as.integer(patience)
   stopifnot(is.single.numeric(min_mse_gain))
-  stopifnot(0 < min_mse_gain)
+  stopifnot(0 <= min_mse_gain)
   control <- as.list(environment())
   return(control)
 }
@@ -142,7 +140,7 @@ aborting_ctrls <- function(mse_value = Inf, check_iter = Inf) {
   .check_controls_with_function(earlystopping_controls, earlystopping_ctrls)
   .check_controls_with_function(aborting_controls, aborting_ctrls)
   # at least one stopping criterion must be enabled
-  test1 <- all(is.finite(c(earlystopping_controls$patience, earlystopping_controls$min_mse_gain)))
+  test1 <- is.finite(earlystopping_controls$patience)
   test2 <- all(is.finite(c(aborting_controls$mse_value, aborting_controls$check_iter)))
   if (!(test1 || test2)) {
     stop("Both earlystopping_controls and aborting_controls are disabled: the training loop will run indefinitely!")
@@ -230,7 +228,6 @@ load_mixedml <- function(mixedml_model_rds) {
 
 
 # prediction ----
-
 .test_predict <- function(model, data) {
   .test_is_midexml(model)
   stopifnot(names(data) == names(model$random_model$data))
@@ -251,7 +248,7 @@ predict <- function(model, data, all_info_hlme_prediction = FALSE) {
   .test_predict(model, data)
   target_name <- .get_y_label(model$fixed_spec)
   data_rand <- data
-  pred_fixed <- .predict_reservoir(model$fixed_model, data, model$fixed_spec, model$subject)
+  pred_fixed <- predict_fixed_model(model$fixed_model, data, model$fixed_spec, model$subject)
   data_rand[[target_name]] <- data[[target_name]] - pred_fixed
   pred_rand <- .predict_random_hlme(model$random_model, data_rand, all_info_hlme_prediction)
   return(pred_fixed + pred_rand)
@@ -269,7 +266,7 @@ get_loglik <- function(model, data) {
   .test_predict(model, data)
   target_name <- .get_y_label(model$fixed_spec)
   data_rand <- data
-  pred_fixed <- .predict_reservoir(model$fixed_model, data, model$fixed_spec, model$subject)
+  pred_fixed <- predict_fixed_model(model$fixed_model, data, model$fixed_spec, model$subject)
   data_rand[[target_name]] <- data[[target_name]] - pred_fixed
   random_model <- update(model$random_model, data = data_rand, B = model$random_model$best, maxiter = 0)
   return(random_model$loglik)
@@ -379,7 +376,6 @@ plot_prediction_check <- function(model, subject_nb_or_list, ylog = FALSE) {
   )
 }
 
-
 # recipe: HLME/Reservoir ----
 
 .test_reservoir_mixedml <- function(fixed_spec, random_spec, data, data_val, subject, time, mixedml_controls) {
@@ -480,15 +476,13 @@ reservoir_mixedml <- function(
     # fitting fixed effects -----
     message("\tfitting fixed effects...")
     data_fixed[[target_name]] <- data_train[[target_name]] - pred_rand
-    fixed_model <- try(.fit_reservoir(fixed_model, data_fixed, fixed_spec, subject), silent = TRUE)
-    if (inherits(fixed_model, "try-error")) {
-      warning("Training of the the ML model failed: aborting the training loop!")
-      break()
+    fitted_fixed_model <- try_fit_fixed_model(fixed_model, data_fixed, fixed_spec, subject)
+    if (is.null(fitted_fixed_model)) {
+      break() # the "break" must stay in the loop
     }
-    pred_fixed <- try(.predict_reservoir(fixed_model, data_fixed, fixed_spec, subject), silent = TRUE)
-    if (inherits(pred_fixed, "try-error")) {
-      warning("Prediction with the ML model failed: aborting the training loop!")
-      break()
+    pred_fixed <- try_predict_fixed_model(fixed_model, data_fixed, fixed_spec, subject)
+    if (is.null(pred_fixed)) {
+      break() # the "break" must stay in the loop
     }
     # fitting random effects -----
     message("\tfitting random effects...")
@@ -540,7 +534,7 @@ reservoir_mixedml <- function(
     if (istep == abort_iter) {
       if (mse_conv > abort_mse) {
         warning("Conditions defined in aborting_controls: aborting training loop!")
-        break
+        break()
       }
     }
     ## improving / early stopping test ----
@@ -553,7 +547,7 @@ reservoir_mixedml <- function(
       message(sprintf("\t(no improvement #%d)", count_conv))
       if (count_conv == patience) {
         warning("Conditions defined in early_stopping: aborting training loop!")
-        break
+        break()
       }
     }
     ## improvement test ----

@@ -71,7 +71,7 @@ training_with_early_stopping <- function() {
     subject = subject,
     time = time,
     mixedml_controls = mixedml_ctrls(
-      earlystopping_controls = earlystopping_ctrls(min_mse_gain = 10., patience = 2),
+      earlystopping_controls = earlystopping_ctrls(min_mse_gain = 10., patience = 1),
       convB = 0.1,
       convL = 0.1,
       convG = 0.1
@@ -99,5 +99,6 @@ training_with_early_stopping <- function() {
 
 test_that("mixedml works", {
   expect_no_error(training_with_abort())
+  expect_no_error(training_with_early_stopping())
   expect_no_error(full_pipeline(training_with_early_stopping()))
 })

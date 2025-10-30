@@ -1,6 +1,6 @@
 linters: linters_with_defaults(
     line_length_linter(120),
     return_linter(return_style = "explicit"),
-    object_name_linter(styles = c("snake_case", "SNAKE_CASE", "dotted.case", "symbols")),
+    object_name_linter(styles = c("snake_case", "SNAKE_CASE", "dotted.case", "symbols"), regexes="[\\w_\\.]+"),
     object_usage_linter = NULL
     )

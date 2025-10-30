@@ -14,9 +14,9 @@ time <- "time"
 
 .pipeline <- function() {
   model <- .get_test_model()
-  model <- .fit_reservoir(model, data_, fixed_spec, subject)
+  model <- fit_fixed_model(model, data_, fixed_spec, subject)
   stopifnot(inherits(model, "reservoir_ensemble.JoblibReservoirEnsemble"))
-  pred <- .predict_reservoir(model, data_, fixed_spec, subject)
+  pred <- predict_fixed_model(model, data_, fixed_spec, subject)
   expect_vector(pred)
   x_labels <- .get_x_labels(fixed_spec)
   stopifnot(nrow(pred) == nrow(data_))
@@ -27,9 +27,9 @@ time <- "time"
 
 test_that("esn works", {
   # works with default parameters
-  expect_error(.initiate_esn(esn_controls = "nimp"))
-  expect_error(.initiate_esn(fit_controls = "nimp"))
-  expect_error(.initiate_esn(ensemble_controls = "nimp"))
+  expect_error(.initiate_esn(esn_controls = "nimp", ensemble_controls = ensemble_ctrls(), fit_controls = fit_ctrls()))
+  expect_error(.initiate_esn(esn_controls = esn_ctrls(), ensemble_controls = "nimp", fit_controls = fit_ctrls()))
+  expect_error(.initiate_esn(esn_controls = esn_ctrls(), ensemble_controls = ensemble_ctrls(), fit_controls = "nimp"))
 
   expect_no_error(.pipeline())
 })

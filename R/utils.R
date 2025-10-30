@@ -130,12 +130,25 @@ is.named.vector <- function(x) {
   return(inherits(obj, "python.builtin.object") && !reticulate::py_is_null_xptr(obj))
 }
 
+
+R_CLASS <- "R_class"
 .save_py_object <- function(obj, filename) {
+  stopifnot(.is_python_model(obj))
   if (file.exists(filename)) {
     stop(filename, " already exists!")
   }
+  if (R_CLASS %in% names(obj)) {
+    stop(
+      "The ",
+      R_CLASS,
+      " attribute is used to save the R class of the Python object,  but this attribute already exists in ",
+      obj
+    )
+  }
+  .set_r_attr_to_py_obj(obj, R_CLASS, class(obj))
   joblib <- reticulate::import("joblib")
   joblib$dump(obj, filename)
+  reticulate::py_del_attr(obj, R_CLASS)
   return()
 }
 
@@ -143,9 +156,10 @@ is.named.vector <- function(x) {
   stopifnot(file.exists(filename))
   joblib <- reticulate::import("joblib")
   model <- joblib$load(filename)
+  class(model) <- c(.get_r_attr_from_py_obj(model, R_CLASS), class(model))
+  reticulate::py_del_attr(model, R_CLASS)
   return(model)
 }
-
 
 # covariance matrix ----
 

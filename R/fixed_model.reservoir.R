@@ -28,11 +28,7 @@ esn_ctrls <- function(
   stopifnot(is.single.numeric(lr))
   stopifnot(is.single.numeric(sr))
   stopifnot(is.single.numeric(ridge))
-  stopifnot(
-    is.numeric(input_scaling) &&
-      length(input_scaling) == 1 &&
-      input_scaling > 0.
-  )
+  stopifnot(is.numeric(input_scaling) && length(input_scaling) == 1 && input_scaling > 0.)
   stopifnot(is.logical(feedback))
   stopifnot(is.logical(input_to_readout))
   return(as.list(environment()))
@@ -49,12 +45,7 @@ esn_ctrls <- function(
 #' @param n_procs Number of processor to use. 1 means no multiprocessing. Default: 1.
 #' @return ensemble_controls
 #' @export
-ensemble_ctrls <- function(
-  seed_list = c(1, 2, 3),
-  aggregator = "median",
-  scaler = "standard",
-  n_procs = 1
-) {
+ensemble_ctrls <- function(seed_list = c(1, 2, 3), aggregator = "median", scaler = "standard", n_procs = 1) {
   stopifnot(is.integer(seed_list))
   seed_list <- as.integer(seed_list) # real integer for reticulate
   stopifnot(is.character(aggregator))
@@ -83,11 +74,7 @@ fit_ctrls <- function(warmup = 0) {
 }
 
 
-.test_initiate_esn <- function(
-  esn_controls,
-  ensemble_controls,
-  fit_controls
-) {
+.test_initiate_esn <- function(esn_controls, ensemble_controls, fit_controls) {
   .check_controls_with_function(esn_controls, esn_ctrls)
   .check_controls_with_function(ensemble_controls, ensemble_ctrls)
   .check_controls_with_function(fit_controls, fit_ctrls)
@@ -96,11 +83,7 @@ fit_ctrls <- function(warmup = 0) {
 
 
 # recipes  ----
-.initiate_esn <- function(
-  esn_controls = esn_ctrls(),
-  ensemble_controls = ensemble_ctrls(),
-  fit_controls = fit_ctrls()
-) {
+.initiate_esn <- function(esn_controls, ensemble_controls, fit_controls) {
   .test_initiate_esn(esn_controls, ensemble_controls, fit_controls)
   # sys.path is modified when activating the Python environment
   # so the import is simply:
@@ -112,19 +95,18 @@ fit_ctrls <- function(warmup = 0) {
 
   controls <- c(
     ensemble_controls,
-    list(
-      esn_controls = esn_controls,
-      fit_controls = fit_controls,
-      predict_controls = predict_controls
-    )
+    list(esn_controls = esn_controls, fit_controls = fit_controls, predict_controls = predict_controls)
   )
   model <- do.call(retipy$JoblibReservoirEnsemble, controls)
+  # class for the S3 dispatching
+  class(model) <- c("reservoir", class(model))
   return(model)
 }
 
 
 # fitting/training ----
-.fit_reservoir <- function(model, data, fixed_spec, subject) {
+#' @export
+fit_fixed_model.reservoir <- function(model, data, fixed_spec, subject) {
   # !!! offsetting is not implemented in LCMM
   # BUT for linear models, fitting "f(X)+offset" on Y is equivalent to
   # fitting f(X) on "Y-offset"
@@ -134,29 +116,25 @@ fit_ctrls <- function(warmup = 0) {
   ccases <- complete.cases(data[x_labels])
   data <- data[ccases, ]
   #
-  controls <- list(
-    X = as.matrix(data[x_labels]),
-    y = as.matrix(data[y_label]),
-    subject_col = as.array(data[[subject]])
-  )
+  controls <- list(X = as.matrix(data[x_labels]), y = as.matrix(data[y_label]), subject_col = as.array(data[[subject]]))
   do.call(model$fit, controls)
   return(model)
 }
 
 
 # prediction ----
-.predict_reservoir <- function(model, data, fixed_spec, subject) {
+#' @export
+predict_fixed_model.reservoir <- function(model, data, fixed_spec, subject) {
   x_labels <- .get_x_labels(fixed_spec)
   ccases <- complete.cases(data[x_labels])
+  rname <- rownames(data)
   data <- data[ccases, ]
-  controls <- list(
-    X = as.matrix(data[x_labels]),
-    subject_col = as.array(data[[subject]])
-  )
+  controls <- list(X = as.matrix(data[x_labels]), subject_col = as.array(data[[subject]]))
   pred_fixed <- do.call(model$predict, controls)
   stopifnot(ncol(pred_fixed) == 1)
   stopifnot(all(!is.na(pred_fixed[, 1])))
   pred_final <- rep(NA, length(ccases))
   pred_final[ccases] <- pred_fixed[, 1]
+  names(pred_final) <- rname
   return(pred_final)
 }

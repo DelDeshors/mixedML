@@ -194,7 +194,10 @@ model_reservoir <- reservoir_mixedml(
   subject = "ID",
   time = "time",
   # parameters for MixedML method
-  mixedml_controls = mixedml_ctrls(min_mse_gain = 0.1, patience = 10),
+  mixedml_controls = mixedml_ctrls(
+    earlystopping_controls = earlystopping_ctrls(min_mse_gain = 0.1, patience = 10),
+    all_info_hlme_prediction = TRUE
+  ),
   # controls (extra-parameters) for the hlme model
   hlme_controls = hlme_ctrls(maxiter = 50, idiag = TRUE),
   # controls (extra-parameters) for the ML model
@@ -207,306 +210,218 @@ model_reservoir <- reservoir_mixedml(
 #>          4 incomplete cases for the HLME model
 #>          2 NA values in target
 #>          => 4/38 observations could not be used to train (either no fixed preds, random preds or target).
-#> step#0
-#>  fitting fixed effects...
-#>  fitting random effects...
-#> check 1 is OK !
-#> check 2 is OK !
-#>  MSE-train = 85.38
-#> check 1 is OK !
-#>  MSE-val = 296.1
-#>  (improvement)
-#>  (saving best model)
 #> step#1
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> check 1 is OK !
-#> check 2 is OK !
-#>  MSE-train = 77.51
-#> check 1 is OK !
-#>  MSE-val = 183.1
+#>  MSE-train = 85.38
+#> Warning in .get_model_snapshot(): Dev warning: these components defined in
+#> MIXEDML_COMPONENTS are not present in the execution environment: mse_val,
+#> loglik_val
+#>  MSE-val = 296.1
 #>  (improvement)
 #>  (saving best model)
 #> step#2
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> check 1 is OK !
-#> check 2 is OK !
-#>  MSE-train = 70.84
-#> check 1 is OK !
-#>  MSE-val = 116.2
+#>  MSE-train = 77.51
+#>  MSE-val = 183.1
 #>  (improvement)
 #>  (saving best model)
 #> step#3
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> check 1 is OK !
-#> check 2 is OK !
-#>  MSE-train = 59.75
-#> check 1 is OK !
-#>  MSE-val = 71.43
+#>  MSE-train = 70.84
+#>  MSE-val = 116.2
 #>  (improvement)
 #>  (saving best model)
 #> step#4
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> check 1 is OK !
-#> check 2 is OK !
-#>  MSE-train = 49
-#> check 1 is OK !
-#>  MSE-val = 45.37
+#>  MSE-train = 59.75
+#>  MSE-val = 71.43
 #>  (improvement)
 #>  (saving best model)
 #> step#5
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> check 1 is OK !
-#> check 2 is OK !
-#>  MSE-train = 44.6
-#> check 1 is OK !
-#>  MSE-val = 32.97
+#>  MSE-train = 49
+#>  MSE-val = 45.37
 #>  (improvement)
 #>  (saving best model)
 #> step#6
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> check 1 is OK !
-#> check 2 is OK !
-#>  MSE-train = 40.23
-#> check 1 is OK !
-#>  MSE-val = 24.51
+#>  MSE-train = 44.6
+#>  MSE-val = 32.97
 #>  (improvement)
 #>  (saving best model)
 #> step#7
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> check 1 is OK !
-#> check 2 is OK !
-#>  MSE-train = 37.03
-#> check 1 is OK !
-#>  MSE-val = 18.62
+#>  MSE-train = 40.23
+#>  MSE-val = 24.51
 #>  (improvement)
 #>  (saving best model)
 #> step#8
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> check 1 is OK !
-#> check 2 is OK !
-#>  MSE-train = 33.69
-#> check 1 is OK !
-#>  MSE-val = 14.39
+#>  MSE-train = 37.03
+#>  MSE-val = 18.62
 #>  (improvement)
 #>  (saving best model)
 #> step#9
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> check 1 is OK !
-#> check 2 is OK !
-#>  MSE-train = 30.91
-#> check 1 is OK !
-#>  MSE-val = 11.56
+#>  MSE-train = 33.69
+#>  MSE-val = 14.39
 #>  (improvement)
 #>  (saving best model)
 #> step#10
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> check 1 is OK !
-#> check 2 is OK !
-#>  MSE-train = 27.85
-#> check 1 is OK !
-#>  MSE-val = 9.402
+#>  MSE-train = 30.91
+#>  MSE-val = 11.56
 #>  (improvement)
 #>  (saving best model)
 #> step#11
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> check 1 is OK !
-#> check 2 is OK !
-#>  MSE-train = 25.07
-#> check 1 is OK !
-#>  MSE-val = 7.859
+#>  MSE-train = 27.85
+#>  MSE-val = 9.402
 #>  (improvement)
 #>  (saving best model)
 #> step#12
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> check 1 is OK !
-#> check 2 is OK !
-#>  MSE-train = 22.28
-#> check 1 is OK !
-#>  MSE-val = 6.621
+#>  MSE-train = 25.07
+#>  MSE-val = 7.859
 #>  (improvement)
 #>  (saving best model)
 #> step#13
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> check 1 is OK !
-#> check 2 is OK !
-#>  MSE-train = 19.3
-#> check 1 is OK !
-#>  MSE-val = 5.57
+#>  MSE-train = 22.28
+#>  MSE-val = 6.621
 #>  (improvement)
 #>  (saving best model)
 #> step#14
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> check 1 is OK !
-#> check 2 is OK !
-#>  MSE-train = 16.74
-#> check 1 is OK !
-#>  MSE-val = 4.915
+#>  MSE-train = 19.3
+#>  MSE-val = 5.57
 #>  (improvement)
 #>  (saving best model)
 #> step#15
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> check 1 is OK !
-#> check 2 is OK !
-#>  MSE-train = 14.05
-#> check 1 is OK !
-#>  MSE-val = 4.331
+#>  MSE-train = 16.74
+#>  MSE-val = 4.915
 #>  (improvement)
 #>  (saving best model)
 #> step#16
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> check 1 is OK !
-#> check 2 is OK !
-#>  MSE-train = 11.5
-#> check 1 is OK !
-#>  MSE-val = 3.83
+#>  MSE-train = 14.05
+#>  MSE-val = 4.331
 #>  (improvement)
 #>  (saving best model)
 #> step#17
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> check 1 is OK !
-#> check 2 is OK !
-#>  MSE-train = 8.912
-#> check 1 is OK !
-#>  MSE-val = 3.315
+#>  MSE-train = 11.5
+#>  MSE-val = 3.83
 #>  (improvement)
 #>  (saving best model)
 #> step#18
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> check 1 is OK !
-#> check 2 is OK !
-#>  MSE-train = 6.313
-#> check 1 is OK !
-#>  MSE-val = 2.91
+#>  MSE-train = 8.912
+#>  MSE-val = 3.315
 #>  (improvement)
 #>  (saving best model)
 #> step#19
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> check 1 is OK !
-#> check 2 is OK !
-#>  MSE-train = 3.57
-#> check 1 is OK !
-#>  MSE-val = 2.241
+#>  MSE-train = 6.313
+#>  MSE-val = 2.91
 #>  (improvement)
 #>  (saving best model)
 #> step#20
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> check 1 is OK !
-#> check 2 is OK !
-#>  MSE-train = 2.736
-#> check 1 is OK !
-#>  MSE-val = 1.274
+#>  MSE-train = 3.57
+#>  MSE-val = 2.241
 #>  (improvement)
 #>  (saving best model)
 #> step#21
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> check 1 is OK !
-#> check 2 is OK !
-#>  MSE-train = 4.699
-#> check 1 is OK !
-#>  MSE-val = 2.361
-#>  (no improvement #1)
+#>  MSE-train = 2.736
+#>  MSE-val = 1.274
+#>  (improvement)
+#>  (saving best model)
 #> step#22
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> check 1 is OK !
-#> check 2 is OK !
-#>  MSE-train = 6.087
-#> check 1 is OK !
-#>  MSE-val = 3.373
-#>  (no improvement #2)
+#>  MSE-train = 4.699
+#>  MSE-val = 2.361
+#>  (no improvement #1)
 #> step#23
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> check 1 is OK !
-#> check 2 is OK !
-#>  MSE-train = 7.583
-#> check 1 is OK !
-#>  MSE-val = 4.677
-#>  (no improvement #3)
+#>  MSE-train = 6.087
+#>  MSE-val = 3.373
+#>  (no improvement #2)
 #> step#24
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> check 1 is OK !
-#> check 2 is OK !
-#>  MSE-train = 8.396
-#> check 1 is OK !
-#>  MSE-val = 5.886
-#>  (no improvement #4)
+#>  MSE-train = 7.583
+#>  MSE-val = 4.677
+#>  (no improvement #3)
 #> step#25
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> check 1 is OK !
-#> check 2 is OK !
-#>  MSE-train = 7.41
-#> check 1 is OK !
-#>  MSE-val = 5.855
-#>  (no improvement #5)
+#>  MSE-train = 8.396
+#>  MSE-val = 5.886
+#>  (no improvement #4)
 #> step#26
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> check 1 is OK !
-#> check 2 is OK !
-#>  MSE-train = 5.943
-#> check 1 is OK !
-#>  MSE-val = 4.325
-#>  (no improvement #6)
+#>  MSE-train = 7.41
+#>  MSE-val = 5.855
+#>  (no improvement #5)
 #> step#27
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> check 1 is OK !
-#> check 2 is OK !
-#>  MSE-train = 5.273
-#> check 1 is OK !
-#>  MSE-val = 3.688
-#>  (no improvement #7)
+#>  MSE-train = 5.943
+#>  MSE-val = 4.325
+#>  (no improvement #6)
 #> step#28
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> check 1 is OK !
-#> check 2 is OK !
-#>  MSE-train = 5.097
-#> check 1 is OK !
-#>  MSE-val = 4.091
-#>  (no improvement #8)
+#>  MSE-train = 5.273
+#>  MSE-val = 3.688
+#>  (no improvement #7)
 #> step#29
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> check 1 is OK !
-#> check 2 is OK !
-#>  MSE-train = 4.891
-#> check 1 is OK !
-#>  MSE-val = 3.9
-#>  (no improvement #9)
+#>  MSE-train = 5.097
+#>  MSE-val = 4.091
+#>  (no improvement #8)
 #> step#30
 #>  fitting fixed effects...
 #>  fitting random effects...
-#> check 1 is OK !
-#> check 2 is OK !
+#>  MSE-train = 4.891
+#>  MSE-val = 3.9
+#>  (no improvement #9)
+#> step#31
+#>  fitting fixed effects...
+#>  fitting random effects...
 #>  MSE-train = 4.465
-#> check 1 is OK !
 #>  MSE-val = 3.738
 #>  (no improvement #10)
+#> Warning in mixedml_training_loop(fixed_model, fixed_spec, random_spec, data, :
+#> Conditions defined in early_stopping: aborting training loop!
 #> Final convergence of HLME with strict convergence criterions.
 ```
 
@@ -553,7 +468,7 @@ model_reservoir$random_model
 ``` r
 # (this model uses reticulate so it not very convenient as an example…)
 model_reservoir$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x79a8c042df90>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x757dd17b9f90>
 ```
 
 Also a `call` attribute exists, meaning one can trained the model with
@@ -601,14 +516,6 @@ predict(
   data = data_mixedml,
   all_info_hlme_prediction = FALSE
 )
-#> Warning in .predict_newdata_ss(random_hlme, data = actual_data, data_info =
-#> prev_data): check that DATA_SUBJ has NAs or is empty
-#> Warning in .predict_newdata_ss(random_hlme, data = actual_data, data_info =
-#> prev_data): check that DATA_SUBJ has NAs or is empty
-#> check 1 is OK !
-#> check 1 is OK !
-#> check 1 is OK !
-#> check 1 is OK !
 #>    39    35    10     1    42    49    19    43     6    18    25    33    37 
 #>    NA    NA 188.1 200.7 178.0    NA    NA  99.5 107.8 113.1    NA    NA 216.2 
 #>     2    31    16    15    26    13    34    23    22    11    50    46     7 
@@ -697,8 +604,6 @@ Prediction plot of the model.
 
 ``` r
 plot_prediction_check(model = model_reservoir, subject_nb_or_list = c(1, 2, 3, 4, 5))
-#> check 1 is OK !
-#> check 2 is OK !
 #> Warning: Removed 4 rows containing missing values or values outside the scale range
 #> (`geom_point()`).
 ```
@@ -754,7 +659,7 @@ mixedml_model <- load_mixedml("model_reservoir.Rds")
 
 ``` r
 mixedml_model$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x79a8c042efd0>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x757dd17b96d0>
 ```
 
 ``` r
@@ -793,14 +698,6 @@ mixedml_model$random_model
 
 ``` r
 predict(mixedml_model, data_mixedml)
-#> Warning in .predict_newdata_ss(random_hlme, data = actual_data, data_info =
-#> prev_data): check that DATA_SUBJ has NAs or is empty
-#> Warning in .predict_newdata_ss(random_hlme, data = actual_data, data_info =
-#> prev_data): check that DATA_SUBJ has NAs or is empty
-#> check 1 is OK !
-#> check 1 is OK !
-#> check 1 is OK !
-#> check 1 is OK !
 #>    39    35    10     1    42    49    19    43     6    18    25    33    37 
 #>    NA    NA 188.1 200.7 178.0    NA    NA  99.5 107.8 113.1    NA    NA 216.2 
 #>     2    31    16    15    26    13    34    23    22    11    50    46     7 

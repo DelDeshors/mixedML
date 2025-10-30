@@ -55,9 +55,7 @@
   data_mixedml[ID == 4 & time == 1, "ym"] <- NA
 
   # observation missing ----
-  data_mixedml <- data_mixedml[
-    !((ID == 5 & time == 0) | (ID == 6 & time == 1)),
-  ]
+  data_mixedml <- data_mixedml[!((ID == 5 & time == 0) | (ID == 6 & time == 1)), ]
   row.names(data_mixedml) <- sample(row.names(data_mixedml))
   # file generation ----
   usethis::use_data(data_mixedml, overwrite = TRUE)

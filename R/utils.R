@@ -1,4 +1,4 @@
-# formula sides ----
+# formulas and variable names ----
 
 .get_y_label <- function(spec) {
   stopifnot(rlang::is_bare_formula(spec))
@@ -30,6 +30,8 @@
   stopifnot(is.character(time))
   stopifnot(time %in% names(data))
   #
+  data <- data[c(subject, time)]
+  data <- data[complete.cases(data), ]
   data_order <- order(data[, subject], data[, time])
   if (!all(data_order == seq_along(data_order))) {
     stop("Please sort the data by subject and time beforehand!")
@@ -58,15 +60,13 @@ is.named.vector <- function(x) {
   if (!setequal(names_controls, params_function)) {
     control_name <- as.character(as.list(match.call())[["controls"]])
     function_name <- as.character(as.list(match.call())[["controls_function"]])
-    stop(sprintf(
-      "\"%s\" should be set with the function \"%s\"\n",
-      control_name,
-      function_name
-    ))
+    stop(sprintf("\"%s\" should be set with the function \"%s\"\n", control_name, function_name))
   }
 }
 
+
 # reticulate ----
+
 .activate_environment <- function() {
   name <- "MIXED_ML_PYTHON_ENV"
   value <- Sys.getenv(name)
@@ -131,17 +131,28 @@ is.named.vector <- function(x) {
 
 
 .is_python_model <- function(obj) {
-  return(
-    inherits(obj, "python.builtin.object") && !reticulate::py_is_null_xptr(obj)
-  )
+  return(inherits(obj, "python.builtin.object") && !reticulate::py_is_null_xptr(obj))
 }
 
+
+R_CLASS <- "R_class"
 .save_py_object <- function(obj, filename) {
+  stopifnot(.is_python_model(obj))
   if (file.exists(filename)) {
     stop(filename, " already exists!")
   }
+  if (R_CLASS %in% names(obj)) {
+    stop(
+      "The ",
+      R_CLASS,
+      " attribute is used to save the R class of the Python object,  but this attribute already exists in ",
+      obj
+    )
+  }
+  .set_r_attr_to_py_obj(obj, R_CLASS, class(obj))
   joblib <- reticulate::import("joblib")
   joblib$dump(obj, filename)
+  reticulate::py_del_attr(obj, R_CLASS)
   return()
 }
 
@@ -149,9 +160,10 @@ is.named.vector <- function(x) {
   stopifnot(file.exists(filename))
   joblib <- reticulate::import("joblib")
   model <- joblib$load(filename)
+  class(model) <- c(.get_r_attr_from_py_obj(model, R_CLASS), class(model))
+  reticulate::py_del_attr(model, R_CLASS)
   return(model)
 }
-
 
 # covariance matrix ----
 

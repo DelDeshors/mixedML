@@ -415,7 +415,7 @@ mixedml_training_loop <- function(
   fixed_model,
   fixed_spec,
   random_spec,
-  data_train,
+  data,
   data_val,
   subject,
   time,
@@ -423,6 +423,7 @@ mixedml_training_loop <- function(
   hlme_controls,
   call
 ) {
+  data_train <- data
   .test_training_loop(
     fixed_model,
     fixed_spec,

@@ -1,20 +1,24 @@
 # fixed-model S3 generics and adapters ----
 
+#' @export
 fit_fixed_model <- function(model, data, fixed_spec, subject) {
   UseMethod("fit_fixed_model")
   return("Will not be executed")
 }
 
+#' @export
 fit_fixed_model.default <- function(model, data, fixed_spec, subject) {
   stop(sprintf("No fit_fixed_model method for objects of class '%s'", class(model)[1]))
   return("Will not be executed")
 }
 
+#' @export
 predict_fixed_model <- function(model, data, fixed_spec, subject) {
   UseMethod("predict_fixed_model")
   return("Will not be executed")
 }
 
+#' @export
 predict_fixed_model.default <- function(model, data, fixed_spec, subject) {
   stop(sprintf("No predict_fixed_model method for objects of class '%s'", class(model)[1]))
   return("Will not be executed")

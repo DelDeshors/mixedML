@@ -105,6 +105,7 @@ fit_ctrls <- function(warmup = 0) {
 
 
 # fitting/training ----
+#' @export
 fit_fixed_model.reservoir <- function(model, data, fixed_spec, subject) {
   # !!! offsetting is not implemented in LCMM
   # BUT for linear models, fitting "f(X)+offset" on Y is equivalent to
@@ -122,6 +123,7 @@ fit_fixed_model.reservoir <- function(model, data, fixed_spec, subject) {
 
 
 # prediction ----
+#' @export
 predict_fixed_model.reservoir <- function(model, data, fixed_spec, subject) {
   x_labels <- .get_x_labels(fixed_spec)
   ccases <- complete.cases(data[x_labels])

@@ -147,6 +147,18 @@ model_reservoir <- reservoir_mixedml(
 
 The resulting model will be used in the remaining sections.
 
+
+# Remark on logging
+
+The use of reticulate makes it cumbersome to implement logging in the package. Since the solutions found involve
+preventing the use of Rstudio and favor running from terminal let's simply write a standard R script and call it from
+terminal redirecting both stdout and stderr to a log file:
+
+```bash
+Rscript name_of_script.R > log_file.log 2>&1
+```
+
+
 # Attributes
 
 Each sub-models are accessible from the fitted MixedML model:

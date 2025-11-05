@@ -67,31 +67,44 @@ is.named.vector <- function(x) {
 
 # reticulate ----
 
+#' Set the Python environment for mixedML
+#' @param environement_tool Tool used to managge the environments. Can be one of "venv" or "conda"
+#' @param environement_name Name of the environment.
+#' @return invisible NULL
+#' @export
+use_python_environment <- function(environement_tool, environement_name) {
+  if (environement_tool == "conda") {
+    if (!reticulate::condaenv_exists(environement_name)) {
+      stop(sprintf("The conda environment \"%s\" does not exist.", environement_name))
+    }
+    reticulate::use_condaenv(environement_name)
+    message(sprintf("conda environment \"%s\" activated!\n", environement_name))
+  } else if (environement_tool == "venv") {
+    if (!reticulate::virtualenv_exists(environement_name)) {
+      stop("The virtual environment \"%s\" does not exist.", environement_name)
+    }
+    reticulate::use_virtualenv(environement_name)
+    message(sprintf("virtual environment \"%s\" activated!\n", environement_name))
+  } else {
+    stop("environement_tool should be one of \"venv\" or \"conda\".")
+  }
+  return(invisible())
+}
+
+
 .activate_environment <- function() {
   name <- "MIXED_ML_PYTHON_ENV"
   value <- Sys.getenv(name)
-  err <- function() {
-    stop(sprintf(
-      "You need to setup the %s environement variable with \"no environment\", ",
-      "\"venv:name_of_env\" or \"conda:name_of_env\".",
-      name
-    ))
+  if (value == "") {
+    # no default environment defined…
+    return(invisible())
   }
+  message("Value found for MIXED_ML_PYTHON_ENV: ", value)
   splt <- strsplit(value, ":")
   envtype <- splt[[1]][[1]]
   envname <- splt[[1]][[2]]
-  if (envtype == "no environment") {
-    # nothing…
-  } else if (envtype == "venv" && reticulate::virtualenv_exists(envname)) {
-    reticulate::use_virtualenv(envname)
-    message(sprintf("virtual environment \"%s\" activated!\n", envname))
-  } else if (envtype == "conda" && reticulate::condaenv_exists(envname)) {
-    reticulate::use_condaenv(envname)
-    message(sprintf("conda environment \"%s\" activated!\n", envname))
-  } else {
-    err()
-  }
-  return()
+  use_python_environment(envtype, envname)
+  return(invisible())
 }
 
 

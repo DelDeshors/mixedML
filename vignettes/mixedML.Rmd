@@ -147,6 +147,30 @@ model_reservoir <- reservoir_mixedml(
 
 The resulting model will be used in the remaining sections.
 
+
+# Remark on logging
+
+The use of reticulate makes it cumbersome to implement logging in the package. Since the solutions found involve
+preventing the use of Rstudio and favor running from terminal, one simple solution is to write a standard R script and
+call it from the terminal, redirecting both stdout and stderr to a log file:
+
+```bash
+Rscript name_of_script.R > log_file.log 2>&1
+```
+
+# Remark on Python environments
+
+One might to use a specific Python environment for the reticulate part of the package.
+
+To do so you have two options:
+
+- Using the `use_python_environment` function from the package.
+- Setting the environement variable `MIXED_ML_PYTHON_ENV` (which will be automatically read at package load time).
+
+The value of the variable should be set as `conda:environement_name` or `virtualenv:environement_name` depending on
+the type of environment you want to use.
+
+
 # Attributes
 
 Each sub-models are accessible from the fitted MixedML model:

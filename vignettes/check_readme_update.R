@@ -7,7 +7,8 @@ mixed_rmd <- "vignettes/mixedML.Rmd"
 
 is_newer <- function(file1, file2) {
   if (!file.exists(file1) || !file.exists(file2)) return(FALSE)
-  return(file.info(file1)$mtime > file.info(file2)$mtime)
+  # we use a threshold to avoid false positives when the files are modified when merging with another branch
+  return(file.info(file1)$mtime - file.info(file2)$mtime > 0.1)
 }
 
 if (is_newer(readme_rmd, readme_md) || is_newer(mixed_rmd, readme_md)) {

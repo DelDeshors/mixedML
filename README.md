@@ -5,16 +5,16 @@
 - [4 General principle](#4-general-principle)
 - [5 Arguments](#5-arguments)
 - [6 Example](#6-example)
-- [7 Remark on logging](#7-remark-on-logging)
-- [8 Remark on Python environments](#8-remark-on-python-environments)
-- [9 Attributes](#9-attributes)
-- [10 Functions](#10-functions)
-  - [10.1 `predict`](#101-predict)
-  - [10.2 `plot_conv`](#102-plot_conv)
-  - [10.3 `plot_loglik`](#103-plot_loglik)
-  - [10.4 `plot_prediction_check`](#104-plot_prediction_check)
-  - [10.5 `save_mixedml`](#105-save_mixedml)
-  - [10.6 `load_mixedml`](#106-load_mixedml)
+- [7 Attributes](#7-attributes)
+- [8 Functions](#8-functions)
+  - [8.1 `predict`](#81-predict)
+  - [8.2 `plot_conv`](#82-plot_conv)
+  - [8.3 `plot_loglik`](#83-plot_loglik)
+  - [8.4 `plot_prediction_check`](#84-plot_prediction_check)
+  - [8.5 `save_mixedml`](#85-save_mixedml)
+  - [8.6 `load_mixedml`](#86-load_mixedml)
+- [9 Remark on logging](#9-remark-on-logging)
+- [10 Remark on Python environments](#10-remark-on-python-environments)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
@@ -60,11 +60,14 @@ The method uses a iterative training of both fixed effects and random
 effects models.
 
 So far we are fitting each model on the **residuals** of the other. This
-is only valid for **regression problems** where it is equivalent to to
-fitting using the predictions (of the other model) as offset (see [this
-vignette](method_study.html) for an example). In generalized linear
-model terms: the models use an identity link. In neural networks terms:
-the models do not use a final activation function.
+is only valid for **regression problems** where
+
+- in generalized linear model terms: the models use an identity link,  
+- in neural networks terms: the models do not use a final activation
+  function.
+
+In such case, fitting on the residuals is equivalent to fitting using
+the predictions (of the other model) as offset.
 
 The pseudo-code is as follow (`fe`/`re` stands for fixed/random
 effects):
@@ -182,7 +185,7 @@ has its specific help.
 # 6 Example
 
 Here is an example using the `reservoir_mixedml` function (here is the
-[corresponding vignette](mixedML_reservoir.html):
+[corresponding vignette](mixedML_reservoir.html)):
 
 ``` r
 data_train <- data_mixedml[data_mixedml$ID < 9, ]
@@ -429,34 +432,7 @@ model_reservoir <- reservoir_mixedml(
 
 The resulting model will be used in the remaining sections.
 
-# 7 Remark on logging
-
-The use of reticulate makes it cumbersome to implement logging in the
-package. Since the solutions found involve preventing the use of Rstudio
-and favor running from terminal, one simple solution is to write a
-standard R script and call it from the terminal, redirecting both stdout
-and stderr to a log file:
-
-``` bash
-Rscript name_of_script.R > log_file.log 2>&1
-```
-
-# 8 Remark on Python environments
-
-One might to use a specific Python environment for the reticulate part
-of the package.
-
-To do so you have two options:
-
-- Using the `use_python_environment` function from the package.
-- Setting the environement variable `MIXED_ML_PYTHON_ENV` (which will be
-  automatically read at package load time).
-
-The value of the variable should be set as `conda:environement_name` or
-`virtualenv:environement_name` depending on the type of environment you
-want to use.
-
-# 9 Attributes
+# 7 Attributes
 
 Each sub-models are accessible from the fitted MixedML model:
 
@@ -497,7 +473,7 @@ model_reservoir$random_model
 ``` r
 # (this model uses reticulate so it not very convenient as an example…)
 model_reservoir$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x71a510f9df90>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x72b0f4f2da90>
 ```
 
 Also a `call` attribute exists, meaning one can trained the model with
@@ -507,7 +483,7 @@ new inputs using `update` command:
 new_model_reservoir <- update(model_reservoir, data = new_data, maxiter = new_maxiter)
 ```
 
-# 10 Functions
+# 8 Functions
 
 The function `predict`, `plot_conv`, `plot_best_iter` are common to all
 fitted MixedML models.
@@ -515,7 +491,7 @@ fitted MixedML models.
 The function `load_backup` can be used to inspect the model and the
 predictions of a specific iteration.
 
-## 10.1 `predict`
+## 8.1 `predict`
 
 **Description**
 
@@ -555,7 +531,7 @@ predict(
 #> 198.5 200.2 215.5 207.0    NA  75.7  77.6  80.6  79.2
 ```
 
-## 10.2 `plot_conv`
+## 8.2 `plot_conv`
 
 **Description**
 
@@ -582,7 +558,7 @@ plot_conv_mse(model = model_reservoir, ylog = TRUE)
 
 <img src="man/figures/README-unnamed-chunk-15-1.png" width="100%" />
 
-## 10.3 `plot_loglik`
+## 8.3 `plot_loglik`
 
 **Description**
 
@@ -608,7 +584,7 @@ plot_conv_loglik(model = model_reservoir)
 
 <img src="man/figures/README-unnamed-chunk-17-1.png" width="100%" />
 
-## 10.4 `plot_prediction_check`
+## 8.4 `plot_prediction_check`
 
 **Description**
 
@@ -639,7 +615,7 @@ plot_prediction_check(model = model_reservoir, subject_nb_or_list = c(1, 2, 3, 4
 
 <img src="man/figures/README-unnamed-chunk-19-1.png" width="100%" />
 
-## 10.5 `save_mixedml`
+## 8.5 `save_mixedml`
 
 **Description**
 
@@ -661,7 +637,7 @@ save_mixedml(model, mixedml_model_rds, overwrite = FALSE)
 save_mixedml(model_reservoir, mixedml_model_rds = "model_reservoir.Rds")
 ```
 
-## 10.6 `load_mixedml`
+## 8.6 `load_mixedml`
 
 **Description**
 
@@ -688,7 +664,7 @@ mixedml_model <- load_mixedml("model_reservoir.Rds")
 
 ``` r
 mixedml_model$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x71a510f9d6d0>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x72b0f4f2e350>
 ```
 
 ``` r
@@ -736,3 +712,30 @@ predict(mixedml_model, data_mixedml)
 #>    48    36    29     5    47     8    20     3    41 
 #> 198.5 200.2 215.5 207.0    NA  75.7  77.6  80.6  79.2
 ```
+
+# 9 Remark on logging
+
+The use of reticulate makes it cumbersome to implement logging in the
+package. Since the solutions found involve preventing the use of Rstudio
+and favor running from terminal, one simple solution is to write a
+standard R script and call it from the terminal, redirecting both stdout
+and stderr to a log file:
+
+``` bash
+Rscript name_of_script.R > log_file.log 2>&1
+```
+
+# 10 Remark on Python environments
+
+One might to use a specific Python environment for the reticulate part
+of the package.
+
+To do so you have two options:
+
+- Using the `use_python_environment` function from the package.
+- Setting the environement variable `MIXED_ML_PYTHON_ENV` (which will be
+  automatically read at package load time).
+
+The value of the variable should be set as `conda:environement_name` or
+`virtualenv:environement_name` depending on the type of environment you
+want to use.

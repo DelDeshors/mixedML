@@ -56,11 +56,12 @@ However, some ML models have a "black box" effect, as one cannot use its estimat
 The method uses a iterative training of both fixed effects and random effects models.
 
 So far we are fitting each model on the **residuals** of the other.
-This is only valid for **regression problems** where it is equivalent to
-to fitting using the predictions (of the other model) as offset
-(see [this vignette](method_study.html) for an example).
-In generalized linear model terms: the models use an identity link.
-In neural networks terms: the models do not use a final activation function.
+This is only valid for **regression problems** where
+
+- in generalized linear model terms: the models use an identity link,
+- in neural networks terms: the models do not use a final activation function.
+
+In such case, fitting on the residuals is equivalent to fitting using the predictions (of the other model) as offset.
 
 
 The pseudo-code is as follow (`fe`/`re` stands for fixed/random effects):
@@ -118,7 +119,7 @@ The `fixed_spec`, `random_spec`, `cor`, `data`, `subject` and `time` are used by
 Then several controls are defined, using specific functions whose names correspond to the control names. That is, the `some_name_ctrls(…)` function is used to define `some_name_controls` controls. Each control has its specific help.
 
 # Example
-Here is an example using the `reservoir_mixedml` function (here is the [corresponding vignette](mixedML_reservoir.html):
+Here is an example using the `reservoir_mixedml` function (here is the [corresponding vignette](mixedML_reservoir.html)):
 
 ```{r}
 data_train <- data_mixedml[data_mixedml$ID < 9, ]
@@ -146,29 +147,6 @@ model_reservoir <- reservoir_mixedml(
 ```
 
 The resulting model will be used in the remaining sections.
-
-
-# Remark on logging
-
-The use of reticulate makes it cumbersome to implement logging in the package. Since the solutions found involve
-preventing the use of Rstudio and favor running from terminal, one simple solution is to write a standard R script and
-call it from the terminal, redirecting both stdout and stderr to a log file:
-
-```bash
-Rscript name_of_script.R > log_file.log 2>&1
-```
-
-# Remark on Python environments
-
-One might to use a specific Python environment for the reticulate part of the package.
-
-To do so you have two options:
-
-- Using the `use_python_environment` function from the package.
-- Setting the environement variable `MIXED_ML_PYTHON_ENV` (which will be automatically read at package load time).
-
-The value of the variable should be set as `conda:environement_name` or `virtualenv:environement_name` depending on
-the type of environment you want to use.
 
 
 # Attributes
@@ -282,7 +260,31 @@ predict(mixedml_model, data_mixedml)
 
 
 
-```{r, echo=FALSE}
+```{r, include=FALSE}
 unlink("model_reservoir.Rds")
 unlink("model_reservoir.Rds.joblib")
 ```
+
+
+
+# Remark on logging
+
+The use of reticulate makes it cumbersome to implement logging in the package. Since the solutions found involve
+preventing the use of Rstudio and favor running from terminal, one simple solution is to write a standard R script and
+call it from the terminal, redirecting both stdout and stderr to a log file:
+
+```bash
+Rscript name_of_script.R > log_file.log 2>&1
+```
+
+# Remark on Python environments
+
+One might to use a specific Python environment for the reticulate part of the package.
+
+To do so you have two options:
+
+- Using the `use_python_environment` function from the package.
+- Setting the environement variable `MIXED_ML_PYTHON_ENV` (which will be automatically read at package load time).
+
+The value of the variable should be set as `conda:environement_name` or `virtualenv:environement_name` depending on
+the type of environment you want to use.

@@ -577,7 +577,16 @@ mixedml_training_loop <- function(
   best_model <- .update_model_snapshot_lists(best_model, .get_model_snapshot())
   # final model with saved convergence criteria ----
   message("Final convergence of HLME with strict convergence criterions.")
-  best_model$random_model <- .fine_tune(best_model$random_model, best_data_rand, hlme_controls_final)
+  fine_tune <- try(.fine_tune(best_model$random_model, best_data_rand, hlme_controls_final))
+  if (inherits(fine_tune, "try-error")) {
+    warning(
+      "Could not fine-tune the best model with better convergence threshold: ",
+      "keeping the model converged during the loop"
+    )
+    best_model$random_model <- best_model$random_model
+  } else {
+    best_model$random_model <- .fine_tune(best_model$random_model, best_data_rand, hlme_controls_final)
+  }
   .check_convergence_hlme(best_model$random_model)
   # NOTE: after updating the random model, the stored MSE/loglik could also be updated
   # It is likely a matter 0.01% difference but it could confuse the user (it confused me!)

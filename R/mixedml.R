@@ -140,7 +140,7 @@ aborting_ctrls <- function(mse_value = Inf, check_iter = Inf) {
   .check_controls_with_function(earlystopping_controls, earlystopping_ctrls)
   .check_controls_with_function(aborting_controls, aborting_ctrls)
   # at least one stopping criterion must be enabled
-  test1 <- is.finite(earlystopping_controls$patience)
+  test1 <- is.finite(earlystopping_controls$patience) && earlystopping_controls$patience > 0
   test2 <- all(is.finite(c(aborting_controls$mse_value, aborting_controls$check_iter)))
   if (!(test1 || test2)) {
     stop("Both earlystopping_controls and aborting_controls are disabled: the training loop will run indefinitely!")

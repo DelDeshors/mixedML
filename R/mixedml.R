@@ -28,17 +28,18 @@ MIXEDML_COMPONENTS <- c(
   # must only be called in main loop
   # (where the MIXEDML_COMPONENTS variables are defined)
   pframe <- as.list(parent.frame())
-  sdiff <- setdiff(MIXEDML_COMPONENTS, names(pframe))
-  if (length(sdiff) > 0) {
-    # the warning is temporary, while the package is still evolving
-    warning(
-      "Dev warning: these components defined in MIXEDML_COMPONENTS are ",
-      "not present in the execution environment: ",
-      paste(sdiff, collapse = ", ")
-    )
-    pframe[sdiff] <- NA
-  }
-  #
+  # nolint start
+  # sdiff <- setdiff(MIXEDML_COMPONENTS, names(pframe))
+  # if (length(sdiff) > 0) {
+  #   # the warning is temporary, while the package is still evolving
+  #   warning(
+  #     "Dev warning: these components defined in MIXEDML_COMPONENTS are ",
+  #     "not present in the execution environment: ",
+  #     paste(sdiff, collapse = ", ")
+  #   )
+  #   pframe[sdiff] <- NA
+  # }
+  # nolint end
   model <- pframe[MIXEDML_COMPONENTS]
   class(model) <- MIXEDML_CLASS
   return(model)

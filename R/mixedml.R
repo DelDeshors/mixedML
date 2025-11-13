@@ -24,6 +24,9 @@ MIXEDML_COMPONENTS <- c(
   "call"
 )
 
+
+#' This function captures the current model state in the training loop
+#' the names of the saved variables is defined in MIXEDML_COMPONENTS
 .get_model_snapshot <- function() {
   # must only be called in main loop
   # (where the MIXEDML_COMPONENTS variables are defined)

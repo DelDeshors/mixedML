@@ -306,14 +306,20 @@ hlme_ctrls <- function(
 
 
 ## prediction with past information ----
-.predict_with_past_info <- function(random_hlme, data) {
+
+#' This function computes the predictions of a HLME model using only the past information to compute the random effects
+#' and correlation components. The actual X values are of course still used to compute the estimates.
+#' @param hlme_model HLME model from the LCMM package
+#' @param data Data to be used for the prediction. It must have the same format as the one used to fit the hlme model.
+#' @export
+.predict_with_past_info <- function(hlme_model, data) {
   full_preds <- .initiate_full_preds(data)
-  var.time <- random_hlme$var.time
+  var.time <- hlme_model$var.time
   time_unq <- sort(unique(data[[var.time]]))
   for (i_time in time_unq[-1]) {
     actual_data <- data[data[var.time] == i_time, ]
     prev_data <- data[data[var.time] < i_time, ]
-    full_preds[rownames(actual_data)] <- .predict_newdata_ss(random_hlme, data = actual_data, data_info = prev_data)
+    full_preds[rownames(actual_data)] <- .predict_newdata_ss(hlme_model, data = actual_data, data_info = prev_data)
   }
   return(full_preds)
 }

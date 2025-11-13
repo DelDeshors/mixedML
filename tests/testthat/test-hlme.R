@@ -30,14 +30,14 @@
   stopifnot(all(model$pred$pred_m == 0.))
 
   # prediction with all info ----
-  pred <- .predict_with_all_info(random_hlme = model, data = data_mixedml)
+  pred <- .predict_with_all_info(hlme_model = model, data = data_mixedml)
   expect_vector(pred, ptype = NULL, size = nrow(data_mixedml))
   expect_type(pred, "double")
   stopifnot(length(pred) == nrow(data_mixedml))
   stopifnot(sum(is.na(pred)) == sum(!ccases))
 
   # prediction with past info ----
-  pred <- .predict_with_past_info(random_hlme = model, data = data_mixedml)
+  pred <- .predict_with_past_info(hlme_model =  model, data = data_mixedml)
   stopifnot(length(pred) == nrow(data_mixedml))
   expect_vector(pred, ptype = NULL, size = nrow(data_mixedml))
   expect_type(pred, "double")

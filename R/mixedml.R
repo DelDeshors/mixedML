@@ -327,13 +327,11 @@ plot_conv_loglik <- function(model) {
 #' @param model Trained MixedML model.
 #' @param subject_nb_or_list Number of subjects to plot (randomly selected) or
 #' list of subjects to plot (amongst the train/val dataset).
-#' @param ylog Plot the y-value with a log scale. Default: TRUE.
 #' @return Prediction plot of the model.
 #' @export
-plot_prediction_check <- function(model, subject_nb_or_list, ylog = FALSE) {
+plot_prediction_check <- function(model, subject_nb_or_list) {
   stopifnot(inherits(model, MIXEDML_CLASS))
   stopifnot(is.integer(subject_nb_or_list))
-  stopifnot(is.logical(ylog))
   #
   subject <- model$subject
   time <- model$time

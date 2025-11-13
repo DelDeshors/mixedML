@@ -24,6 +24,8 @@ MIXEDML_COMPONENTS <- c(
   "call"
 )
 
+MIXEDML_COMPONENTS_OPT <- c("data_val", "mse_val", "loglik_val", "mse_val_list", "loglik_val_list")
+
 
 #' This function captures the current model state in the training loop
 #' the names of the saved variables is defined in MIXEDML_COMPONENTS
@@ -31,18 +33,15 @@ MIXEDML_COMPONENTS <- c(
   # must only be called in main loop
   # (where the MIXEDML_COMPONENTS variables are defined)
   pframe <- as.list(parent.frame())
-  # nolint start
-  # sdiff <- setdiff(MIXEDML_COMPONENTS, names(pframe))
-  # if (length(sdiff) > 0) {
-  #   # the warning is temporary, while the package is still evolving
-  #   warning(
-  #     "Dev warning: these components defined in MIXEDML_COMPONENTS are ",
-  #     "not present in the execution environment: ",
-  #     paste(sdiff, collapse = ", ")
-  #   )
-  #   pframe[sdiff] <- NA
-  # }
-  # nolint end
+  sdiff <- setdiff(MIXEDML_COMPONENTS, names(pframe))
+  if (length(sdiff) > 0 && !setequal(sdiff, MIXEDML_COMPONENTS_OPT)) {
+    warning(
+      "Dev warning: these components defined in MIXEDML_COMPONENTS are ",
+      "not present in the execution environment: ",
+      paste(sdiff, collapse = ", ")
+    )
+  }
+  pframe[sdiff] <- NA
   model <- pframe[MIXEDML_COMPONENTS]
   class(model) <- MIXEDML_CLASS
   return(model)
@@ -144,7 +143,7 @@ aborting_ctrls <- function(mse_value = Inf, check_iter = Inf) {
   .check_controls_with_function(earlystopping_controls, earlystopping_ctrls)
   .check_controls_with_function(aborting_controls, aborting_ctrls)
   # at least one stopping criterion must be enabled
-  test1 <- is.finite(earlystopping_controls$patience) && earlystopping_controls$patience > 0
+  test1 <- is.finite(earlystopping_controls$patience) && earlystopping_controls$min_mse_gain > 0
   test2 <- all(is.finite(c(aborting_controls$mse_value, aborting_controls$check_iter)))
   if (!(test1 || test2)) {
     stop("Both earlystopping_controls and aborting_controls are disabled: the training loop will run indefinitely!")

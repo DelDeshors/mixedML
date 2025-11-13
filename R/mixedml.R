@@ -533,26 +533,6 @@ mixedml_training_loop <- function(
     } else {
       mse_conv <- mse_train
     }
-    ## aborting test ----
-    if (istep == abort_iter) {
-      if (mse_conv > abort_mse) {
-        warning("Conditions defined in aborting_controls: aborting training loop!")
-        break()
-      }
-    }
-    ## improving / early stopping test ----
-    if (mse_conv < eastop_mse - eastop_gain) {
-      message("\t(improvement)")
-      eastop_mse <- mse_conv
-      count_conv <- 0
-    } else {
-      count_conv <- count_conv + 1
-      message(sprintf("\t(no improvement #%d)", count_conv))
-      if (count_conv == eastop_patience) {
-        warning("Conditions defined in early_stopping: aborting training loop!")
-        break()
-      }
-    }
     ## improvement test ----
     if (mse_conv < mse_min) {
       message("\t(saving best model)")
@@ -568,6 +548,26 @@ mixedml_training_loop <- function(
       # best_pred_fixed <- pred_fixed
       # best_data_fixed <- data_fixed
       # nolint end ----
+    }
+    ## improving / early stopping test ----
+    if (mse_conv < eastop_mse - eastop_gain) {
+      message("\t(improvement)")
+      eastop_mse <- mse_conv
+      count_conv <- 0
+    } else {
+      count_conv <- count_conv + 1
+      message(sprintf("\t(no improvement #%d)", count_conv))
+      if (count_conv == eastop_patience) {
+        warning("Conditions defined in early_stopping: aborting training loop!")
+        break()
+      }
+    }
+    ## aborting test ----
+    if (istep == abort_iter) {
+      if (mse_conv > abort_mse) {
+        warning("Conditions defined in aborting_controls: aborting training loop!")
+        break()
+      }
     }
     istep <- istep + 1
   }

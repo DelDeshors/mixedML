@@ -1,5 +1,4 @@
 # initialization ----
-library(doFuture)
 
 #' Prepare the hlme_controls
 #'
@@ -219,11 +218,7 @@ hlme_ctrls <- function(
   # PRED_RE <- lcmm::predictRE(hlme_model, DATA_INFO)
   # FULL_PREDS <- .initiate_full_preds(data)
   # nolint end ----
-  if (hlme_model$call$nproc > 1) {
-    future::plan(future::multisession, workers = hlme_model$call$nproc)
-  } else {
-    future::plan(future::sequential)
-  }
+
   full_preds <- .initiate_full_preds(data)
   subject <- hlme_model$call$subject
   time <- hlme_model$var.time
@@ -235,36 +230,28 @@ hlme_ctrls <- function(
   data_info <- data_info[complete.cases(data_info[c(x_labels, y_label)]), ]
   # common subjects
   comsubj <- intersect(data[[subject]], data_info[[subject]])
-  predict_cor_fn <- .predict_cor
-  predict_y_fn <- .predict_y
-  predictRE_fn <- lcmm::predictRE
-  subj_preds <- foreach::foreach(subj = comsubj) %dofuture%
-    {
-      # we work by isolating subject, this is how the functions have been designed
-      # (trust me I know the dev)
-      data_subj <- data[data[[subject]] == subj, ]
-      data_info_subj <- data_info[data_info[[subject]] == subj, ]
-      times_subj <- unique(data_subj[[time]])
-      pred_re <- predictRE_fn(hlme_model, data_info_subj)
-      pred_cor <- predict_cor_fn(hlme_model, data_info_subj, times_subj)
-      pred_y <- predict_y_fn(hlme_model, data_subj, pred_re, pred_cor)
-      full_preds[rownames(pred_y$times)] <- pred_y$pred[, 1]
-      return(list(rownames = rownames(pred_y$times), pred = pred_y$pred[, 1]))
-      # nolint start ----
-      # DATA_SUBJ <- DATA[DATA[[subject]] == subj, ]
-      # PRED_RE_SUBJ <- PRED_RE[PRED_RE[[subject]] == subj, ]
-      # PRED_Y <- .predict_y(hlme_model, DATA_SUBJ, PRED_RE_SUBJ, pred_cor)
-      # if (
-      #   max(abs(pred_y$pred - PRED_Y$pred), na.rm = TRUE) > 1e-8 ||
-      #     max(abs(pred_y$times - PRED_Y$times), na.rm = TRUE) > 1e-8
-      # ) {
-      #   # browser()
-      #   stop()
-      # }
-      # nolint end ----
-    }
-  for (subj_pred in subj_preds) {
-    full_preds[subj_pred$rownames] <- subj_pred$pred
+  for (subj in comsubj) {
+    # we work by isolating subject, this is how the functions have been designed
+    # (trust me I know the dev)
+    data_subj <- data[data[[subject]] == subj, ]
+    data_info_subj <- data_info[data_info[[subject]] == subj, ]
+    times_subj <- unique(data_subj[[time]])
+    pred_re <- lcmm::predictRE(hlme_model, data_info_subj)
+    pred_cor <- .predict_cor(hlme_model, data_info_subj, times_subj)
+    pred_y <- .predict_y(hlme_model, data_subj, pred_re, pred_cor)
+    full_preds[rownames(pred_y$times)] <- pred_y$pred[, 1]
+    # nolint start ----
+    # DATA_SUBJ <- DATA[DATA[[subject]] == subj, ]
+    # PRED_RE_SUBJ <- PRED_RE[PRED_RE[[subject]] == subj, ]
+    # PRED_Y <- .predict_y(hlme_model, DATA_SUBJ, PRED_RE_SUBJ, pred_cor)
+    # if (
+    #   max(abs(pred_y$pred - PRED_Y$pred), na.rm = TRUE) > 1e-8 ||
+    #     max(abs(pred_y$times - PRED_Y$times), na.rm = TRUE) > 1e-8
+    # ) {
+    #   # browser()
+    #   stop()
+    # }
+    # nolint end ----
   }
   # nolint start ----
   # for (subj in PRED_RE[[subject]]) {

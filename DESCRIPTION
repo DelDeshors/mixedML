@@ -37,10 +37,7 @@ Imports:
     methods,
     stats,
     ggplot2,
-    here,
-    doFuture,
-    foreach,
-    future
+    here
 Remotes:
     quantsch/rd2md,
     r-lib/usethis

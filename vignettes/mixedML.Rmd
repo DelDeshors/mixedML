@@ -138,7 +138,7 @@ model_reservoir <- reservoir_mixedml(
     all_info_hlme_prediction = TRUE
   ),
   # controls (extra-parameters) for the hlme model
-  hlme_controls = hlme_ctrls(maxiter = 50, idiag = TRUE, nproc = 2),
+  hlme_controls = hlme_ctrls(maxiter = 50, idiag = TRUE),
   # controls (extra-parameters) for the ML model
   esn_controls = esn_ctrls(units = 20, ridge = 1e-5),
   ensemble_controls = ensemble_ctrls(seed_list = c(1, 2, 3, 4, 5)),

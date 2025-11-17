@@ -42,6 +42,8 @@
   expect_vector(pred, ptype = NULL, size = nrow(data_mixedml))
   expect_type(pred, "double")
   stopifnot(length(pred) == nrow(data_mixedml))
+  pred_comp <- readRDS("test-hlme-past-pred.Rds")
+  stopifnot(max(abs(pred - pred_comp), na.rm = TRUE) < 1e-8)
   return()
 }
 

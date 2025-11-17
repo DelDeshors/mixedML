@@ -231,10 +231,15 @@ load_mixedml <- function(mixedml_model_rds) {
 
 
 # prediction ----
-.test_predict <- function(model, data) {
+.test_predict <- function(model, data, all_info_hlme_prediction, nproc_hlme_past) {
   .test_is_midexml(model)
   stopifnot(names(data) == names(model$random_model$data))
   .check_sorted_data(data, model$subject, model$time)
+  stopifnot(is.logical(all_info_hlme_prediction))
+  stopifnot(is.single.integer(nproc_hlme_past) && nproc_hlme_past > 0)
+  if (all_info_hlme_prediction && nproc_hlme_past > 1) {
+    message("nproc_hlme_past has no effect with all_info_hlme_prediction=TRUE")
+  }
   return()
 }
 
@@ -245,16 +250,25 @@ load_mixedml <- function(mixedml_model_rds) {
 #' @param all_info_hlme_prediction boolean to choose if all the information
 #' (past, present, future) is used for the hlme prediction (TRUE) or if only the past
 #' information is used (FALSE). Default: FALSE
+#' @param nproc_hlme_past number of processes to use for the past information prediction with the hlme modes. Default: 1
 #' @return prediction
 #' @export
-predict <- function(model, data, all_info_hlme_prediction = FALSE) {
-  .test_predict(model, data)
+predict <- function(model, data, all_info_hlme_prediction = FALSE, nproc_hlme_past = 1) {
+  .test_predict(model, data, all_info_hlme_prediction, nproc_hlme_past)
   target_name <- .get_y_label(model$fixed_spec)
   data_rand <- data
   pred_fixed <- predict_fixed_model(model$fixed_model, data, model$fixed_spec, model$subject)
   data_rand[[target_name]] <- data[[target_name]] - pred_fixed
-  pred_rand <- .predict_random_hlme(model$random_model, data_rand, all_info_hlme_prediction)
+  pred_rand <- .predict_random_hlme(model$random_model, data_rand, all_info_hlme_prediction, nproc_hlme_past)
   return(pred_fixed + pred_rand)
+}
+
+
+.test_get_loglik <- function(model, data) {
+  .test_is_midexml(model)
+  stopifnot(names(data) == names(model$random_model$data))
+  .check_sorted_data(data, model$subject, model$time)
+  return()
 }
 
 
@@ -266,7 +280,7 @@ predict <- function(model, data, all_info_hlme_prediction = FALSE) {
 #' @export
 get_loglik <- function(model, data) {
   # (might be refactored with predict)
-  .test_predict(model, data)
+  .test_get_loglik(model, data)
   target_name <- .get_y_label(model$fixed_spec)
   data_rand <- data
   pred_fixed <- predict_fixed_model(model$fixed_model, data, model$fixed_spec, model$subject)

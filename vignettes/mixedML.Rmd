@@ -182,12 +182,10 @@ print_help("predict")
 
 
 ```{r}
-predict(
-  model = model_reservoir,
-  data = data_mixedml,
-  all_info_hlme_prediction = FALSE
-)
+predict(model = model_reservoir, data = data_mixedml, all_info_hlme_prediction = FALSE, nproc_hlme_past = 1)
 ```
+
+
 
 
 
@@ -252,10 +250,6 @@ mixedml_model$fixed_model
 
 ```{r}
 mixedml_model$random_model
-```
-
-```{r}
-predict(mixedml_model, data_mixedml)
 ```
 
 

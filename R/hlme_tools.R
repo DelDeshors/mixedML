@@ -1,5 +1,7 @@
 # initialization ----
 
+library(doFuture)
+
 #' Prepare the hlme_controls
 #'
 #' Please see the [documentation](https://cecileproust-lima.github.io/lcmm/reference/hlme.html)
@@ -312,24 +314,39 @@ hlme_ctrls <- function(
 #' @param hlme_model HLME model from the LCMM package
 #' @param data Data to be used for the prediction. It must have the same format as the one used to fit the hlme model.
 #' @export
-.predict_with_past_info <- function(hlme_model, data) {
+.predict_with_past_info <- function(hlme_model, data, nproc) {
   full_preds <- .initiate_full_preds(data)
   var.time <- hlme_model$var.time
   time_unq <- sort(unique(data[[var.time]]))
-  for (i_time in time_unq[-1]) {
-    actual_data <- data[data[var.time] == i_time, ]
-    prev_data <- data[data[var.time] < i_time, ]
-    full_preds[rownames(actual_data)] <- .predict_newdata_ss(hlme_model, data = actual_data, data_info = prev_data)
+  predict_newdata_ss_fn <- .predict_newdata_ss
+  if (nproc > 1) {
+    future::plan(future::multisession, workers = nproc)
+  } else {
+    future::plan(future::sequential)
   }
+  times_preds <- foreach::foreach(i_time = time_unq[-1]) %dofuture%
+    {
+      actual_data <- data[data[var.time] == i_time, ]
+      prev_data <- data[data[var.time] < i_time, ]
+      return(list(
+        rownames = rownames(actual_data),
+        pred = predict_newdata_ss_fn(hlme_model, data = actual_data, data_info = prev_data)
+      ))
+    }
+
+  for (time_pred in times_preds) {
+    full_preds[time_pred$rownames] <- time_pred$pred
+  }
+
   return(full_preds)
 }
 
 
 ## global method ----
-.predict_random_hlme <- function(hlme_model, data, use_all_info) {
+.predict_random_hlme <- function(hlme_model, data, use_all_info, nproc_hlme) {
   if (use_all_info) {
     return(.predict_with_all_info(hlme_model, data))
   } else {
-    return(.predict_with_past_info(hlme_model, data))
+    return(.predict_with_past_info(hlme_model, data, nproc_hlme))
   }
 }

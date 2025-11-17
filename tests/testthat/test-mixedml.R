@@ -8,7 +8,7 @@ data_val <- data_mixedml[data_mixedml$ID >= 9, ]
 
 
 full_pipeline <- function(mixed_ml_model) {
-  pred <- predict(mixed_ml_model, data_val)
+  pred <- predict(mixed_ml_model, data_val, all_info_hlme_prediction = FALSE, nproc_hlme_past = 2)
   stopifnot(length(pred) == nrow(data_val))
   #
   loglik_train <- get_loglik(mixed_ml_model, data_train)
@@ -98,7 +98,7 @@ training_with_early_stopping <- function() {
 
 
 test_that("mixedml works", {
-  expect_no_error(training_with_abort())
-  expect_no_error(training_with_early_stopping())
-  expect_no_error(full_pipeline(training_with_early_stopping()))
+  training_with_abort()
+  model <- training_with_early_stopping()
+  full_pipeline(model)
 })

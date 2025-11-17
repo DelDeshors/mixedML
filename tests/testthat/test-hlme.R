@@ -7,7 +7,7 @@
     data = data_mixedml,
     subject = "ID",
     var.time = "time",
-    hlme_controls = hlme_ctrls(maxiter = 2, idiag = TRUE, cor = cor, B_rand = c(1, 2, 3, 4, 5, 6))
+    hlme_controls = hlme_ctrls(maxiter = 2, idiag = TRUE, cor = cor, B_rand = c(1, 2, 3, 4, 5, 6), nproc = 2)
   ))
 }
 

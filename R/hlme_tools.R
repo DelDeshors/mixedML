@@ -209,7 +209,15 @@ hlme_ctrls <- function(
   }
 }
 
-.predict_newdata_ss <- function(hlme_model, data, data_info) {
+.predict_newdata_ss <- function(
+  hlme_model,
+  data,
+  data_info,
+  initiate_full_preds_fn = .initiate_full_preds,
+  get_y_label_fn = .get_y_label,
+  predict_cor_fn = .predict_cor,
+  predict_y_fn = .predict_y
+) {
   # NOTE: with this method the observations with no NAs in Xs and NA in Y
   # will get a prediction, which is different from the library original behaviour
   # in model$pred$pred_ss
@@ -218,14 +226,13 @@ hlme_ctrls <- function(
   # DATA <- data
   # DATA_INFO <- data_info
   # PRED_RE <- lcmm::predictRE(hlme_model, DATA_INFO)
-  # FULL_PREDS <- .initiate_full_preds(data)
+  # FULL_PREDS <- initiate_full_preds_fn(data)
   # nolint end ----
-
-  full_preds <- .initiate_full_preds(data)
+  full_preds <- initiate_full_preds_fn(data)
   subject <- hlme_model$call$subject
   time <- hlme_model$var.time
   x_labels <- hlme_model$Xnames2[hlme_model$Xnames2 != "intercept"]
-  y_label <- .get_y_label(hlme_model$call$fixed)
+  y_label <- get_y_label_fn(hlme_model$call$fixed)
   # we need all the Xs to compute the predictions
   data <- data[complete.cases(data[x_labels]), ]
   # we need all the Xs and the Y to compute de random effect and correlation
@@ -239,8 +246,8 @@ hlme_ctrls <- function(
     data_info_subj <- data_info[data_info[[subject]] == subj, ]
     times_subj <- unique(data_subj[[time]])
     pred_re <- lcmm::predictRE(hlme_model, data_info_subj)
-    pred_cor <- .predict_cor(hlme_model, data_info_subj, times_subj)
-    pred_y <- .predict_y(hlme_model, data_subj, pred_re, pred_cor)
+    pred_cor <- predict_cor_fn(hlme_model, data_info_subj, times_subj)
+    pred_y <- predict_y_fn(hlme_model, data_subj, pred_re, pred_cor)
     full_preds[rownames(pred_y$times)] <- pred_y$pred[, 1]
     # nolint start ----
     # DATA_SUBJ <- DATA[DATA[[subject]] == subj, ]
@@ -318,19 +325,29 @@ hlme_ctrls <- function(
   full_preds <- .initiate_full_preds(data)
   var.time <- hlme_model$var.time
   time_unq <- sort(unique(data[[var.time]]))
+  # trick so the function are available (resolved) when running on several processes
   predict_newdata_ss_fn <- .predict_newdata_ss
-  if (nproc > 1) {
-    future::plan(future::multisession, workers = nproc)
-  } else {
-    future::plan(future::sequential)
-  }
-  times_preds <- foreach::foreach(i_time = time_unq[-1]) %dofuture%
+  initiate_full_preds_fn <- .initiate_full_preds
+  get_y_label_fn <- .get_y_label
+  predict_cor_fn <- .predict_cor
+  predict_y_fn <- .predict_y
+  #
+  .set_future_plan(nproc)
+  times_preds <- foreach::foreach(i_time = sample(time_unq[-1])) %dofuture%
     {
       actual_data <- data[data[var.time] == i_time, ]
       prev_data <- data[data[var.time] < i_time, ]
       return(list(
         rownames = rownames(actual_data),
-        pred = predict_newdata_ss_fn(hlme_model, data = actual_data, data_info = prev_data)
+        pred = predict_newdata_ss_fn(
+          hlme_model,
+          data = actual_data,
+          data_info = prev_data,
+          initiate_full_preds_fn = initiate_full_preds_fn,
+          get_y_label_fn = get_y_label_fn,
+          predict_cor_fn = predict_cor_fn,
+          predict_y_fn = predict_y_fn
+        )
       ))
     }
 

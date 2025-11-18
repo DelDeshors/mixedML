@@ -62,7 +62,7 @@ effects models.
 So far we are fitting each model on the **residuals** of the other. This
 is only valid for **regression problems** where
 
-- in generalized linear model terms: the models use an identity link,  
+- in generalized linear model terms: the models use an identity link,
 - in neural networks terms: the models do not use a final activation
   function.
 
@@ -223,148 +223,148 @@ model_reservoir <- reservoir_mixedml(
 #> MIXEDML_COMPONENTS are not present in the execution environment: mse_val,
 #> loglik_val
 #>  MSE-val = 296.1
-#>  (improvement)
 #>  (saving best model)
+#>  (improvement)
 #> step#2
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 77.51
 #>  MSE-val = 183.1
-#>  (improvement)
 #>  (saving best model)
+#>  (improvement)
 #> step#3
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 70.84
 #>  MSE-val = 116.2
-#>  (improvement)
 #>  (saving best model)
+#>  (improvement)
 #> step#4
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 59.75
 #>  MSE-val = 71.43
-#>  (improvement)
 #>  (saving best model)
+#>  (improvement)
 #> step#5
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 49
 #>  MSE-val = 45.37
-#>  (improvement)
 #>  (saving best model)
+#>  (improvement)
 #> step#6
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 44.6
 #>  MSE-val = 32.97
-#>  (improvement)
 #>  (saving best model)
+#>  (improvement)
 #> step#7
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 40.23
 #>  MSE-val = 24.51
-#>  (improvement)
 #>  (saving best model)
+#>  (improvement)
 #> step#8
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 37.03
 #>  MSE-val = 18.62
-#>  (improvement)
 #>  (saving best model)
+#>  (improvement)
 #> step#9
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 33.69
 #>  MSE-val = 14.39
-#>  (improvement)
 #>  (saving best model)
+#>  (improvement)
 #> step#10
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 30.91
 #>  MSE-val = 11.56
-#>  (improvement)
 #>  (saving best model)
+#>  (improvement)
 #> step#11
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 27.85
 #>  MSE-val = 9.402
-#>  (improvement)
 #>  (saving best model)
+#>  (improvement)
 #> step#12
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 25.07
 #>  MSE-val = 7.859
-#>  (improvement)
 #>  (saving best model)
+#>  (improvement)
 #> step#13
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 22.28
 #>  MSE-val = 6.621
-#>  (improvement)
 #>  (saving best model)
+#>  (improvement)
 #> step#14
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 19.3
 #>  MSE-val = 5.57
-#>  (improvement)
 #>  (saving best model)
+#>  (improvement)
 #> step#15
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 16.74
 #>  MSE-val = 4.915
-#>  (improvement)
 #>  (saving best model)
+#>  (improvement)
 #> step#16
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 14.05
 #>  MSE-val = 4.331
-#>  (improvement)
 #>  (saving best model)
+#>  (improvement)
 #> step#17
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 11.5
 #>  MSE-val = 3.83
-#>  (improvement)
 #>  (saving best model)
+#>  (improvement)
 #> step#18
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 8.912
 #>  MSE-val = 3.315
-#>  (improvement)
 #>  (saving best model)
+#>  (improvement)
 #> step#19
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 6.313
 #>  MSE-val = 2.91
-#>  (improvement)
 #>  (saving best model)
+#>  (improvement)
 #> step#20
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 3.57
 #>  MSE-val = 2.241
-#>  (improvement)
 #>  (saving best model)
+#>  (improvement)
 #> step#21
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 2.736
 #>  MSE-val = 1.274
-#>  (improvement)
 #>  (saving best model)
+#>  (improvement)
 #> step#22
 #>  fitting fixed effects...
 #>  fitting random effects...
@@ -473,7 +473,7 @@ model_reservoir$random_model
 ``` r
 # (this model uses reticulate so it not very convenient as an example…)
 model_reservoir$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x72b0f4f2da90>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x73186d561450>
 ```
 
 Also a `call` attribute exists, meaning one can trained the model with
@@ -516,11 +516,7 @@ predict(model, data, all_info_hlme_prediction = FALSE)
 prediction
 
 ``` r
-predict(
-  model = model_reservoir,
-  data = data_mixedml,
-  all_info_hlme_prediction = FALSE
-)
+predict(model = model_reservoir, data = data_mixedml, all_info_hlme_prediction = FALSE, nproc_hlme_past = 1)
 #>    39    35    10     1    42    49    19    43     6    18    25    33    37 
 #>    NA    NA 188.1 200.7 178.0    NA    NA  99.5 107.8 113.1    NA    NA 216.2 
 #>     2    31    16    15    26    13    34    23    22    11    50    46     7 
@@ -593,7 +589,7 @@ Plot the prediction of a MixedML model beside the true/target values
 **Usage**
 
 ``` r
-plot_prediction_check(model, subject_nb_or_list, ylog = FALSE)
+plot_prediction_check(model, subject_nb_or_list)
 ```
 
 **Arguments**
@@ -601,7 +597,6 @@ plot_prediction_check(model, subject_nb_or_list, ylog = FALSE)
 - `model`: Trained MixedML model.
 - `subject_nb_or_list`: Number of subjects to plot (randomly selected)
   or list of subjects to plot (amongst the train/val dataset).
-- `ylog`: Plot the y-value with a log scale. Default: TRUE.
 
 **Value**
 
@@ -664,7 +659,7 @@ mixedml_model <- load_mixedml("model_reservoir.Rds")
 
 ``` r
 mixedml_model$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x72b0f4f2e350>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x73186d562ad0>
 ```
 
 ``` r
@@ -699,18 +694,6 @@ mixedml_model$random_model
 #>      BIC: 214.69  
 #>  
 #> 
-```
-
-``` r
-predict(mixedml_model, data_mixedml)
-#>    39    35    10     1    42    49    19    43     6    18    25    33    37 
-#>    NA    NA 188.1 200.7 178.0    NA    NA  99.5 107.8 113.1    NA    NA 216.2 
-#>     2    31    16    15    26    13    34    23    22    11    50    46     7 
-#> 204.4 214.2    NA 101.8 101.4 102.3 106.3    NA 206.4 194.2 195.5    NA 107.0 
-#>    40    44    28    38     4    14    24     9    17    32    45    30    12 
-#> 110.3 111.6    NA 191.8 203.3 188.6 197.1    NA  91.9  90.5  93.9  94.2    NA 
-#>    48    36    29     5    47     8    20     3    41 
-#> 198.5 200.2 215.5 207.0    NA  75.7  77.6  80.6  79.2
 ```
 
 # 9 Remark on logging

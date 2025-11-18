@@ -1,7 +1,5 @@
 # initialization ----
 
-library(doFuture)
-
 #' Prepare the hlme_controls
 #'
 #' Please see the [documentation](https://cecileproust-lima.github.io/lcmm/reference/hlme.html)
@@ -100,13 +98,6 @@ hlme_ctrls <- function(
 #' Initiate the HLME model
 #'
 #' @import lcmm
-#'
-#' @param random_spec random_spec
-#' @param data data
-#' @param subject subject
-#' @param var.time var.time
-#' @param hlme_controls hlme_controls
-#' @return HLME model
 .initiate_random_hlme <- function(target_name, random_spec, data, subject, var.time, hlme_controls) {
   .test_initiate_random_hlme(random_spec, hlme_controls, var.time)
   # preparing the hlme formula inputs
@@ -321,6 +312,8 @@ hlme_ctrls <- function(
 #' @param hlme_model HLME model from the LCMM package
 #' @param data Data to be used for the prediction. It must have the same format as the one used to fit the hlme model.
 #' @export
+#' @importFrom doFuture %dofuture%
+#' @importFrom foreach foreach
 .predict_with_past_info <- function(hlme_model, data, nproc) {
   full_preds <- .initiate_full_preds(data)
   var.time <- hlme_model$var.time
@@ -333,7 +326,7 @@ hlme_ctrls <- function(
   predict_y_fn <- .predict_y
   #
   .set_future_plan(nproc)
-  times_preds <- foreach::foreach(i_time = sample(time_unq[-1])) %dofuture%
+  times_preds <- foreach(i_time = sample(time_unq[-1])) %dofuture%
     {
       actual_data <- data[data[var.time] == i_time, ]
       prev_data <- data[data[var.time] < i_time, ]

@@ -22,6 +22,7 @@
 
 # multiprocessing
 
+#' @import future
 .set_future_plan <- function(nproc) {
   if (nproc == future::nbrOfWorkers()) {
     return()

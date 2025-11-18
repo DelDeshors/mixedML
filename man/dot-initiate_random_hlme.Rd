@@ -13,20 +13,6 @@
   hlme_controls
 )
 }
-\arguments{
-\item{random_spec}{random_spec}
-
-\item{data}{data}
-
-\item{subject}{subject}
-
-\item{var.time}{var.time}
-
-\item{hlme_controls}{hlme_controls}
-}
-\value{
-HLME model
-}
 \description{
 Initiate the HLME model
 }

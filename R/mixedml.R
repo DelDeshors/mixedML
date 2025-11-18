@@ -293,6 +293,8 @@ get_loglik <- function(model, data) {
 #' @importFrom ggplot2 aes
 #' @importFrom ggplot2 geom_line
 #' @importFrom ggplot2 geom_point
+#' @importFrom ggplot2 scale_y_log10
+#' @importFrom ggplot2 .data
 .plot_train_val_metric <- function(metric_train_list, metric_val_list, metric_name, ylog) {
   stopifnot(is.logical(ylog))
   data_plot <- data.frame(iteration = seq_along(metric_train_list), METRIC = metric_train_list, group = "train")
@@ -349,6 +351,7 @@ plot_conv_loglik <- function(model) {
 #' @importFrom ggplot2 ggplot
 #' @importFrom ggplot2 aes
 #' @importFrom ggplot2 geom_point
+#' @importFrom ggplot2 .data
 #' @importFrom ggplot2 scale_shape_manual
 plot_prediction_check <- function(model, subject_nb_or_list) {
   stopifnot(inherits(model, MIXEDML_CLASS))

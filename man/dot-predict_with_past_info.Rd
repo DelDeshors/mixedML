@@ -5,7 +5,7 @@
 \title{This function computes the predictions of a HLME model using only the past information to compute the random effects
 and correlation components. The actual X values are of course still used to compute the estimates.}
 \usage{
-.predict_with_past_info(hlme_model, data)
+.predict_with_past_info(hlme_model, data, nproc)
 }
 \arguments{
 \item{hlme_model}{HLME model from the LCMM package}

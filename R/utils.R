@@ -20,6 +20,20 @@
   return(x_labels)
 }
 
+# multiprocessing
+
+.set_future_plan <- function(nproc) {
+  if (nproc == future::nbrOfWorkers()) {
+    return()
+  }
+  if (nproc > 1) {
+    future::plan(future::multisession, workers = nproc)
+  } else {
+    future::plan(future::sequential)
+  }
+  return()
+}
+
 
 # data check ----
 

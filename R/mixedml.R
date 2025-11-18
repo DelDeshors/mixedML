@@ -24,21 +24,24 @@ MIXEDML_COMPONENTS <- c(
   "call"
 )
 
+MIXEDML_COMPONENTS_OPT <- c("data_val", "mse_val", "loglik_val", "mse_val_list", "loglik_val_list")
+
+
+#' This function captures the current model state in the training loop
+#' the names of the saved variables is defined in MIXEDML_COMPONENTS
 .get_model_snapshot <- function() {
   # must only be called in main loop
   # (where the MIXEDML_COMPONENTS variables are defined)
   pframe <- as.list(parent.frame())
   sdiff <- setdiff(MIXEDML_COMPONENTS, names(pframe))
-  if (length(sdiff) > 0) {
-    # the warning is temporary, while the package is still evolving
+  if (length(sdiff) > 0 && !setequal(sdiff, MIXEDML_COMPONENTS_OPT)) {
     warning(
       "Dev warning: these components defined in MIXEDML_COMPONENTS are ",
       "not present in the execution environment: ",
       paste(sdiff, collapse = ", ")
     )
-    pframe[sdiff] <- NA
   }
-  #
+  pframe[sdiff] <- NA
   model <- pframe[MIXEDML_COMPONENTS]
   class(model) <- MIXEDML_CLASS
   return(model)
@@ -140,7 +143,7 @@ aborting_ctrls <- function(mse_value = Inf, check_iter = Inf) {
   .check_controls_with_function(earlystopping_controls, earlystopping_ctrls)
   .check_controls_with_function(aborting_controls, aborting_ctrls)
   # at least one stopping criterion must be enabled
-  test1 <- is.finite(earlystopping_controls$patience)
+  test1 <- is.finite(earlystopping_controls$patience) && earlystopping_controls$min_mse_gain > 0
   test2 <- all(is.finite(c(aborting_controls$mse_value, aborting_controls$check_iter)))
   if (!(test1 || test2)) {
     stop("Both earlystopping_controls and aborting_controls are disabled: the training loop will run indefinitely!")
@@ -228,10 +231,15 @@ load_mixedml <- function(mixedml_model_rds) {
 
 
 # prediction ----
-.test_predict <- function(model, data) {
+.test_predict <- function(model, data, all_info_hlme_prediction, nproc_hlme_past) {
   .test_is_midexml(model)
   stopifnot(names(data) == names(model$random_model$data))
   .check_sorted_data(data, model$subject, model$time)
+  stopifnot(is.logical(all_info_hlme_prediction))
+  stopifnot(is.single.integer(nproc_hlme_past) && nproc_hlme_past > 0)
+  if (all_info_hlme_prediction && nproc_hlme_past > 1) {
+    message("nproc_hlme_past has no effect with all_info_hlme_prediction=TRUE")
+  }
   return()
 }
 
@@ -242,16 +250,25 @@ load_mixedml <- function(mixedml_model_rds) {
 #' @param all_info_hlme_prediction boolean to choose if all the information
 #' (past, present, future) is used for the hlme prediction (TRUE) or if only the past
 #' information is used (FALSE). Default: FALSE
+#' @param nproc_hlme_past number of processes to use for the past information prediction with the hlme modes. Default: 1
 #' @return prediction
 #' @export
-predict <- function(model, data, all_info_hlme_prediction = FALSE) {
-  .test_predict(model, data)
+predict <- function(model, data, all_info_hlme_prediction = FALSE, nproc_hlme_past = 1) {
+  .test_predict(model, data, all_info_hlme_prediction, nproc_hlme_past)
   target_name <- .get_y_label(model$fixed_spec)
   data_rand <- data
   pred_fixed <- predict_fixed_model(model$fixed_model, data, model$fixed_spec, model$subject)
   data_rand[[target_name]] <- data[[target_name]] - pred_fixed
-  pred_rand <- .predict_random_hlme(model$random_model, data_rand, all_info_hlme_prediction)
+  pred_rand <- .predict_random_hlme(model$random_model, data_rand, all_info_hlme_prediction, nproc_hlme_past)
   return(pred_fixed + pred_rand)
+}
+
+
+.test_get_loglik <- function(model, data) {
+  .test_is_midexml(model)
+  stopifnot(names(data) == names(model$random_model$data))
+  .check_sorted_data(data, model$subject, model$time)
+  return()
 }
 
 
@@ -263,7 +280,7 @@ predict <- function(model, data, all_info_hlme_prediction = FALSE) {
 #' @export
 get_loglik <- function(model, data) {
   # (might be refactored with predict)
-  .test_predict(model, data)
+  .test_get_loglik(model, data)
   target_name <- .get_y_label(model$fixed_spec)
   data_rand <- data
   pred_fixed <- predict_fixed_model(model$fixed_model, data, model$fixed_spec, model$subject)
@@ -324,13 +341,11 @@ plot_conv_loglik <- function(model) {
 #' @param model Trained MixedML model.
 #' @param subject_nb_or_list Number of subjects to plot (randomly selected) or
 #' list of subjects to plot (amongst the train/val dataset).
-#' @param ylog Plot the y-value with a log scale. Default: TRUE.
 #' @return Prediction plot of the model.
 #' @export
-plot_prediction_check <- function(model, subject_nb_or_list, ylog = FALSE) {
+plot_prediction_check <- function(model, subject_nb_or_list) {
   stopifnot(inherits(model, MIXEDML_CLASS))
   stopifnot(is.integer(subject_nb_or_list))
-  stopifnot(is.logical(ylog))
   #
   subject <- model$subject
   time <- model$time
@@ -530,26 +545,6 @@ mixedml_training_loop <- function(
     } else {
       mse_conv <- mse_train
     }
-    ## aborting test ----
-    if (istep == abort_iter) {
-      if (mse_conv > abort_mse) {
-        warning("Conditions defined in aborting_controls: aborting training loop!")
-        break()
-      }
-    }
-    ## improving / early stopping test ----
-    if (mse_conv < eastop_mse - eastop_gain) {
-      message("\t(improvement)")
-      eastop_mse <- mse_conv
-      count_conv <- 0
-    } else {
-      count_conv <- count_conv + 1
-      message(sprintf("\t(no improvement #%d)", count_conv))
-      if (count_conv == eastop_patience) {
-        warning("Conditions defined in early_stopping: aborting training loop!")
-        break()
-      }
-    }
     ## improvement test ----
     if (mse_conv < mse_min) {
       message("\t(saving best model)")
@@ -566,6 +561,26 @@ mixedml_training_loop <- function(
       # best_data_fixed <- data_fixed
       # nolint end ----
     }
+    ## improving / early stopping test ----
+    if (mse_conv < eastop_mse - eastop_gain) {
+      message("\t(improvement)")
+      eastop_mse <- mse_conv
+      count_conv <- 0
+    } else {
+      count_conv <- count_conv + 1
+      message(sprintf("\t(no improvement #%d)", count_conv))
+      if (count_conv == eastop_patience) {
+        warning("Conditions defined in early_stopping: aborting training loop!")
+        break()
+      }
+    }
+    ## aborting test ----
+    if (istep == abort_iter) {
+      if (mse_conv > abort_mse) {
+        warning("Conditions defined in aborting_controls: aborting training loop!")
+        break()
+      }
+    }
     istep <- istep + 1
   }
   #
@@ -577,7 +592,16 @@ mixedml_training_loop <- function(
   best_model <- .update_model_snapshot_lists(best_model, .get_model_snapshot())
   # final model with saved convergence criteria ----
   message("Final convergence of HLME with strict convergence criterions.")
-  best_model$random_model <- .fine_tune(best_model$random_model, best_data_rand, hlme_controls_final)
+  fine_tune <- try(.fine_tune(best_model$random_model, best_data_rand, hlme_controls_final))
+  if (inherits(fine_tune, "try-error")) {
+    warning(
+      "Could not fine-tune the best model with better convergence threshold: ",
+      "keeping the model converged during the loop"
+    )
+    best_model$random_model <- best_model$random_model
+  } else {
+    best_model$random_model <- .fine_tune(best_model$random_model, best_data_rand, hlme_controls_final)
+  }
   .check_convergence_hlme(best_model$random_model)
   # NOTE: after updating the random model, the stored MSE/loglik could also be updated
   # It is likely a matter 0.01% difference but it could confuse the user (it confused me!)

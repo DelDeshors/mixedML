@@ -31,5 +31,5 @@ test_that("esn works", {
   expect_error(.initiate_esn(esn_controls = esn_ctrls(), ensemble_controls = "nimp", fit_controls = fit_ctrls()))
   expect_error(.initiate_esn(esn_controls = esn_ctrls(), ensemble_controls = ensemble_ctrls(), fit_controls = "nimp"))
 
-  expect_no_error(.pipeline())
+  .pipeline()
 })

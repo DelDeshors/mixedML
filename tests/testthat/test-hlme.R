@@ -7,7 +7,7 @@
     data = data_mixedml,
     subject = "ID",
     var.time = "time",
-    hlme_controls = hlme_ctrls(maxiter = 2, idiag = TRUE, cor = cor, B_rand = c(1, 2, 3, 4, 5, 6))
+    hlme_controls = hlme_ctrls(maxiter = 2, idiag = TRUE, cor = cor, B_rand = c(1, 2, 3, 4, 5, 6), nproc = 2)
   ))
 }
 
@@ -30,41 +30,44 @@
   stopifnot(all(model$pred$pred_m == 0.))
 
   # prediction with all info ----
-  pred <- .predict_with_all_info(random_hlme = model, data = data_mixedml)
+  pred <- .predict_with_all_info(hlme_model = model, data = data_mixedml)
   expect_vector(pred, ptype = NULL, size = nrow(data_mixedml))
   expect_type(pred, "double")
   stopifnot(length(pred) == nrow(data_mixedml))
   stopifnot(sum(is.na(pred)) == sum(!ccases))
 
   # prediction with past info ----
-  pred <- .predict_with_past_info(random_hlme = model, data = data_mixedml)
+  pred <- .predict_with_past_info(hlme_model = model, data = data_mixedml, nproc = 2)
   stopifnot(length(pred) == nrow(data_mixedml))
   expect_vector(pred, ptype = NULL, size = nrow(data_mixedml))
   expect_type(pred, "double")
   stopifnot(length(pred) == nrow(data_mixedml))
+  pred_comp <- readRDS("test-hlme-past-pred.Rds")
+  stopifnot(max(abs(pred - pred_comp), na.rm = TRUE) < 1e-8)
   return()
 }
 
 
 test_that("hlme_full_use", {
-  expect_no_error(.initiate_random_hlme(
+  .initiate_random_hlme(
     target_name = "ym",
     random_spec = ~ 1 + x1 + x2 + x3 + x1:x3 + time,
     data = data_mixedml,
     subject = "ID",
     var.time = "time",
     hlme_controls = hlme_ctrls(maxiter = 2, idiag = TRUE, cor = "AR(time)", B_rand = c(1, 2, 3, 4, 5, 6))
-  ))
-  expect_no_error(.initiate_random_hlme(
+  )
+
+  .initiate_random_hlme(
     target_name = "ym",
     random_spec = ~ 1 + x1 + x2 + x3 + x1:x3 + time,
     data = data_mixedml,
     subject = "ID",
     var.time = "time",
     hlme_controls = hlme_ctrls(maxiter = 2, idiag = TRUE, cor = NULL, B_rand = c(1, 2, 3, 4, 5, 6))
-  ))
-  expect_no_error(.get_model(cor = "AR(time)"))
-  expect_no_error(.get_model(cor = NULL))
+  )
+  .get_model(cor = "AR(time)")
+  .get_model(cor = NULL)
 
   expect_error(.initiate_random_hlme(
     target_name = "ym",
@@ -79,5 +82,5 @@ test_that("hlme_full_use", {
   expect_error(.intermediate_initialisation(cor = "AR(X1)"))
   expect_error(.intermediate_initialisation(cor = "lala(time)"))
   #
-  expect_no_error(.full_pipeline(NULL))
+  .full_pipeline(NULL)
 })

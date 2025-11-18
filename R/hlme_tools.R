@@ -1,5 +1,7 @@
 # initialization ----
 
+library(doFuture)
+
 #' Prepare the hlme_controls
 #'
 #' Please see the [documentation](https://cecileproust-lima.github.io/lcmm/reference/hlme.html)
@@ -167,15 +169,15 @@ hlme_ctrls <- function(
 }
 
 # convergence check ----
-.check_convergence_hlme <- function(random_hlme) {
-  stopifnot(is.integer(random_hlme$conv))
+.check_convergence_hlme <- function(hlme_model) {
+  stopifnot(is.integer(hlme_model$conv))
   NOT_CONVERGED <- c(2, 4)
-  if (random_hlme$conv %in% NOT_CONVERGED) {
-    sum_conv <- paste(sprintf("%.3g", random_hlme$gconv), collapse = "/")
+  if (hlme_model$conv %in% NOT_CONVERGED) {
+    sum_conv <- paste(sprintf("%.3g", hlme_model$gconv), collapse = "/")
     warning(sprintf(
       "The hlme model did not converge (code %s).
        Here are the criterions (stability/likelihood/RDM): %s",
-      random_hlme$conv,
+      hlme_model$conv,
       sum_conv
     ))
   }
@@ -207,7 +209,15 @@ hlme_ctrls <- function(
   }
 }
 
-.predict_newdata_ss <- function(random_hlme, data, data_info) {
+.predict_newdata_ss <- function(
+  hlme_model,
+  data,
+  data_info,
+  initiate_full_preds_fn = .initiate_full_preds,
+  get_y_label_fn = .get_y_label,
+  predict_cor_fn = .predict_cor,
+  predict_y_fn = .predict_y
+) {
   # NOTE: with this method the observations with no NAs in Xs and NA in Y
   # will get a prediction, which is different from the library original behaviour
   # in model$pred$pred_ss
@@ -215,15 +225,14 @@ hlme_ctrls <- function(
   # nolint start ----
   # DATA <- data
   # DATA_INFO <- data_info
-  # PRED_RE <- lcmm::predictRE(random_hlme, DATA_INFO)
-  # FULL_PREDS <- .initiate_full_preds(data)
+  # PRED_RE <- lcmm::predictRE(hlme_model, DATA_INFO)
+  # FULL_PREDS <- initiate_full_preds_fn(data)
   # nolint end ----
-
-  full_preds <- .initiate_full_preds(data)
-  subject <- random_hlme$call$subject
-  time <- random_hlme$var.time
-  x_labels <- random_hlme$Xnames2[random_hlme$Xnames2 != "intercept"]
-  y_label <- .get_y_label(random_hlme$call$fixed)
+  full_preds <- initiate_full_preds_fn(data)
+  subject <- hlme_model$call$subject
+  time <- hlme_model$var.time
+  x_labels <- hlme_model$Xnames2[hlme_model$Xnames2 != "intercept"]
+  y_label <- get_y_label_fn(hlme_model$call$fixed)
   # we need all the Xs to compute the predictions
   data <- data[complete.cases(data[x_labels]), ]
   # we need all the Xs and the Y to compute de random effect and correlation
@@ -236,14 +245,14 @@ hlme_ctrls <- function(
     data_subj <- data[data[[subject]] == subj, ]
     data_info_subj <- data_info[data_info[[subject]] == subj, ]
     times_subj <- unique(data_subj[[time]])
-    pred_re <- lcmm::predictRE(random_hlme, data_info_subj)
-    pred_cor <- .predict_cor(random_hlme, data_info_subj, times_subj)
-    pred_y <- .predict_y(random_hlme, data_subj, pred_re, pred_cor)
+    pred_re <- lcmm::predictRE(hlme_model, data_info_subj)
+    pred_cor <- predict_cor_fn(hlme_model, data_info_subj, times_subj)
+    pred_y <- predict_y_fn(hlme_model, data_subj, pred_re, pred_cor)
     full_preds[rownames(pred_y$times)] <- pred_y$pred[, 1]
     # nolint start ----
     # DATA_SUBJ <- DATA[DATA[[subject]] == subj, ]
     # PRED_RE_SUBJ <- PRED_RE[PRED_RE[[subject]] == subj, ]
-    # PRED_Y <- .predict_y(random_hlme, DATA_SUBJ, PRED_RE_SUBJ, pred_cor)
+    # PRED_Y <- .predict_y(hlme_model, DATA_SUBJ, PRED_RE_SUBJ, pred_cor)
     # if (
     #   max(abs(pred_y$pred - PRED_Y$pred), na.rm = TRUE) > 1e-8 ||
     #     max(abs(pred_y$times - PRED_Y$times), na.rm = TRUE) > 1e-8
@@ -262,9 +271,9 @@ hlme_ctrls <- function(
   #   PRED_RE_SUBJ <- PRED_RE[PRED_RE[[subject]] == subj, ]
   #   TIME_SUBJ_CC <- DATA_SUBJ[complete.cases(DATA_SUBJ[x_labels]), ][[time]]
   #
-  #   pred_cor <- .predict_cor(random_hlme, DATA_INFO_SUBJ, TIME_SUBJ_CC)
+  #   pred_cor <- .predict_cor(hlme_model, DATA_INFO_SUBJ, TIME_SUBJ_CC)
   #   PRED_Y <- try(
-  #     .predict_y(random_hlme, DATA_SUBJ, PRED_RE_SUBJ, pred_cor),
+  #     .predict_y(hlme_model, DATA_SUBJ, PRED_RE_SUBJ, pred_cor),
   #     silent = TRUE
   #   )
   #   if (!is.list(PRED_Y)) {
@@ -281,11 +290,11 @@ hlme_ctrls <- function(
   #   warning("check 1 is OK !")
   # }
   # ####
-  # inter_names <- intersect(rownames(random_hlme$pred), rownames(DATA))
+  # inter_names <- intersect(rownames(hlme_model$pred), rownames(DATA))
   # if (identical(DATA, DATA_INFO) && length(inter_names) > 0) {
   #   # using all info
-  #   # and DATA is train data so is stored in random_hlme$pred
-  #   pred1 <- random_hlme$pred[inter_names, "pred_ss"]
+  #   # and DATA is train data so is stored in hlme_model$pred
+  #   pred1 <- hlme_model$pred[inter_names, "pred_ss"]
   #   pred2 <- full_preds[inter_names]
   #   if (max(abs(pred1 - pred2), na.rm = TRUE) > 1e-8) {
   #     stop()
@@ -299,31 +308,62 @@ hlme_ctrls <- function(
 
 
 ## prediction with all information ----
-.predict_with_all_info <- function(random_hlme, data) {
-  full_preds <- .predict_newdata_ss(random_hlme, data = data, data_info = data)
+.predict_with_all_info <- function(hlme_model, data) {
+  full_preds <- .predict_newdata_ss(hlme_model, data = data, data_info = data)
   return(full_preds)
 }
 
 
 ## prediction with past information ----
-.predict_with_past_info <- function(random_hlme, data) {
+
+#' This function computes the predictions of a HLME model using only the past information to compute the random effects
+#' and correlation components. The actual X values are of course still used to compute the estimates.
+#' @param hlme_model HLME model from the LCMM package
+#' @param data Data to be used for the prediction. It must have the same format as the one used to fit the hlme model.
+#' @export
+.predict_with_past_info <- function(hlme_model, data, nproc) {
   full_preds <- .initiate_full_preds(data)
-  var.time <- random_hlme$var.time
+  var.time <- hlme_model$var.time
   time_unq <- sort(unique(data[[var.time]]))
-  for (i_time in time_unq[-1]) {
-    actual_data <- data[data[var.time] == i_time, ]
-    prev_data <- data[data[var.time] < i_time, ]
-    full_preds[rownames(actual_data)] <- .predict_newdata_ss(random_hlme, data = actual_data, data_info = prev_data)
+  # trick so the function are available (resolved) when running on several processes
+  predict_newdata_ss_fn <- .predict_newdata_ss
+  initiate_full_preds_fn <- .initiate_full_preds
+  get_y_label_fn <- .get_y_label
+  predict_cor_fn <- .predict_cor
+  predict_y_fn <- .predict_y
+  #
+  .set_future_plan(nproc)
+  times_preds <- foreach::foreach(i_time = sample(time_unq[-1])) %dofuture%
+    {
+      actual_data <- data[data[var.time] == i_time, ]
+      prev_data <- data[data[var.time] < i_time, ]
+      return(list(
+        rownames = rownames(actual_data),
+        pred = predict_newdata_ss_fn(
+          hlme_model,
+          data = actual_data,
+          data_info = prev_data,
+          initiate_full_preds_fn = initiate_full_preds_fn,
+          get_y_label_fn = get_y_label_fn,
+          predict_cor_fn = predict_cor_fn,
+          predict_y_fn = predict_y_fn
+        )
+      ))
+    }
+
+  for (time_pred in times_preds) {
+    full_preds[time_pred$rownames] <- time_pred$pred
   }
+
   return(full_preds)
 }
 
 
 ## global method ----
-.predict_random_hlme <- function(random_hlme, data, use_all_info) {
+.predict_random_hlme <- function(hlme_model, data, use_all_info, nproc_hlme) {
   if (use_all_info) {
-    return(.predict_with_all_info(random_hlme, data))
+    return(.predict_with_all_info(hlme_model, data))
   } else {
-    return(.predict_with_past_info(random_hlme, data))
+    return(.predict_with_past_info(hlme_model, data, nproc_hlme))
   }
 }

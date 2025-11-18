@@ -4,15 +4,13 @@
 \alias{plot_prediction_check}
 \title{Plot the prediction of a MixedML model beside the true/target values}
 \usage{
-plot_prediction_check(model, subject_nb_or_list, ylog = FALSE)
+plot_prediction_check(model, subject_nb_or_list)
 }
 \arguments{
 \item{model}{Trained MixedML model.}
 
 \item{subject_nb_or_list}{Number of subjects to plot (randomly selected) or
 list of subjects to plot (amongst the train/val dataset).}
-
-\item{ylog}{Plot the y-value with a log scale. Default: TRUE.}
 }
 \value{
 Prediction plot of the model.

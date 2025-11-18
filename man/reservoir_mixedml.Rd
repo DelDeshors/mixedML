@@ -28,6 +28,9 @@ By default, an intercept is included. If no intercept, -1 should be the first te
 
 \item{data}{dataframe containing the variables named in \code{fixed_spec}, \code{random_spec}, \code{subject} and \code{time}.}
 
+\item{data_val}{dataframe used for validation (control of over-training). If present, the earlystopping and
+aborting procedures will use the MSE on this dataset. Default: NULL (no validation dataset).}
+
 \item{subject}{name of the covariate representing the grouping structure, given as a string/character.}
 
 \item{time}{name of the time variable, given as a string/character.}

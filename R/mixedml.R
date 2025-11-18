@@ -196,6 +196,7 @@ aborting_ctrls <- function(mse_value = Inf, check_iter = Inf) {
 #'
 #' @param model Trained MixedML model
 #' @param mixedml_model_rds Name of the RDS fileNew data (same format as the one used for training)
+#' @param overwrite Overwrite file if it exists? Default: FALSE
 #' @export
 save_mixedml <- function(model, mixedml_model_rds, overwrite = FALSE) {
   .test_is_midexml(model)

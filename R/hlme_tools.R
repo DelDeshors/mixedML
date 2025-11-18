@@ -311,10 +311,11 @@ hlme_ctrls <- function(
 #' and correlation components. The actual X values are of course still used to compute the estimates.
 #' @param hlme_model HLME model from the LCMM package
 #' @param data Data to be used for the prediction. It must have the same format as the one used to fit the hlme model.
+#' @param nproc Number of processes to use. Default: 1
 #' @export
 #' @importFrom doFuture %dofuture%
 #' @importFrom foreach foreach
-.predict_with_past_info <- function(hlme_model, data, nproc) {
+.predict_with_past_info <- function(hlme_model, data, nproc = 1) {
   full_preds <- .initiate_full_preds(data)
   var.time <- hlme_model$var.time
   time_unq <- sort(unique(data[[var.time]]))

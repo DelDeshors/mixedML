@@ -22,10 +22,12 @@ jobs:
           use-public-rspm: true
 
       - name: Install air
-        shell: curl -LsSf https://github.com/posit-dev/air/releases/latest/download/air-installer.sh | sh
+        shell: bash
+        run: curl -LsSf https://github.com/posit-dev/air/releases/latest/download/air-installer.sh | sh
 
       - name: Format directory with air
-        shell: air format .
+        shell: bash
+        run: air format .
 
       - name: Install lintr
         run: install.packages("lintr")

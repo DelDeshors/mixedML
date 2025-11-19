@@ -4,7 +4,7 @@
 \alias{predict}
 \title{Predict using a fitted model and new data}
 \usage{
-predict(model, data, all_info_hlme_prediction = FALSE)
+predict(model, data, all_info_hlme_prediction = FALSE, nproc_hlme_past = 1)
 }
 \arguments{
 \item{model}{Trained MixedML model}
@@ -14,6 +14,8 @@ predict(model, data, all_info_hlme_prediction = FALSE)
 \item{all_info_hlme_prediction}{boolean to choose if all the information
 (past, present, future) is used for the hlme prediction (TRUE) or if only the past
 information is used (FALSE). Default: FALSE}
+
+\item{nproc_hlme_past}{number of processes to use for the past information prediction with the hlme modes. Default: 1}
 }
 \value{
 prediction

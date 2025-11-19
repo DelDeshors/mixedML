@@ -196,6 +196,7 @@ aborting_ctrls <- function(mse_value = Inf, check_iter = Inf) {
 #'
 #' @param model Trained MixedML model
 #' @param mixedml_model_rds Name of the RDS fileNew data (same format as the one used for training)
+#' @param overwrite Overwrite file if it exists? Default: FALSE
 #' @export
 save_mixedml <- function(model, mixedml_model_rds, overwrite = FALSE) {
   .test_is_midexml(model)
@@ -289,7 +290,12 @@ get_loglik <- function(model, data) {
   return(random_model$loglik)
 }
 
-
+#' @importFrom ggplot2 ggplot
+#' @importFrom ggplot2 aes
+#' @importFrom ggplot2 geom_line
+#' @importFrom ggplot2 geom_point
+#' @importFrom ggplot2 scale_y_log10
+#' @importFrom ggplot2 .data
 .plot_train_val_metric <- function(metric_train_list, metric_val_list, metric_name, ylog) {
   stopifnot(is.logical(ylog))
   data_plot <- data.frame(iteration = seq_along(metric_train_list), METRIC = metric_train_list, group = "train")
@@ -300,8 +306,8 @@ get_loglik <- function(model, data) {
     )
   }
   colnames(data_plot)[2] <- metric_name
-  plt <- ggplot2::ggplot(data = data_plot, aes(x = iteration, y = .data[[metric_name]], color = group)) +
-    ggplot2::geom_line() +
+  plt <- ggplot(data = data_plot, aes(x = iteration, y = .data[[metric_name]], color = group)) +
+    geom_line() +
     geom_point()
   if (ylog) {
     plt <- plt + scale_y_log10()
@@ -343,6 +349,11 @@ plot_conv_loglik <- function(model) {
 #' list of subjects to plot (amongst the train/val dataset).
 #' @return Prediction plot of the model.
 #' @export
+#' @importFrom ggplot2 ggplot
+#' @importFrom ggplot2 aes
+#' @importFrom ggplot2 geom_point
+#' @importFrom ggplot2 .data
+#' @importFrom ggplot2 scale_shape_manual
 plot_prediction_check <- function(model, subject_nb_or_list) {
   stopifnot(inherits(model, MIXEDML_CLASS))
   stopifnot(is.integer(subject_nb_or_list))

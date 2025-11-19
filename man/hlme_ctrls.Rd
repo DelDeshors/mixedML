@@ -39,6 +39,8 @@ log-likelihood stability. Used for the final MixedML model. By default, convL=0.
 
 \item{convG}{optional threshold for the convergence criterion based on the
 derivatives. Used for the final MixedML model. By default, convG=0.0001.}
+
+\item{verbose}{logical indicating if information about computation should be reported. Default to TRUE.}
 }
 \value{
 hlme_controls

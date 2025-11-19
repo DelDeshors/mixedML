@@ -1,7 +1,5 @@
 # initialization ----
 
-library(doFuture)
-
 #' Prepare the hlme_controls
 #'
 #' Please see the [documentation](https://cecileproust-lima.github.io/lcmm/reference/hlme.html)
@@ -22,6 +20,7 @@ library(doFuture)
 #' log-likelihood stability. Used for the final MixedML model. By default, convL=0.0001.
 #' @param convG optional threshold for the convergence criterion based on the
 #' derivatives. Used for the final MixedML model. By default, convG=0.0001.
+#' @param verbose logical indicating if information about computation should be reported. Default to TRUE.
 #' @export
 hlme_ctrls <- function(
   cor = NULL,
@@ -97,16 +96,6 @@ hlme_ctrls <- function(
 }
 
 
-#' Initiate the HLME model
-#'
-#' @import lcmm
-#'
-#' @param random_spec random_spec
-#' @param data data
-#' @param subject subject
-#' @param var.time var.time
-#' @param hlme_controls hlme_controls
-#' @return HLME model
 .initiate_random_hlme <- function(target_name, random_spec, data, subject, var.time, hlme_controls) {
   .test_initiate_random_hlme(random_spec, hlme_controls, var.time)
   # preparing the hlme formula inputs
@@ -125,6 +114,7 @@ hlme_ctrls <- function(
   b_backup <- hlme_controls$B_rand
   hlme_controls$B_rand <- NULL
   # initialization call
+  # "hlme" with "" to keep a clean summary
   random_hlme <- do.call("hlme", hlme_controls)
   random_hlme$call$data <- NULL
   #
@@ -320,8 +310,11 @@ hlme_ctrls <- function(
 #' and correlation components. The actual X values are of course still used to compute the estimates.
 #' @param hlme_model HLME model from the LCMM package
 #' @param data Data to be used for the prediction. It must have the same format as the one used to fit the hlme model.
+#' @param nproc Number of processes to use. Default: 1
 #' @export
-.predict_with_past_info <- function(hlme_model, data, nproc) {
+#' @importFrom doFuture %dofuture%
+#' @importFrom foreach foreach
+.predict_with_past_info <- function(hlme_model, data, nproc = 1) {
   full_preds <- .initiate_full_preds(data)
   var.time <- hlme_model$var.time
   time_unq <- sort(unique(data[[var.time]]))
@@ -333,7 +326,7 @@ hlme_ctrls <- function(
   predict_y_fn <- .predict_y
   #
   .set_future_plan(nproc)
-  times_preds <- foreach::foreach(i_time = sample(time_unq[-1])) %dofuture%
+  times_preds <- foreach(i_time = sample(time_unq[-1])) %dofuture%
     {
       actual_data <- data[data[var.time] == i_time, ]
       prev_data <- data[data[var.time] < i_time, ]

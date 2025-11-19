@@ -1,7 +1,7 @@
 # formulas and variable names ----
 
 .get_y_label <- function(spec) {
-  stopifnot(rlang::is_bare_formula(spec))
+  stopifnot(is_bare_formula(spec))
   if (attr(terms(spec), "response") == 0) {
     return(NULL)
   }
@@ -11,7 +11,7 @@
 }
 
 .get_x_labels <- function(spec, allow_interactions = FALSE) {
-  stopifnot(rlang::is_bare_formula(spec))
+  stopifnot(is_bare_formula(spec))
   orders <- attr(terms(spec), "order")
   if ((!allow_interactions) && max(orders) > 1) {
     stop("Formula with interactions are not allowed for this model.")

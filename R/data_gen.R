@@ -6,6 +6,8 @@
 #' NAs are added in the independent variables and the response
 "data_mixedml"
 
+#' @importFrom stats sd
+#' @importFrom stats rnorm
 .generate_data <- function() {
   set.seed(666)
 

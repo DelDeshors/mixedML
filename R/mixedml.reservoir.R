@@ -8,6 +8,8 @@
 #' @param random_spec one-sided formula for the random-effects in the linear mixed model.
 #'  By default, an intercept is included. If no intercept, -1 should be the first term included.
 #' @param data dataframe containing the variables named in `fixed_spec`, `random_spec`, `subject` and `time`.
+#' @param data_val dataframe used for validation (control of over-training). If present, the earlystopping and
+#' aborting procedures will use the MSE on this dataset. Default: NULL (no validation dataset).
 #' @param subject name of the covariate representing the grouping structure, given as a string/character.
 #' @param time name of the time variable, given as a string/character.
 #' @param mixedml_controls controls specific to the MixedML model

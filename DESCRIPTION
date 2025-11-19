@@ -37,7 +37,6 @@ Imports:
     methods,
     stats,
     ggplot2,
-    here,
     foreach,
     doFuture,
     future

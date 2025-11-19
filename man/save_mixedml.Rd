@@ -10,6 +10,8 @@ save_mixedml(model, mixedml_model_rds, overwrite = FALSE)
 \item{model}{Trained MixedML model}
 
 \item{mixedml_model_rds}{Name of the RDS fileNew data (same format as the one used for training)}
+
+\item{overwrite}{Overwrite file if it exists? Default: FALSE}
 }
 \description{
 Save a MixedML model

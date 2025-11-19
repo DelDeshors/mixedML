@@ -19,6 +19,11 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
+<!-- badges: start -->
+
+[![R-CMD-check](https://github.com/FrankwaP/mixedML/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/FrankwaP/mixedML/actions/workflows/R-CMD-check.yaml)
+<!-- badges: end -->
+
 # 1 Introduction
 
 This package provides functions to train hybrid mixed effects models.
@@ -522,7 +527,7 @@ model_reservoir$random_model
 ``` r
 # (this model uses reticulate so it not very convenient as an example…)
 model_reservoir$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7e6b5f32da90>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x770bd9f3dbd0>
 ```
 
 Also a `call` attribute exists, meaning one can trained the model with
@@ -598,7 +603,7 @@ mixedml_model <- load_mixedml("model_reservoir.Rds")
 
 ``` r
 mixedml_model$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7e6b5f32e350>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x770bd9f3d590>
 ```
 
 ``` r

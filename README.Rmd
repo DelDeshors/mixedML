@@ -8,6 +8,11 @@ output:
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
+
+<!-- badges: start -->
+  [![R-CMD-check](https://github.com/FrankwaP/mixedML/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/FrankwaP/mixedML/actions/workflows/R-CMD-check.yaml)
+  <!-- badges: end -->
+
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,

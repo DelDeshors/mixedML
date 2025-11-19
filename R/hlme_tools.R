@@ -96,9 +96,6 @@ hlme_ctrls <- function(
 }
 
 
-#' Initiate the HLME model
-#'
-#' @import lcmm
 .initiate_random_hlme <- function(target_name, random_spec, data, subject, var.time, hlme_controls) {
   .test_initiate_random_hlme(random_spec, hlme_controls, var.time)
   # preparing the hlme formula inputs
@@ -117,6 +114,7 @@ hlme_ctrls <- function(
   b_backup <- hlme_controls$B_rand
   hlme_controls$B_rand <- NULL
   # initialization call
+  # "hlme" with "" to keep a clean summary
   random_hlme <- do.call("hlme", hlme_controls)
   random_hlme$call$data <- NULL
   #

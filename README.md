@@ -1,20 +1,21 @@
 
 - [1 Introduction](#1-introduction)
 - [2 Method](#2-method)
-- [3 Example dataset](#3-example-dataset)
-- [4 General principle](#4-general-principle)
-- [5 Arguments](#5-arguments)
-- [6 Example](#6-example)
-- [7 Attributes](#7-attributes)
-- [8 Functions](#8-functions)
-  - [8.1 `predict`](#81-predict)
-  - [8.2 `plot_conv`](#82-plot_conv)
-  - [8.3 `plot_loglik`](#83-plot_loglik)
-  - [8.4 `plot_prediction_check`](#84-plot_prediction_check)
-  - [8.5 `save_mixedml`](#85-save_mixedml)
-  - [8.6 `load_mixedml`](#86-load_mixedml)
-- [9 Remark on logging](#9-remark-on-logging)
-- [10 Remark on Python environments](#10-remark-on-python-environments)
+- [3 Extension with Python](#3-extension-with-python)
+- [4 Example dataset](#4-example-dataset)
+- [5 Main/fit functions](#5-mainfit-functions)
+  - [5.1 Formalism](#51-formalism)
+  - [5.2 Arguments](#52-arguments)
+  - [5.3 Example](#53-example)
+- [6 Model attributes](#6-model-attributes)
+- [7 Post-fit functions](#7-post-fit-functions)
+  - [7.1 `predict`](#71-predict)
+  - [7.2 `plot_conv`](#72-plot_conv)
+  - [7.3 `plot_loglik`](#73-plot_loglik)
+  - [7.4 `plot_prediction_check`](#74-plot_prediction_check)
+  - [7.5 `save_mixedml`](#75-save_mixedml)
+  - [7.6 `load_mixedml`](#76-load_mixedml)
+- [8 Remark on logging](#8-remark-on-logging)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
@@ -24,12 +25,22 @@ This package provides functions to train hybrid mixed effects models.
 Such models are a variation of linear mixed effects models, used for
 Gaussian longitudinal data, whose formulation is:
 
-$$Y_{ij} = X_{ij} \beta +  Z_{ij} u_i + w_{ij} + \varepsilon_{ij}$$
+$$Y_{ij} = X_{ij} \beta +  Z_{ij} u_i + w_{i} + \varepsilon_{ij}$$
 
-… where $i$ is the subject, $j$ is the occasion, and $w_i$ comes from a
-zero-mean Gaussian stochastic process (such as Brownian motion).
+… where:
 
-<br><br> For such hybrid models:
+- $i$ is the subject,
+- $j$ is the observation,
+- $\beta$ is the vector of fixed effects and $X_{ij}$ is associated
+  covariates,
+- $u_i$ is the vector of random effects and $Z_{ij}$ the associated
+  covariates,
+- $w_i$ is a zero-mean Gaussian stochastic process (such as Brownian
+  motion) modeling the correlation in the individual error,
+- $\epsilon_{ij}$ is the zero-mean Gaussian residual error.
+- 
+
+For such hybrid models:
 
 - a Machine Leaning (ML) model is used to estimates the fixed effects;
 - a Mixed Effects model (`hlme` from [lcmm
@@ -38,13 +49,13 @@ zero-mean Gaussian stochastic process (such as Brownian motion).
 
 That is, the formulation becomes:
 
-$$Y_{ij} = f_{ML}(X_{ij}) +  Z_{ij} u_i + w_{ij} + \varepsilon_{ij}$$
+$$Y_{ij} = f_{ML}(X_{ij}) +  Z_{ij} u_i + w_{i} + \varepsilon_{ij}$$
 
 … where $f_{ML}(X_{ij})$ is the output from a ML model trained to
 predict the fixed effects.
 
-<br><br> Using ML models to estimates the fixed effects has two main
-advantages comparing to linear models:
+Using ML models to estimates the fixed effects has two main advantages
+comparing to linear models:
 
 - they can handle highly non-linear relations, and do so with simple
   inputs (instead of being highly dependent of the specification);
@@ -85,15 +96,44 @@ effects):
 
       converged <- criterion(Y, Yfe+Yre)
 
-# 3 Example dataset
+# 3 Extension with Python
+
+The `reticulate` package is used to extend the choice of ML model to the
+one available in Python packages.
+
+One might to use a specific **Python environment**. To do so you have
+two options:
+
+- Using the `use_python_environment` function from the package.
+- Setting the environement variable `MIXED_ML_PYTHON_ENV` (which will be
+  automatically read at package load time).
+
+The value of the variable should be set as `conda:environement_name` or
+`virtualenv:environement_name` depending on the type of environment you
+want to use.
+
+**Note to devs**
+
+Specific helpers are available in the `R/utils.R` files.
+
+It is important to make sure that the R object are properly transfered
+to Python, with the expected classes. See [Type
+Conversions](https://cran.r-project.org/web/packages/reticulate/vignettes/calling_python.html)
+in `reticulate` documentation. One tricky exemple: a user will enter `1`
+as an integer, but this is actully a `numeric` in R, which will become a
+`float` in Python. So if an `int` is expected on Python side, one needs
+to use `as.integer`.
+
+# 4 Example dataset
 
 The dataset `data_mixedml` is proposed. It is generated using the
 `R/data_gen.R` file.
 
 It is a synthetic longitudinal dataset, containing data for 10 subjects
 on 5 regularly spaced time steps. It contains two response columns for
-both fixed and mixed effects. NA values have been added manually in
-these columns:
+both fixed and mixed effects. NA values have been added manually, and
+some observations are deleted. Also the row names have been shuffled in
+order to enforce a clear use of row names or indices in the code.
 
 ``` r
 data_mixedml
@@ -148,13 +188,15 @@ data_mixedml
 #> 41 10    4 10.19 100.1  0 102.0 -21.93  80.2       80.1
 ```
 
-# 4 General principle
+# 5 Main/fit functions
+
+## 5.1 Formalism
 
 The MixedML models are obtained using specific functions which have for
 signature:
 
 ``` r
-some_mixed_ml_model(
+XXXX_mixedml(
   # parameters of the MixedML model (inpired by the hlme function definition)
   fixed_spec,
   random_spec,
@@ -165,12 +207,19 @@ some_mixed_ml_model(
   mixedml_controls,
   # controls (extra-parameters) for the hlme model
   hlme_controls,
-  # controls (extra-parameters) for the implemented ML model
+  # controls (extra-parameters) specific to the implemented ML model
   controls_1, controls_2, et_caetera
 )
 ```
 
-# 5 Arguments
+… where `XXXX` takes the name of the ML model used for the fixed
+effects. As an example, the Reservoir Computing model is named
+`reservoir_mixedml`.
+
+Using a dedicated function allows to benefit from the code-completion
+since every arguments is explicitely specified (no optional arguments).
+
+## 5.2 Arguments
 
 The `fixed_spec`, `random_spec`, `cor`, `data`, `subject` and `time` are
 used by both sub-models and are taken from the `hlme` function which can
@@ -182,7 +231,7 @@ correspond to the control names. That is, the `some_name_ctrls(…)`
 function is used to define `some_name_controls` controls. Each control
 has its specific help.
 
-# 6 Example
+## 5.3 Example
 
 Here is an example using the `reservoir_mixedml` function (here is the
 [corresponding vignette](mixedML_reservoir.html)):
@@ -432,7 +481,7 @@ model_reservoir <- reservoir_mixedml(
 
 The resulting model will be used in the remaining sections.
 
-# 7 Attributes
+# 6 Model attributes
 
 Each sub-models are accessible from the fitted MixedML model:
 
@@ -473,7 +522,7 @@ model_reservoir$random_model
 ``` r
 # (this model uses reticulate so it not very convenient as an example…)
 model_reservoir$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x73186d561450>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7e6b5f32da90>
 ```
 
 Also a `call` attribute exists, meaning one can trained the model with
@@ -483,37 +532,11 @@ new inputs using `update` command:
 new_model_reservoir <- update(model_reservoir, data = new_data, maxiter = new_maxiter)
 ```
 
-# 8 Functions
+# 7 Post-fit functions
 
-The function `predict`, `plot_conv`, `plot_best_iter` are common to all
-fitted MixedML models.
+The following functions are common to all fitted MixedML models.
 
-The function `load_backup` can be used to inspect the model and the
-predictions of a specific iteration.
-
-## 8.1 `predict`
-
-**Description**
-
-Predict using a fitted model and new data
-
-**Usage**
-
-``` r
-predict(model, data, all_info_hlme_prediction = FALSE)
-```
-
-**Arguments**
-
-- `model`: Trained MixedML model
-- `data`: New data (same format as the one used for training)
-- `all_info_hlme_prediction`: boolean to choose if all the information
-  (past, present, future) is used for the hlme prediction (TRUE) or if
-  only the past information is used (FALSE). Default: FALSE
-
-**Value**
-
-prediction
+## 7.1 `predict`
 
 ``` r
 predict(model = model_reservoir, data = data_mixedml, all_info_hlme_prediction = FALSE, nproc_hlme_past = 1)
@@ -527,80 +550,23 @@ predict(model = model_reservoir, data = data_mixedml, all_info_hlme_prediction =
 #> 198.5 200.2 215.5 207.0    NA  75.7  77.6  80.6  79.2
 ```
 
-## 8.2 `plot_conv`
-
-**Description**
-
-Plot the (MSE) convergence of the MixedML training and validation
-
-**Usage**
-
-``` r
-plot_conv_mse(model, ylog = FALSE)
-```
-
-**Arguments**
-
-- `model`: Trained MixedML model
-- `ylog`: Plot the y-value with a log scale. Default: FALSE
-
-**Value**
-
-Convergence plot
+## 7.2 `plot_conv`
 
 ``` r
 plot_conv_mse(model = model_reservoir, ylog = TRUE)
 ```
 
-<img src="man/figures/README-unnamed-chunk-15-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-13-1.png" width="100%" />
 
-## 8.3 `plot_loglik`
-
-**Description**
-
-Plot the log-likelihood of the random effect hlme during training
-
-**Usage**
-
-``` r
-plot_conv_loglik(model)
-```
-
-**Arguments**
-
-- `model`: Trained MixedML model
-
-**Value**
-
-Log-likelihood plot
+## 7.3 `plot_loglik`
 
 ``` r
 plot_conv_loglik(model = model_reservoir)
 ```
 
-<img src="man/figures/README-unnamed-chunk-17-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-14-1.png" width="100%" />
 
-## 8.4 `plot_prediction_check`
-
-**Description**
-
-Plot the prediction of a MixedML model beside the true/target values
-
-**Usage**
-
-``` r
-plot_prediction_check(model, subject_nb_or_list)
-```
-
-**Arguments**
-
-- `model`: Trained MixedML model.
-- `subject_nb_or_list`: Number of subjects to plot (randomly selected)
-  or list of subjects to plot (amongst the train/val dataset).
-
-**Value**
-
-Prediction plot of the model.
+## 7.4 `plot_prediction_check`
 
 ``` r
 plot_prediction_check(model = model_reservoir, subject_nb_or_list = c(1, 2, 3, 4, 5))
@@ -608,50 +574,23 @@ plot_prediction_check(model = model_reservoir, subject_nb_or_list = c(1, 2, 3, 4
 #> (`geom_point()`).
 ```
 
-<img src="man/figures/README-unnamed-chunk-19-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-15-1.png" width="100%" />
 
-## 8.5 `save_mixedml`
+## 7.5 `save_mixedml`
 
-**Description**
-
-Save a MixedML model
-
-**Usage**
-
-``` r
-save_mixedml(model, mixedml_model_rds, overwrite = FALSE)
-```
-
-**Arguments**
-
-- `model`: Trained MixedML model
-- `mixedml_model_rds`: Name of the RDS fileNew data (same format as the
-  one used for training)
+This function is used to save a mixedML model. It is **mandatory** when
+using a model based on a Python package, since we need to save both R
+and Python objects.
 
 ``` r
 save_mixedml(model_reservoir, mixedml_model_rds = "model_reservoir.Rds")
 ```
 
-## 8.6 `load_mixedml`
+## 7.6 `load_mixedml`
 
-**Description**
-
-Load a MixedML model
-
-**Usage**
-
-``` r
-load_mixedml(mixedml_model_rds)
-```
-
-**Arguments**
-
-- `mixedml_model_rds`: Name of the RDS fileNew data (same format as the
-  one used for training)
-
-**Value**
-
-MixedMl model
+This function is used to load a mixedML model. It is **mandatory** when
+using a model based on a Python package, since we need to load both R
+and Python objects.
 
 ``` r
 mixedml_model <- load_mixedml("model_reservoir.Rds")
@@ -659,7 +598,7 @@ mixedml_model <- load_mixedml("model_reservoir.Rds")
 
 ``` r
 mixedml_model$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x73186d562ad0>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7e6b5f32e350>
 ```
 
 ``` r
@@ -696,7 +635,7 @@ mixedml_model$random_model
 #> 
 ```
 
-# 9 Remark on logging
+# 8 Remark on logging
 
 The use of reticulate makes it cumbersome to implement logging in the
 package. Since the solutions found involve preventing the use of Rstudio
@@ -707,18 +646,3 @@ and stderr to a log file:
 ``` bash
 Rscript name_of_script.R > log_file.log 2>&1
 ```
-
-# 10 Remark on Python environments
-
-One might to use a specific Python environment for the reticulate part
-of the package.
-
-To do so you have two options:
-
-- Using the `use_python_environment` function from the package.
-- Setting the environement variable `MIXED_ML_PYTHON_ENV` (which will be
-  automatically read at package load time).
-
-The value of the variable should be set as `conda:environement_name` or
-`virtualenv:environement_name` depending on the type of environment you
-want to use.

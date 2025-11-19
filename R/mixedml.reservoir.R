@@ -1,7 +1,7 @@
-#' MixedML model with Reservoir Computing
+#' Estimation of a mixedML model using Reservoir Computing
 #'
-#' Generate and fit a MixedML model using an Ensemble of Echo State Networks (Reservoir+Ridge Regression)
-#' to fit the fixed effects.
+#' The function fits a MixedML model which combines an Ensemble of Echo State Networks (Reservoir+Ridge Regression)
+#' for the population part (fixed effects) and a linear mixed model for the individual part (random effects)
 #' @param fixed_spec two-sided linear formula object for the fixed-effects.
 #' The response outcome is on the left of ~ and the covariates are separated by + on the right of ~.
 #' (do not used extra formulation such as "x1*x3")

@@ -24,8 +24,6 @@ MIXEDML_COMPONENTS <- c(
   "call"
 )
 
-MIXEDML_COMPONENTS_OPT <- c("data_val", "mse_val", "loglik_val", "mse_val_list", "loglik_val_list")
-
 
 #' This function captures the current model state in the training loop
 #' the names of the saved variables is defined in MIXEDML_COMPONENTS
@@ -34,10 +32,10 @@ MIXEDML_COMPONENTS_OPT <- c("data_val", "mse_val", "loglik_val", "mse_val_list",
   # (where the MIXEDML_COMPONENTS variables are defined)
   pframe <- as.list(parent.frame())
   sdiff <- setdiff(MIXEDML_COMPONENTS, names(pframe))
-  if (length(sdiff) > 0 && !setequal(sdiff, MIXEDML_COMPONENTS_OPT)) {
+  if (length(sdiff) > 0) {
     warning(
       "Dev warning: these components defined in MIXEDML_COMPONENTS are ",
-      "not present in the execution environment: ",
+      "not defined in mixedml_training_loop",
       paste(sdiff, collapse = ", ")
     )
   }
@@ -487,8 +485,10 @@ mixedml_training_loop <- function(
   pred_rand <- rep(0, nrow(data_train))
   istep <- 1
   mse_train_list <- c()
+  mse_val <- NULL
   mse_val_list <- c()
   loglik_train_list <- c()
+  loglik_val <- NULL
   loglik_val_list <- c()
   mse_min <- Inf
   # confusing name, might need to change:

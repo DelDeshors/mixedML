@@ -1,27 +1,24 @@
-# fixed-model S3 generics and adapters ----
+# fixed-model S3 generics ----
+# to implement a new fixed effect model, one must give the new model a class
+# and implement the corresponding S3 class
+# as a convention this should be done in a fixed_model.class.R file
+#
+# for example: to define the functions for a reservoirpy model
+# 1. we create a "fixed_model.reservoir.R" file
+# 2. the model is give the "reservoir" class at the end of its initialization
+#    using `class(model) <- c("reservoir", class(model))`
+# 3. The `fit_fixed_model.reservoir` is implemented
+# 4. The `predict_fixed_model.reservoir` is implemented
 
 fit_fixed_model <- function(model, data, fixed_spec, subject) {
   UseMethod("fit_fixed_model")
   return("Will not be executed")
 }
 
-
-fit_fixed_model.default <- function(model, data, fixed_spec, subject) {
-  stop(sprintf("No fit_fixed_model method for objects of class '%s'", class(model)[1]))
-  return("Will not be executed")
-}
-
-
 predict_fixed_model <- function(model, data, fixed_spec, subject) {
   UseMethod("predict_fixed_model")
   return("Will not be executed")
 }
-
-predict_fixed_model.default <- function(model, data, fixed_spec, subject) {
-  stop(sprintf("No predict_fixed_model method for objects of class '%s'", class(model)[1]))
-  return("Will not be executed")
-}
-
 
 # check methods ----
 # these functions stop with an error message if the checks fail

@@ -105,10 +105,10 @@ use_python_environment <- function(environement_tool, environement_name) {
   return(invisible())
 }
 
+MIXED_ML_PYTHON_ENV <- "MIXED_ML_PYTHON_ENV"
 
 .activate_environment <- function() {
-  name <- "MIXED_ML_PYTHON_ENV"
-  value <- Sys.getenv(name)
+  value <- Sys.getenv(MIXED_ML_PYTHON_ENV)
   if (value == "") {
     # no default environment defined…
     return(invisible())

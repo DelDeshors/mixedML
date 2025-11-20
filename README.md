@@ -1,7 +1,12 @@
 
 - [1 Introduction](#1-introduction)
 - [2 Method](#2-method)
-- [3 Extension with Python](#3-extension-with-python)
+- [3 Working with Python](#3-working-with-python)
+  - [3.1 Installation of the
+    libraries](#31-installation-of-the-libraries)
+  - [3.2 Setup of `reticulate` environment
+    variables](#32-setup-of-reticulate-environment-variables)
+  - [3.3 Note to devs](#33-note-to-devs)
 - [4 Example dataset](#4-example-dataset)
 - [5 Main/fit functions](#5-mainfit-functions)
   - [5.1 Formalism](#51-formalism)
@@ -101,27 +106,56 @@ effects):
 
       converged <- criterion(Y, Yfe+Yre)
 
-# 3 Extension with Python
+This method works with any kind of model, so far models coded in R and
+Python acn be easily implemented.
+
+# 3 Working with Python
 
 The `reticulate` package is used to extend the choice of ML model to the
 one available in Python packages.
 
-One might to use a specific **Python environment**. To do so you have
-two options:
+## 3.1 Installation of the libraries
 
-- Using the `use_python_environment` function from the package.
-- Setting the environement variable `MIXED_ML_PYTHON_ENV` (which will be
-  automatically read at package load time).
+One must of course install the necessary Python packages before running
+the corresponding models:
 
-The value of the variable should be set as `conda:environement_name` or
-`virtualenv:environement_name` depending on the type of environment you
-want to use.
+- the `requirements.txt` lists the packages needed to run all the ML
+  models.
+- the `requirements-dev.txt` lists the packages needed for developpers.
 
-**Note to devs**
+The recommended practice is to use a specific environments. Tools like
+`venv`, `miniforge` or `uv` can be used for that purpose.
+
+## 3.2 Setup of `reticulate` environment variables
+
+Before using `reticulate` it is necessary to set up the
+RETICULATE_PYTHON or the RETICULATE_PYTHON_ENV environment variable, as
+explained in the `reticulate`
+[documentation](https://rstudio.github.io/reticulate/articles/versions.html).
+
+To define such environment variable, one can use a R command. For
+example:
+
+``` r
+# if one wants to use the Python executable path (Windows example)
+Sys.setenv(RETICULATE_PYTHON = "%HOMEPATH%/python3.13/bin/python.exe")
+
+# if one wants to use a Python environment (Linux/OSX example)
+Sys.setenv(RETICULATE_PYTHON_ENV = "~/miniforge3/envs/environment_name/")
+```
+
+Such command can be written in the `.Rprofile` of a project, to be
+executed automatically when this project is loaded. This allows
+different projects to use different variables.
+
+**Please note** that if `reticulate` has already been called, then one
+must restart the R session after changing these variables.
+
+## 3.3 Note to devs
 
 Specific helpers are available in the `R/utils.R` files.
 
-It is important to make sure that the R object are properly transfered
+It is important to make sure that the R object are propperly transfered
 to Python, with the expected classes. See [Type
 Conversions](https://cran.r-project.org/web/packages/reticulate/vignettes/calling_python.html)
 in `reticulate` documentation. One tricky exemple: a user will enter `1`
@@ -273,9 +307,6 @@ model_reservoir <- reservoir_mixedml(
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 85.38
-#> Warning in .get_model_snapshot(): Dev warning: these components defined in
-#> MIXEDML_COMPONENTS are not present in the execution environment: mse_val,
-#> loglik_val
 #>  MSE-val = 296.1
 #>  (saving best model)
 #>  (improvement)
@@ -527,7 +558,7 @@ model_reservoir$random_model
 ``` r
 # (this model uses reticulate so it not very convenient as an example…)
 model_reservoir$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x770bd9f3dbd0>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7373e4ec5a90>
 ```
 
 Also a `call` attribute exists, meaning one can trained the model with
@@ -603,7 +634,7 @@ mixedml_model <- load_mixedml("model_reservoir.Rds")
 
 ``` r
 mixedml_model$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x770bd9f3d590>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7373e4ec6350>
 ```
 
 ``` r

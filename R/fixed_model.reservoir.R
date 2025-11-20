@@ -85,9 +85,7 @@ fit_ctrls <- function(warmup = 0) {
 # recipes  ----
 .initiate_esn <- function(esn_controls, ensemble_controls, fit_controls) {
   .test_initiate_esn(esn_controls, ensemble_controls, fit_controls)
-  # sys.path is modified when activating the Python environment
-  # so the import is simply:
-  retipy <- reticulate::import("reservoir_ensemble")
+  retipy <- .import_python_module("reservoir_ensemble")
   # enforcing "stateful=TRUE" and "reset=TRUE"
   enforcement <- list(stateful = TRUE, reset = TRUE)
   fit_controls <- c(fit_controls, enforcement)

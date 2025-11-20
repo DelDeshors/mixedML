@@ -79,67 +79,20 @@ is.named.vector <- function(x) {
 }
 
 
-# reticulate ----
+# reticulate/Python ----
 
-#' Set the Python environment for mixedML
-#' @param environement_tool Tool used to managge the environments. Can be one of "venv" or "conda"
-#' @param environement_name Name of the environment.
-#' @return invisible NULL
-#' @export
-use_python_environment <- function(environement_tool, environement_name) {
-  if (environement_tool == "conda") {
-    if (!reticulate::condaenv_exists(environement_name)) {
-      stop(sprintf("The conda environment \"%s\" does not exist.", environement_name))
-    }
-    reticulate::use_condaenv(environement_name)
-    message(sprintf("conda environment \"%s\" activated!\n", environement_name))
-  } else if (environement_tool == "venv") {
-    if (!reticulate::virtualenv_exists(environement_name)) {
-      stop("The virtual environment \"%s\" does not exist.", environement_name)
-    }
-    reticulate::use_virtualenv(environement_name)
-    message(sprintf("virtual environment \"%s\" activated!\n", environement_name))
-  } else {
-    stop("environement_tool should be one of \"venv\" or \"conda\".")
-  }
-  return(invisible())
-}
-
-MIXED_ML_PYTHON_ENV <- "MIXED_ML_PYTHON_ENV"
-
-.activate_environment <- function() {
-  value <- Sys.getenv(MIXED_ML_PYTHON_ENV)
-  if (value == "") {
-    # no default environment defined…
-    return(invisible())
-  }
-  message("Value found for MIXED_ML_PYTHON_ENV: ", value)
-  splt <- strsplit(value, ":")
-  envtype <- splt[[1]][[1]]
-  envname <- splt[[1]][[2]]
-  use_python_environment(envtype, envname)
-  return(invisible())
-}
-
-
-.modify_pypath <- function() {
-  # necessary when loading a model saved with joblib
-  # also makes importing Python module easier
-  PACKAGE_NAME <- "mixedML" # pkgload::pkg_name() does not work with devtools::check
-  PYTHON_FOLDER <- "python"
-  py_path <- system.file(PYTHON_FOLDER, package = PACKAGE_NAME)
-  if (py_path == "") {
+.import_python_module <- function(module_name) {
+  path1 <- Sys.getenv("RETICULATE_PYTHON")
+  path2 <- Sys.getenv("RETICULATE_PYTHON_ENV")
+  if (path1 == "" && path2 == "") {
     stop(
-      "Hi developper friend! Have you just renamed this package?
-      Please edit the PACKAGE_NAME variable in .modify_pypath function."
+      "\n\nNone of RETICULATE_PYTHON or RETICULATE_PYTHON_ENV is defined.\n",
+      "If you want to use a Python library, you need to define one of these.\n",
+      "(see: https://rstudio.github.io/reticulate/articles/versions.html)\n",
+      "\nDO NOT FORGET TO RESTART THE R SESSION !\n"
     )
   }
-  pysys <- reticulate::import("sys")
-  if (!py_path %in% pysys$path) {
-    message("Adding ", py_path, " to the reticulate/Python path.")
-    pysys$path <- c(pysys$path, py_path)
-  }
-  return()
+  return(reticulate::import(module_name))
 }
 
 

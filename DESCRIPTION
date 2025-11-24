@@ -23,7 +23,6 @@ Suggests:
     devtools,
     vctrs,
     htmltools,
-    air,
     Rd2md (>= 1.0.1),
     usethis (>= 3.1.0)
 Config/testthat/edition: 3
@@ -39,7 +38,8 @@ Imports:
     ggplot2,
     foreach,
     doFuture,
-    future
+    future,
+    patchwork
 Remotes:
     quantsch/rd2md,
     r-lib/usethis

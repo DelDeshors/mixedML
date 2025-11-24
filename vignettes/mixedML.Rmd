@@ -255,24 +255,17 @@ predict(model = model_reservoir, data = data_mixedml, all_info_hlme_prediction =
 ```
 
 
-## `plot_conv`
+## `plot_convergence`
 
-```{r}
-plot_conv_mse(model = model_reservoir, ylog = TRUE)
-```
-
-
-## `plot_loglik`
-
-```{r}
-plot_conv_loglik(model = model_reservoir)
+```{r, fig.width=10}
+plot_convergence(model = model_reservoir, ylog = TRUE)
 ```
 
 ## `plot_prediction_check`
 
 
-```{r}
-plot_prediction_check(model = model_reservoir, subject_nb_or_list = c(1, 2, 3, 4, 5))
+```{r, fig.width=10, fig.height=10}
+plot_prediction_check(model = model_reservoir, subject_nb_or_list = c(1, 2, 3, 4, 5), ncols = 2, na.rm = TRUE)
 ```
 
 

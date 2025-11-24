@@ -1,4 +1,6 @@
-# controls ----
+# initialization  ----
+
+## controls testing ----
 
 #' Prepare the esn_controls
 #'
@@ -61,7 +63,7 @@ ensemble_ctrls <- function(seed_list = c(1, 2, 3), aggregator = "median", scaler
 #' Please see the
 #' [documentation](https://reservoirpy.readthedocs.io/en/latest/api/generated/reservoirpy.nodes.ESN.html#reservoirpy.nodes.ESN.fit)
 #' of ReservoirPy
-#' @param warmup Number of timesteps to consider as warmup and discard at the beginning. Defalut: 0
+#' @param warmup Number of timesteps to consider as warmup and discard at the beginning. Default: 0
 #' of each timeseries before training.
 #'
 #' @return fit_controls
@@ -81,8 +83,8 @@ fit_ctrls <- function(warmup = 0) {
   return()
 }
 
+## initialiaztion ----
 
-# recipes  ----
 .initiate_esn <- function(esn_controls, ensemble_controls, fit_controls) {
   .test_initiate_esn(esn_controls, ensemble_controls, fit_controls)
   retipy <- .import_python_module("reservoir_ensemble")
@@ -103,6 +105,9 @@ fit_ctrls <- function(warmup = 0) {
 
 
 # fitting/training ----
+
+#' @method fit_fixed_model reservoir
+#' @noRd
 fit_fixed_model.reservoir <- function(model, data, fixed_spec, subject) {
   # !!! offsetting is not implemented in LCMM
   # BUT for linear models, fitting "f(X)+offset" on Y is equivalent to
@@ -120,6 +125,9 @@ fit_fixed_model.reservoir <- function(model, data, fixed_spec, subject) {
 
 
 # prediction ----
+
+#' @method predict_fixed_model reservoir
+#' @noRd
 predict_fixed_model.reservoir <- function(model, data, fixed_spec, subject) {
   x_labels <- .get_x_labels(fixed_spec)
   ccases <- complete.cases(data[x_labels])

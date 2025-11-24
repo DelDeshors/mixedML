@@ -21,6 +21,8 @@
 #' The default use the date at start in the format "mixedML-%y%m%d-%H%M%S"
 #' (ex: mixedML-250709-100530)
 #' @return fitted MixedML model (best iteration)
+#'
+#' @example R/mixedml.reservoir.example
 #' @export
 reservoir_mixedml <- function(
   fixed_spec,

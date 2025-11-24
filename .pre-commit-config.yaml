@@ -127,7 +127,7 @@ repos:
     -   id: readme-md-rendered
         name: readme-md-rendered
         stages: [pre-push, post-merge]
-        entry: Rscript pre-commit-utils/check_readme_update.R
+        entry: Rscript pre-commit-utils/check_readme_update.R_
         language: system
         files: '(README.*|vignettes/mixedML.Rmd)'
         pass_filenames: false

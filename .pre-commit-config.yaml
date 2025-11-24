@@ -36,7 +36,7 @@ repos:
 #        pass_filenames: true
 #  R precommit hooks
 -   repo: https://github.com/lorenzwalthert/precommit    #  R precommit hooks
-    rev: v0.4.3.9015
+    rev: v0.4.3.9017
     hooks:
     -   id: roxygenize
         stages: [pre-merge-commit]
@@ -71,16 +71,19 @@ repos:
         language: fail
         files: '\.(Rhistory|RData|Rds|rds)$'
         # `exclude: <regex>` to allow committing specific files
- # Python formating
+
+
+# Python formating
 -   repo: local
     hooks:
     -   id: black
         name: black
-        entry: black
+        entry: black .
         stages: [pre-commit]
         language: system
         types: [python]
-        require_serial: true
+        #  require_serial: true
+        pass_filenames: false
         files: '\.py$'
 -   repo: local
     hooks:
@@ -90,7 +93,18 @@ repos:
         stages: [pre-commit]
         language: system
         types: [python]
-        require_serial: true
+        # require_serial: true
+        pass_filenames: false
+        files: '\.py$'
+-   repo: local
+    hooks:
+    -   id: mypy-test
+        name: mypy-test
+        entry: mypy tests/pytest/
+        stages: [pre-commit]
+        language: system
+        types: [python]
+        # require_serial: true
         pass_filenames: false
         files: '\.py$'
 -   repo: https://github.com/pycqa/flake8
@@ -104,7 +118,7 @@ repos:
     -   id: Rtesting
         name: Rtesting
         stages: [pre-push, post-merge]
-        entry: Rscript tests/precommit_testthat.R_
+        entry: Rscript pre-commit-utils/precommit_testthat.R_
         language: system
         pass_filenames: false
 # README.md check
@@ -113,7 +127,7 @@ repos:
     -   id: readme-md-rendered
         name: readme-md-rendered
         stages: [pre-push, post-merge]
-        entry: Rscript vignettes/check_readme_update.R
+        entry: Rscript pre-commit-utils/check_readme_update.R
         language: system
         files: '(README.*|vignettes/mixedML.Rmd)'
         pass_filenames: false

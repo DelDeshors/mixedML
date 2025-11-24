@@ -15,11 +15,10 @@
 - [6 Model attributes](#6-model-attributes)
 - [7 Post-fit functions](#7-post-fit-functions)
   - [7.1 `predict`](#71-predict)
-  - [7.2 `plot_conv`](#72-plot_conv)
-  - [7.3 `plot_loglik`](#73-plot_loglik)
-  - [7.4 `plot_prediction_check`](#74-plot_prediction_check)
-  - [7.5 `save_mixedml`](#75-save_mixedml)
-  - [7.6 `load_mixedml`](#76-load_mixedml)
+  - [7.2 `plot_convergence`](#72-plot_convergence)
+  - [7.3 `plot_prediction_check`](#73-plot_prediction_check)
+  - [7.4 `save_mixedml`](#74-save_mixedml)
+  - [7.5 `load_mixedml`](#75-load_mixedml)
 - [8 Remark on logging](#8-remark-on-logging)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -558,7 +557,7 @@ model_reservoir$random_model
 ``` r
 # (this model uses reticulate so it not very convenient as an example…)
 model_reservoir$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7c9015e99a90>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7e76c82baad0>
 ```
 
 Also a `call` attribute exists, meaning one can trained the model with
@@ -586,23 +585,15 @@ predict(model = model_reservoir, data = data_mixedml, all_info_hlme_prediction =
 #> 198.5 200.2 215.5 207.0    NA  75.7  77.6  80.6  79.2
 ```
 
-## 7.2 `plot_conv`
+## 7.2 `plot_convergence`
 
 ``` r
-plot_conv_mse(model = model_reservoir, ylog = TRUE)
+plot_convergence(model = model_reservoir, ylog = TRUE)
 ```
 
 <img src="man/figures/README-unnamed-chunk-13-1.png" width="100%" />
 
-## 7.3 `plot_loglik`
-
-``` r
-plot_conv_loglik(model = model_reservoir)
-```
-
-<img src="man/figures/README-unnamed-chunk-14-1.png" width="100%" />
-
-## 7.4 `plot_prediction_check`
+## 7.3 `plot_prediction_check`
 
 ``` r
 plot_prediction_check(model = model_reservoir, subject_nb_or_list = c(1, 2, 3, 4, 5))
@@ -610,9 +601,9 @@ plot_prediction_check(model = model_reservoir, subject_nb_or_list = c(1, 2, 3, 4
 #> (`geom_point()`).
 ```
 
-<img src="man/figures/README-unnamed-chunk-15-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-14-1.png" width="100%" />
 
-## 7.5 `save_mixedml`
+## 7.4 `save_mixedml`
 
 This function is used to save a mixedML model. It is **mandatory** when
 using a model based on a Python package, since we need to save both R
@@ -622,7 +613,7 @@ and Python objects.
 save_mixedml(model_reservoir, mixedml_model_rds = "model_reservoir.Rds")
 ```
 
-## 7.6 `load_mixedml`
+## 7.5 `load_mixedml`
 
 This function is used to load a mixedML model. It is **mandatory** when
 using a model based on a Python package, since we need to load both R
@@ -634,7 +625,7 @@ mixedml_model <- load_mixedml("model_reservoir.Rds")
 
 ``` r
 mixedml_model$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7c9015e9a350>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7e76c82b9590>
 ```
 
 ``` r

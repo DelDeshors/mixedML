@@ -3,5 +3,6 @@
 #' @importFrom lcmm hlme
 #' @importFrom rlang is_bare_formula
 #' @importFrom stats complete.cases terms update
-NULL
-#> NULL
+#' @importFrom ggplot2 ggplot aes geom_line geom_point scale_y_log10 .data guides scale_shape_manual
+#' @import patchwork
+NULL  # will not work without this line !

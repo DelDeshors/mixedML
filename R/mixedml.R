@@ -288,12 +288,8 @@ get_loglik <- function(model, data) {
   return(random_model$loglik)
 }
 
-#' @importFrom ggplot2 ggplot
-#' @importFrom ggplot2 aes
-#' @importFrom ggplot2 geom_line
-#' @importFrom ggplot2 geom_point
-#' @importFrom ggplot2 scale_y_log10
-#' @importFrom ggplot2 .data
+# plotting ----
+
 .plot_train_val_metric <- function(metric_train_list, metric_val_list, metric_name, ylog) {
   stopifnot(is.logical(ylog))
   data_plot <- data.frame(iteration = seq_along(metric_train_list), METRIC = metric_train_list, group = "train")
@@ -314,29 +310,19 @@ get_loglik <- function(model, data) {
 }
 
 
-#' Plot the (MSE) convergence of the MixedML training and validation
-#'
-#'
+#' Plot the MSE and loglikelihood convergence of the MixedML training and validation
 #'
 #' @param model Trained MixedML model
-#' @param ylog Plot the y-value with a log scale. Default: FALSE
+#' @param ylog_mse Plot the y-value with a log scale. Default: FALSE
+#'
 #' @return Convergence plot
 #' @export
-plot_conv_mse <- function(model, ylog = FALSE) {
+plot_convergence <- function(model, ylog_mse = FALSE) {
   .test_is_midexml(model)
-  return(.plot_train_val_metric(model$mse_train_list, model$mse_val_list, metric_name = "MSE", ylog = ylog))
-}
-
-#' Plot the log-likelihood of the random effect hlme during training
-#'
-#'
-#'
-#' @param model Trained MixedML model
-#' @return Log-likelihood plot
-#' @export
-plot_conv_loglik <- function(model) {
-  .test_is_midexml(model)
-  return(.plot_train_val_metric(model$loglik_train_list, model$loglik_val_list, metric_name = "loglik", ylog = FALSE))
+  mse <- .plot_train_val_metric(model$mse_train_list, model$mse_val_list, metric_name = "MSE", ylog = ylog_mse)
+  mse <- mse + guides(color = "none")
+  loglik <- .plot_train_val_metric(model$loglik_train_list, model$loglik_val_list, metric_name = "loglik", ylog = FALSE)
+  return(mse + loglik)
 }
 
 
@@ -347,11 +333,6 @@ plot_conv_loglik <- function(model) {
 #' list of subjects to plot (amongst the train/val dataset).
 #' @return Prediction plot of the model.
 #' @export
-#' @importFrom ggplot2 ggplot
-#' @importFrom ggplot2 aes
-#' @importFrom ggplot2 geom_point
-#' @importFrom ggplot2 .data
-#' @importFrom ggplot2 scale_shape_manual
 plot_prediction_check <- function(model, subject_nb_or_list) {
   stopifnot(inherits(model, MIXEDML_CLASS))
   stopifnot(is.integer(subject_nb_or_list))

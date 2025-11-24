@@ -19,8 +19,7 @@ full_pipeline <- function(mixed_ml_model) {
   loglik_val <- get_loglik(mixed_ml_model, data_val)
   stopifnot(abs((loglik_val == mixed_ml_model$loglik_val) / loglik_val) < 1e-2)
   #
-  plot_conv_mse(mixed_ml_model)
-  plot_conv_loglik(mixed_ml_model)
+  plot_convergence(mixed_ml_model)
   plot_prediction_check(mixed_ml_model, subject_nb_or_list = 3)
   return()
 }

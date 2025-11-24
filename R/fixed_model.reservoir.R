@@ -1,4 +1,6 @@
-# controls ----
+# initialization  ----
+
+## controls testing ----
 
 #' Prepare the esn_controls
 #'
@@ -81,8 +83,8 @@ fit_ctrls <- function(warmup = 0) {
   return()
 }
 
+## initialiaztion ----
 
-# recipes  ----
 .initiate_esn <- function(esn_controls, ensemble_controls, fit_controls) {
   .test_initiate_esn(esn_controls, ensemble_controls, fit_controls)
   retipy <- .import_python_module("reservoir_ensemble")
@@ -103,6 +105,9 @@ fit_ctrls <- function(warmup = 0) {
 
 
 # fitting/training ----
+
+#' @method fit_fixed_model reservoir
+#' @noRd
 fit_fixed_model.reservoir <- function(model, data, fixed_spec, subject) {
   # !!! offsetting is not implemented in LCMM
   # BUT for linear models, fitting "f(X)+offset" on Y is equivalent to
@@ -120,6 +125,9 @@ fit_fixed_model.reservoir <- function(model, data, fixed_spec, subject) {
 
 
 # prediction ----
+
+#' @method predict_fixed_model reservoir
+#' @noRd
 predict_fixed_model.reservoir <- function(model, data, fixed_spec, subject) {
   x_labels <- .get_x_labels(fixed_spec)
   ccases <- complete.cases(data[x_labels])

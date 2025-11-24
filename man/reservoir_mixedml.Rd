@@ -55,7 +55,7 @@ Generate and fit a MixedML model using an Ensemble of Echo State Networks (Reser
 to fit the fixed effects.
 }
 \examples{
-model_reservoir <- reservoir_mixedml(#' data_train <- data_mixedml[data_mixedml$ID < 9, ]
+data_train <- data_mixedml[data_mixedml$ID < 9, ]
 data_val <- data_mixedml[data_mixedml$ID >= 9, ]
 
 model_reservoir <- reservoir_mixedml(
@@ -67,8 +67,8 @@ model_reservoir <- reservoir_mixedml(
   time = "time",
   # parameters for MixedML method
   mixedml_controls = mixedml_ctrls(
-    earlystopping_controls = earlystopping_ctrls(min_mse_gain = 0.1, patience = 1),
-    aborting_controls = aborting_ctrls(check_iter = 5, mse_value = 100),
+    earlystopping_controls = earlystopping_ctrls(min_mse_gain = 5, patience = 1),
+    aborting_controls = aborting_ctrls(check_iter = 5, mse_value = 10),
     all_info_hlme_prediction = TRUE
   ),
   # controls (extra-parameters) for the hlme model

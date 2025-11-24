@@ -22,30 +22,7 @@
 #' (ex: mixedML-250709-100530)
 #' @return fitted MixedML model (best iteration)
 #'
-#' @examples
-#' model_reservoir <- reservoir_mixedml(#' data_train <- data_mixedml[data_mixedml$ID < 9, ]
-#' data_val <- data_mixedml[data_mixedml$ID >= 9, ]
-#'
-#' model_reservoir <- reservoir_mixedml(
-#'   fixed_spec = ym ~ x1 + x2 + x3,
-#'   random_spec = ~ x1 + x2,
-#'   data = data_train,
-#'   data_val = data_val,
-#'   subject = "ID",
-#'   time = "time",
-#'   # parameters for MixedML method
-#'   mixedml_controls = mixedml_ctrls(
-#'     earlystopping_controls = earlystopping_ctrls(min_mse_gain = 0.1, patience = 1),
-#'     aborting_controls = aborting_ctrls(check_iter = 5, mse_value = 100),
-#'     all_info_hlme_prediction = TRUE
-#'   ),
-#'   # controls (extra-parameters) for the hlme model
-#'   hlme_controls = hlme_ctrls(maxiter = 50, idiag = TRUE),
-#'   # controls (extra-parameters) for the ML model
-#'   esn_controls = esn_ctrls(units = 20, ridge = 1e-5),
-#'   ensemble_controls = ensemble_ctrls(seed_list = c(1, 2, 3, 4, 5)),
-#'   fit_controls = fit_ctrls(warmup = 1)
-#' )
+#' @example R/mixedml.reservoir.example
 #' @export
 reservoir_mixedml <- function(
   fixed_spec,

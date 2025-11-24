@@ -7,7 +7,7 @@
 fit_ctrls(warmup = 0)
 }
 \arguments{
-\item{warmup}{Number of timesteps to consider as warmup and discard at the beginning. Defalut: 0
+\item{warmup}{Number of timesteps to consider as warmup and discard at the beginning. Default: 0
 of each timeseries before training.}
 }
 \value{

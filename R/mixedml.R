@@ -326,14 +326,16 @@ plot_convergence <- function(model, ylog_mse = FALSE) {
 }
 
 
-#' Plot the prediction of a MixedML model beside the true/target values
+#' Plot the predictions of a MixedML model (with all or past informations) beside the true/target values
 #'
 #' @param model Trained MixedML model.
 #' @param subject_nb_or_list Number of subjects to plot (randomly selected) or
 #' list of subjects to plot (amongst the train/val dataset).
-#' @return Prediction plot of the model.
+#' @param ncols Number of columns for the grid plot. Default: 2
+#' @param na.rm Remove the NA values for the plot (to avoid the corresponding warning messages). Default: TRUE
+#' @return Predictions plot of the model.
 #' @export
-plot_prediction_check <- function(model, subject_nb_or_list) {
+plot_prediction_check <- function(model, subject_nb_or_list, ncols = 2, na.rm = TRUE) {
   stopifnot(inherits(model, MIXEDML_CLASS))
   stopifnot(is.integer(subject_nb_or_list))
   #
@@ -341,44 +343,49 @@ plot_prediction_check <- function(model, subject_nb_or_list) {
   time <- model$time
   target <- .get_y_label(model$fixed_spec)
   #
-  type <- "type"
-  type1 <- "target"
-  data_tgt <- model$data
-  if (!is.null(model$data_val)) {
-    data_tgt <- rbind(data_tgt, model$data_val)
-  }
-  data_tgt[[type]] <- type1
-  #
-  type2 <- "pred."
-  data_pred <- data_tgt
-  data_pred[[type]] <- type2
-  data_pred[[target]] <- predict(model, data_pred, all_info_hlme_prediction = TRUE)
-  data_plot <- rbind(data_tgt, data_pred)
   if (length(subject_nb_or_list) == 1) {
-    subject_nb_or_list <- sample(unique(data_plot[[subject]]), subject_nb_or_list)
+    subject_nb_or_list <- sample(unique(model$data[[subject]]), subject_nb_or_list)
     message("Subjects selected randomly: use set.seed to change the selection.")
   } else {
     stopifnot(all(subject_nb_or_list %in% model$data[[subject]]))
   }
   #
-  idx_keep <- data_plot[[subject]] %in% subject_nb_or_list
-  data_plot <- data_plot[idx_keep, ]
-  data_plot[[subject]] <- as.factor(data_plot[[subject]])
-  return(
-    ggplot(
-      data_plot,
-      aes(
-        x = .data[[time]],
-        y = .data[[target]],
-        group = interaction(.data[[subject]], .data[[type]]),
-        color = .data[[subject]],
-        shape = .data[[type]],
-      )
+  type <- "type"
+  type_name <- "true"
+  data_tgt <- model$data
+  if (!is.null(model$data_val)) {
+    data_tgt <- rbind(data_tgt, model$data_val)
+  }
+  data_tgt[[type]] <- type_name
+  data_tgt <- data_tgt[data_tgt[[subject]] %in% subject_nb_or_list, ]
+  data_plot <- data_tgt
+  #
+  type_name <- "pred. all"
+  data_pred <- data_tgt
+  data_pred[[type]] <- type_name
+  data_pred[[target]] <- predict(model, data_pred, all_info_hlme_prediction = TRUE)
+  data_plot <- rbind(data_plot, data_pred)
+  #
+  type_name <- "pred. past"
+  data_pred <- data_tgt
+  data_pred[[type]] <- type_name
+  data_pred[[target]] <- predict(model, data_pred, all_info_hlme_prediction = FALSE)
+  data_plot <- rbind(data_plot, data_pred)
+  #
+  final_plot <- NULL
+  for (subj in subject_nb_or_list) {
+    data_plot_subj <- data_plot[data_plot[[subject]] == subj, ]
+    gleg_sub <- guide_legend(title = paste0("ID: ", subj))
+    plot <- ggplot(
+      data_plot_subj,
+      aes(x = .data[[time]], y = .data[[target]], color = .data[[type]], shape = .data[[type]], )
     ) +
-      # geom_line() +
-      geom_point(size = 3) +
-      scale_shape_manual(name = "Y value", values = c(3, 4))
-  )
+      geom_point(size = 3, na.rm = na.rm) +
+      guides(color = gleg_sub, shape = gleg_sub)
+
+    final_plot <- c(final_plot, plot)
+  }
+  return(wrap_plots(final_plot, ncol = ncols))
 }
 
 

@@ -557,7 +557,7 @@ model_reservoir$random_model
 ``` r
 # (this model uses reticulate so it not very convenient as an example…)
 model_reservoir$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7e76c82baad0>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7571640e2850>
 ```
 
 Also a `call` attribute exists, meaning one can trained the model with
@@ -596,9 +596,7 @@ plot_convergence(model = model_reservoir, ylog = TRUE)
 ## 7.3 `plot_prediction_check`
 
 ``` r
-plot_prediction_check(model = model_reservoir, subject_nb_or_list = c(1, 2, 3, 4, 5))
-#> Warning: Removed 4 rows containing missing values or values outside the scale range
-#> (`geom_point()`).
+plot_prediction_check(model = model_reservoir, subject_nb_or_list = c(1, 2, 3, 4, 5), ncols = 2, na.rm = TRUE)
 ```
 
 <img src="man/figures/README-unnamed-chunk-14-1.png" width="100%" />
@@ -625,7 +623,7 @@ mixedml_model <- load_mixedml("model_reservoir.Rds")
 
 ``` r
 mixedml_model$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7e76c82b9590>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7571640e2e90>
 ```
 
 ``` r

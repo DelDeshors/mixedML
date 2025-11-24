@@ -2,19 +2,23 @@
 % Please edit documentation in R/mixedml.R
 \name{plot_prediction_check}
 \alias{plot_prediction_check}
-\title{Plot the prediction of a MixedML model beside the true/target values}
+\title{Plot the predictions of a MixedML model (with all or past informations) beside the true/target values}
 \usage{
-plot_prediction_check(model, subject_nb_or_list)
+plot_prediction_check(model, subject_nb_or_list, ncols = 2, na.rm = TRUE)
 }
 \arguments{
 \item{model}{Trained MixedML model.}
 
 \item{subject_nb_or_list}{Number of subjects to plot (randomly selected) or
 list of subjects to plot (amongst the train/val dataset).}
+
+\item{ncols}{Number of columns for the grid plot. Default: 2}
+
+\item{na.rm}{Remove the NA values for the plot (to avoid the corresponding warning messages). Default: TRUE}
 }
 \value{
-Prediction plot of the model.
+Predictions plot of the model.
 }
 \description{
-Plot the prediction of a MixedML model beside the true/target values
+Plot the predictions of a MixedML model (with all or past informations) beside the true/target values
 }

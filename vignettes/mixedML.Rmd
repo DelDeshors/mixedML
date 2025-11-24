@@ -264,8 +264,8 @@ plot_convergence(model = model_reservoir, ylog = TRUE)
 ## `plot_prediction_check`
 
 
-```{r}
-plot_prediction_check(model = model_reservoir, subject_nb_or_list = c(1, 2, 3, 4, 5))
+```{r, fig.width=10, fig.height=10}
+plot_prediction_check(model = model_reservoir, subject_nb_or_list = c(1, 2, 3, 4, 5), ncols = 2, na.rm = TRUE)
 ```
 
 

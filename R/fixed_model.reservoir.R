@@ -63,7 +63,7 @@ ensemble_ctrls <- function(seed_list = c(1, 2, 3), aggregator = "median", scaler
 #' Please see the
 #' [documentation](https://reservoirpy.readthedocs.io/en/latest/api/generated/reservoirpy.nodes.ESN.html#reservoirpy.nodes.ESN.fit)
 #' of ReservoirPy
-#' @param warmup Number of timesteps to consider as warmup and discard at the beginning. Defalut: 0
+#' @param warmup Number of timesteps to consider as warmup and discard at the beginning. Default: 0
 #' of each timeseries before training.
 #'
 #' @return fit_controls

@@ -70,7 +70,7 @@ is.named.vector <- function(x) {
 
 .check_controls_with_function <- function(controls, controls_function) {
   names_controls <- names(controls)
-  params_function <- methods::formalArgs(controls_function)
+  params_function <- formalArgs(controls_function)
   if (!setequal(names_controls, params_function)) {
     control_name <- as.character(as.list(match.call())[["controls"]])
     function_name <- as.character(as.list(match.call())[["controls_function"]])
@@ -80,21 +80,6 @@ is.named.vector <- function(x) {
 
 
 # reticulate/Python ----
-
-.import_python_module <- function(module_name) {
-  path1 <- Sys.getenv("RETICULATE_PYTHON")
-  path2 <- Sys.getenv("RETICULATE_PYTHON_ENV")
-  if (path1 == "" && path2 == "") {
-    stop(
-      "\n\nNone of RETICULATE_PYTHON or RETICULATE_PYTHON_ENV is defined.\n",
-      "If you want to use a Python library, you need to define one of these.\n",
-      "(see: https://rstudio.github.io/reticulate/articles/versions.html)\n",
-      "\nDO NOT FORGET TO RESTART THE R SESSION !\n"
-    )
-  }
-  return(reticulate::import(module_name))
-}
-
 
 .set_r_attr_to_py_obj <- function(py_obj, name, r_value) {
   # Specific R objects (like formulas…) will be stored as PyCapsule
@@ -144,6 +129,7 @@ R_CLASS <- "R_class"
   reticulate::py_del_attr(model, R_CLASS)
   return(model)
 }
+
 
 # covariance matrix ----
 

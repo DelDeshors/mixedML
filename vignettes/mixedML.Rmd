@@ -198,6 +198,13 @@ new_model_reservoir <- update(model_reservoir, data = new_data, maxiter = new_ma
 The following functions are common to all fitted MixedML models.
 
 
+## `summary`
+
+```{r}
+summary(model_reservoir)
+```
+
+
 ## `predict`
 
 

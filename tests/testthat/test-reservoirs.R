@@ -14,6 +14,7 @@ time <- "time"
 
 .pipeline <- function() {
   model <- .get_test_model()
+  summary_fixed_model(model)
   model <- fit_fixed_model(model, data_, fixed_spec, subject)
   stopifnot(inherits(model, "reservoir_ensemble.JoblibReservoirEnsemble"))
   pred <- predict_fixed_model(model, data_, fixed_spec, subject)

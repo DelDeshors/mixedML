@@ -57,6 +57,7 @@ training_with_abort <- function() {
     ),
     fit_controls = fit_ctrls(warmup = 1)
   )
+  summary(mixed_ml_model)
   return(mixed_ml_model)
 }
 

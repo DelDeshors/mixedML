@@ -4,27 +4,26 @@ Title: Implementing Machine Learning models in the mixed effect modeling
 Version: 0.1.0
 Authors@R:
     person("François", "Plessier", , "francois.plessier@gmail.com", role = c("aut", "cre"))
-Description: Modeling complex mixed effects with a hybrid approach (machine learning models + LCMM package).
+Description: Modeling complex mixed effects with a hybrid approach
+    (machine learning models + LCMM package).
 License: MIT + file LICENSE
 Depends:
     R (>= 3.5)
 Imports:
-    lcmm,
-    reticulate,
-    rlang,
-    methods,
-    stats,
-    ggplot2,
-    foreach,
     doFuture,
+    foreach,
     future,
-    patchwork
+    ggplot2,
+    lcmm,
+    methods,
+    patchwork,
+    reticulate,
+    stats
 Suggests:
     devtools,
     knitr,
     rmarkdown,
-    testthat (>= 3.0.0),
-    usethis (>= 3.1.0)
+    testthat (>= 3.0.0)
 VignetteBuilder:
     knitr
 Config/testthat/edition: 3

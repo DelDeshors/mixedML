@@ -2,7 +2,7 @@
 % Please edit documentation in R/mixedml.reservoir.R
 \name{reservoir_mixedml}
 \alias{reservoir_mixedml}
-\title{MixedML model with Reservoir Computing}
+\title{Estimation of a mixedML model using Reservoir Computing}
 \usage{
 reservoir_mixedml(
   fixed_spec,
@@ -51,8 +51,8 @@ The default use the date at start in the format "mixedML-\%y\%m\%d-\%H\%M\%S"
 fitted MixedML model (best iteration)
 }
 \description{
-Generate and fit a MixedML model using an Ensemble of Echo State Networks (Reservoir+Ridge Regression)
-to fit the fixed effects.
+The function fits a MixedML model which combines an Ensemble of Echo State Networks (Reservoir+Ridge Regression)
+for the population part (fixed effects) and a linear mixed model for the individual part (random effects)
 }
 \examples{
 data_train <- data_mixedml[data_mixedml$ID < 9, ]

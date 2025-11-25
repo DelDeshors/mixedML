@@ -1,3 +1,18 @@
+---
+title: "Working with Python"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth : 3
+    number_sections: true
+vignette: >
+  %\VignetteIndexEntry{Working with Python}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+
 # Working with Python
 
 The `reticulate` package is used to extend the choice of ML models to the ones available in Python packages.

@@ -8,11 +8,12 @@
   - [4.3 Example](#43-example)
 - [5 Model attributes](#5-model-attributes)
 - [6 Post-fit functions](#6-post-fit-functions)
-  - [6.1 `predict`](#61-predict)
-  - [6.2 `plot_convergence`](#62-plot_convergence)
-  - [6.3 `plot_prediction_check`](#63-plot_prediction_check)
-  - [6.4 `save_mixedml`](#64-save_mixedml)
-  - [6.5 `load_mixedml`](#65-load_mixedml)
+  - [6.1 `summary`](#61-summary)
+  - [6.2 `predict`](#62-predict)
+  - [6.3 `plot_convergence`](#63-plot_convergence)
+  - [6.4 `plot_prediction_check`](#64-plot_prediction_check)
+  - [6.5 `save_mixedml`](#65-save_mixedml)
+  - [6.6 `load_mixedml`](#66-load_mixedml)
 - [7 Remark on logging](#7-remark-on-logging)
 - [8 Working with Python](#8-working-with-python)
   - [8.1 Let `reticulate` handles the
@@ -499,7 +500,7 @@ model_reservoir$random_model
 ``` r
 # (this model uses reticulate so it not very convenient as an example…)
 model_reservoir$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7a7788cdbd40>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x72a825a59bd0>
 ```
 
 Also a `call` attribute exists, meaning one can trained the model with
@@ -513,7 +514,31 @@ new_model_reservoir <- update(model_reservoir, data = new_data, maxiter = new_ma
 
 The following functions are common to all fitted MixedML models.
 
-## 6.1 `predict`
+## 6.1 `summary`
+
+``` r
+summary(model_reservoir)
+#>                   Length Class      Mode       
+#> data               9     data.frame list       
+#> data_val           9     data.frame list       
+#> subject            1     -none-     character  
+#> time               1     -none-     character  
+#> fixed_spec         3     formula    call       
+#> random_spec        2     formula    call       
+#> random_model      32     hlme       list       
+#> mse_train          1     -none-     numeric    
+#> mse_val            1     -none-     numeric    
+#> loglik_train       1     -none-     numeric    
+#> loglik_val         1     -none-     numeric    
+#> mse_train_list    31     -none-     numeric    
+#> mse_val_list      31     -none-     numeric    
+#> loglik_train_list 31     -none-     numeric    
+#> loglik_val_list   31     -none-     numeric    
+#> call              12     -none-     call       
+#> fixed_model        1     reservoir  environment
+```
+
+## 6.2 `predict`
 
 ``` r
 predict(model = model_reservoir, data = data_mixedml, all_info_hlme_prediction = FALSE, nproc_hlme_past = 1)
@@ -527,23 +552,23 @@ predict(model = model_reservoir, data = data_mixedml, all_info_hlme_prediction =
 #> 198.5 200.2 215.5 207.0    NA  75.7  77.6  80.6  79.2
 ```
 
-## 6.2 `plot_convergence`
+## 6.3 `plot_convergence`
 
 ``` r
 plot_convergence(model = model_reservoir, ylog = TRUE)
 ```
 
-<img src="man/figures/README-unnamed-chunk-14-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-15-1.png" width="100%" />
 
-## 6.3 `plot_prediction_check`
+## 6.4 `plot_prediction_check`
 
 ``` r
 plot_prediction_check(model = model_reservoir, subject_nb_or_list = c(1, 2, 3, 4, 5), ncols = 2, na.rm = TRUE)
 ```
 
-<img src="man/figures/README-unnamed-chunk-15-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-16-1.png" width="100%" />
 
-## 6.4 `save_mixedml`
+## 6.5 `save_mixedml`
 
 This function is used to save a mixedML model. It is **mandatory** when
 using a model based on a Python package, since we need to save both R
@@ -553,7 +578,7 @@ and Python objects.
 save_mixedml(model_reservoir, mixedml_model_rds = "model_reservoir.Rds")
 ```
 
-## 6.5 `load_mixedml`
+## 6.6 `load_mixedml`
 
 This function is used to load a mixedML model. It is **mandatory** when
 using a model based on a Python package, since we need to load both R
@@ -565,7 +590,7 @@ mixedml_model <- load_mixedml("model_reservoir.Rds")
 
 ``` r
 mixedml_model$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7a7788663920>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x72a825a58f50>
 ```
 
 ``` r

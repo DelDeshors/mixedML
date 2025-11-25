@@ -12,13 +12,19 @@
 
 fit_fixed_model <- function(model, data, fixed_spec, subject) {
   UseMethod("fit_fixed_model")
-  return("Will not be executed")
+  # Will not be executed"
 }
 
 predict_fixed_model <- function(model, data, fixed_spec, subject) {
   UseMethod("predict_fixed_model")
-  return("Will not be executed")
+  # Will not be executed"
 }
+
+summary_fixed_model <- function(model) {
+  UseMethod("summary_fixed_model")
+  # Will not be executed"
+}
+
 
 # check methods ----
 # these functions stop with an error message if the checks fail

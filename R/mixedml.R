@@ -184,6 +184,31 @@ aborting_ctrls <- function(mse_value = Inf, check_iter = Inf) {
 }
 
 
+# summary ----
+
+summary.MixedML_Model <- function(model) {
+  .test_is_midexml(model)
+  cat(" == MixedML model ==", "\n")
+  cat("  Type of the fixed effect model:", class(model$fixed_model)[1], "\n")
+  cat("  Number of iterations:", length(model$mse_train_list), "\n")
+  iter <- match(model$mse_train, model$mse_train_list)
+  cat("  Best iteration:", iter, "\n")
+  cat("    MSE-train:", model$mse_train, "\n")
+  if (!is.null(model$mse_val)) {
+    cat("    MSE-val:", model$mse_val, "\n")
+  }
+  cat("    loglik-train:", model$loglik_train, "\n")
+  if (!is.null(model$loglik_val)) {
+    cat("    loglik-val:", model$loglik_val, "\n")
+  }
+  #
+  summary_fixed_model(model$fixed_model)
+  cat(" == Random HLME model ==")
+  summary(model$random_model)
+  return()
+}
+
+
 # model backups ----
 
 .joblib_from_rds <- function(mixedml_model_rds) {

@@ -5,8 +5,6 @@ output:
     toc: true
     toc_depth : 3
     number_sections: true
-    includes:
-    css: vignette-style.css
 vignette: >
   %\VignetteIndexEntry{Presentation of the mixedML package}
   %\VignetteEngine{knitr::rmarkdown}
@@ -198,6 +196,13 @@ new_model_reservoir <- update(model_reservoir, data = new_data, maxiter = new_ma
 # Post-fit functions
 
 The following functions are common to all fitted MixedML models.
+
+
+## `summary`
+
+```{r}
+summary(model_reservoir)
+```
 
 
 ## `predict`

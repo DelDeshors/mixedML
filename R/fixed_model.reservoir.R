@@ -103,6 +103,36 @@ fit_ctrls <- function(warmup = 0) {
   return(model)
 }
 
+# summary
+
+#' @method summary_fixed_model reservoir
+#' @noRd
+summary_fixed_model.reservoir <- function(model) {
+  cat("\n === Reservoir Computing model (ReservoirPy) ===\n")
+  cat("ESN ensemble data:\n")
+  cat("  Number of reservoirs in the ensemble:", length(model$model_list), "\n")
+  cat("  Aggregator:", model$aggregator, "\n")
+  cat("  Data scaler:", model$scaler, "\n")
+
+  esn <- model$model_list[[1]]
+  cat("ESN data:\n")
+  cat("  Feedback connection:", esn$has_feedback, "\n")
+  stopifnot(length(esn$edges) == 1 || length(esn$edges) == 2)
+  cat("  Input-to-Readout:", length(esn$edges) == 2, "\n")
+
+  rsrvr <- esn$params$reservoir
+  cat("Reservoirs data:\n")
+  cat("  Number of reservoir units:", rsrvr$hypers$units, "\n")
+  cat("  Leak rate:", rsrvr$hypers$lr, "\n")
+  cat("  Spectral radius:", rsrvr$hypers$sr, "\n")
+  cat("  Input Scaling:", rsrvr$hypers$input_scaling, "\n")
+
+  rout <- esn$params$readout
+  cat("Readout data:\n")
+  cat("  Ridge regression parameter:", rout$hypers$ridge, "\n")
+  return(invisible())
+}
+
 
 # fitting/training ----
 

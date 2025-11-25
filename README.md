@@ -1,32 +1,28 @@
 
 - [1 Introduction](#1-introduction)
 - [2 Method](#2-method)
-- [3 Working with Python](#3-working-with-python)
-  - [3.1 Installation of the
-    libraries](#31-installation-of-the-libraries)
-  - [3.2 Setup of `reticulate` environment
-    variables](#32-setup-of-reticulate-environment-variables)
-  - [3.3 Note to devs](#33-note-to-devs)
-- [4 Example dataset](#4-example-dataset)
-- [5 Main/fit functions](#5-mainfit-functions)
-  - [5.1 Formalism](#51-formalism)
-  - [5.2 Arguments](#52-arguments)
-  - [5.3 Example](#53-example)
-- [6 Model attributes](#6-model-attributes)
-- [7 Post-fit functions](#7-post-fit-functions)
-  - [7.1 `predict`](#71-predict)
-  - [7.2 `plot_convergence`](#72-plot_convergence)
-  - [7.3 `plot_prediction_check`](#73-plot_prediction_check)
-  - [7.4 `save_mixedml`](#74-save_mixedml)
-  - [7.5 `load_mixedml`](#75-load_mixedml)
-- [8 Remark on logging](#8-remark-on-logging)
-
-<!-- README.md is generated from README.Rmd. Please edit that file -->
-
-<!-- badges: start -->
-
-[![R-CMD-check](https://github.com/FrankwaP/mixedML/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/FrankwaP/mixedML/actions/workflows/R-CMD-check.yaml)
-<!-- badges: end -->
+- [3 Example dataset](#3-example-dataset)
+- [4 Main/fit functions](#4-mainfit-functions)
+  - [4.1 Formalism](#41-formalism)
+  - [4.2 Arguments](#42-arguments)
+  - [4.3 Example](#43-example)
+- [5 Model attributes](#5-model-attributes)
+- [6 Post-fit functions](#6-post-fit-functions)
+  - [6.1 `predict`](#61-predict)
+  - [6.2 `plot_convergence`](#62-plot_convergence)
+  - [6.3 `plot_prediction_check`](#63-plot_prediction_check)
+  - [6.4 `save_mixedml`](#64-save_mixedml)
+  - [6.5 `load_mixedml`](#65-load_mixedml)
+- [7 Remark on logging](#7-remark-on-logging)
+- [8 Working with Python](#8-working-with-python)
+  - [8.1 Let `reticulate` handles the
+    installation](#81-let-reticulate-handles-the-installation)
+  - [8.2 Use `reticulate` with a user controlled
+    environement](#82-use-reticulate-with-a-user-controlled-environement)
+    - [8.2.1 Installation](#821-installation)
+    - [8.2.2 Setup of the `RETICULATE_PYTHON_ENV` environment
+      variable](#822-setup-of-the-reticulate_python_env-environment-variable)
+  - [8.3 Note to devs](#83-note-to-devs)
 
 # 1 Introduction
 
@@ -108,61 +104,7 @@ effects):
 This method works with any kind of model, so far models coded in R and
 Python acn be easily implemented.
 
-# 3 Working with Python
-
-The `reticulate` package is used to extend the choice of ML model to the
-one available in Python packages.
-
-## 3.1 Installation of the libraries
-
-One must of course install the necessary Python packages before running
-the corresponding models:
-
-- the `requirements.txt` lists the packages needed to run all the ML
-  models.
-- the `requirements-dev.txt` lists the packages needed for developpers.
-
-The recommended practice is to use a specific environments. Tools like
-`venv`, `miniforge` or `uv` can be used for that purpose.
-
-## 3.2 Setup of `reticulate` environment variables
-
-Before using `reticulate` it is necessary to set up the
-RETICULATE_PYTHON or the RETICULATE_PYTHON_ENV environment variable, as
-explained in the `reticulate`
-[documentation](https://rstudio.github.io/reticulate/articles/versions.html).
-
-To define such environment variable, one can use a R command. For
-example:
-
-``` r
-# if one wants to use the Python executable path (Windows example)
-Sys.setenv(RETICULATE_PYTHON = "%HOMEPATH%/python3.13/bin/python.exe")
-
-# if one wants to use a Python environment (Linux/OSX example)
-Sys.setenv(RETICULATE_PYTHON_ENV = "~/miniforge3/envs/environment_name/")
-```
-
-Such command can be written in the `.Rprofile` of a project, to be
-executed automatically when this project is loaded. This allows
-different projects to use different variables.
-
-**Please note** that if `reticulate` has already been called, then one
-must restart the R session after changing these variables.
-
-## 3.3 Note to devs
-
-Specific helpers are available in the `R/utils.R` files.
-
-It is important to make sure that the R object are propperly transfered
-to Python, with the expected classes. See [Type
-Conversions](https://cran.r-project.org/web/packages/reticulate/vignettes/calling_python.html)
-in `reticulate` documentation. One tricky exemple: a user will enter `1`
-as an integer, but this is actully a `numeric` in R, which will become a
-`float` in Python. So if an `int` is expected on Python side, one needs
-to use `as.integer`.
-
-# 4 Example dataset
+# 3 Example dataset
 
 The dataset `data_mixedml` is proposed. It is generated using the
 `R/data_gen.R` file.
@@ -226,9 +168,9 @@ data_mixedml
 #> 41 10    4 10.19 100.1  0 102.0 -21.93  80.2       80.1
 ```
 
-# 5 Main/fit functions
+# 4 Main/fit functions
 
-## 5.1 Formalism
+## 4.1 Formalism
 
 The MixedML models are obtained using specific functions which have for
 signature:
@@ -257,7 +199,7 @@ effects. As an example, the Reservoir Computing model is named
 Using a dedicated function allows to benefit from the code-completion
 since every arguments is explicitely specified (no optional arguments).
 
-## 5.2 Arguments
+## 4.2 Arguments
 
 The `fixed_spec`, `random_spec`, `cor`, `data`, `subject` and `time` are
 used by both sub-models and are taken from the `hlme` function which can
@@ -269,7 +211,7 @@ correspond to the control names. That is, the `some_name_ctrls(…)`
 function is used to define `some_name_controls` controls. Each control
 has its specific help.
 
-## 5.3 Example
+## 4.3 Example
 
 Here is an example using the `reservoir_mixedml` function (here is the
 [corresponding vignette](mixedML_reservoir.html)):
@@ -516,7 +458,7 @@ model_reservoir <- reservoir_mixedml(
 
 The resulting model will be used in the remaining sections.
 
-# 6 Model attributes
+# 5 Model attributes
 
 Each sub-models are accessible from the fitted MixedML model:
 
@@ -557,7 +499,7 @@ model_reservoir$random_model
 ``` r
 # (this model uses reticulate so it not very convenient as an example…)
 model_reservoir$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7571640e2850>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7a7788cdbd40>
 ```
 
 Also a `call` attribute exists, meaning one can trained the model with
@@ -567,11 +509,11 @@ new inputs using `update` command:
 new_model_reservoir <- update(model_reservoir, data = new_data, maxiter = new_maxiter)
 ```
 
-# 7 Post-fit functions
+# 6 Post-fit functions
 
 The following functions are common to all fitted MixedML models.
 
-## 7.1 `predict`
+## 6.1 `predict`
 
 ``` r
 predict(model = model_reservoir, data = data_mixedml, all_info_hlme_prediction = FALSE, nproc_hlme_past = 1)
@@ -585,23 +527,23 @@ predict(model = model_reservoir, data = data_mixedml, all_info_hlme_prediction =
 #> 198.5 200.2 215.5 207.0    NA  75.7  77.6  80.6  79.2
 ```
 
-## 7.2 `plot_convergence`
+## 6.2 `plot_convergence`
 
 ``` r
 plot_convergence(model = model_reservoir, ylog = TRUE)
 ```
 
-<img src="man/figures/README-unnamed-chunk-13-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-14-1.png" width="100%" />
 
-## 7.3 `plot_prediction_check`
+## 6.3 `plot_prediction_check`
 
 ``` r
 plot_prediction_check(model = model_reservoir, subject_nb_or_list = c(1, 2, 3, 4, 5), ncols = 2, na.rm = TRUE)
 ```
 
-<img src="man/figures/README-unnamed-chunk-14-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-15-1.png" width="100%" />
 
-## 7.4 `save_mixedml`
+## 6.4 `save_mixedml`
 
 This function is used to save a mixedML model. It is **mandatory** when
 using a model based on a Python package, since we need to save both R
@@ -611,7 +553,7 @@ and Python objects.
 save_mixedml(model_reservoir, mixedml_model_rds = "model_reservoir.Rds")
 ```
 
-## 7.5 `load_mixedml`
+## 6.5 `load_mixedml`
 
 This function is used to load a mixedML model. It is **mandatory** when
 using a model based on a Python package, since we need to load both R
@@ -623,7 +565,7 @@ mixedml_model <- load_mixedml("model_reservoir.Rds")
 
 ``` r
 mixedml_model$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7571640e2e90>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7a7788663920>
 ```
 
 ``` r
@@ -660,7 +602,7 @@ mixedml_model$random_model
 #> 
 ```
 
-# 8 Remark on logging
+# 7 Remark on logging
 
 The use of reticulate makes it cumbersome to implement logging in the
 package. Since the solutions found involve preventing the use of Rstudio
@@ -671,3 +613,87 @@ and stderr to a log file:
 ``` bash
 Rscript name_of_script.R > log_file.log 2>&1
 ```
+
+# 8 Working with Python
+
+The `reticulate` package is used to extend the choice of ML models to
+the ones available in Python packages.
+
+One can either:
+
+- let `reticulate` create a specific environment,
+- use `reticulate` with a user controlled environment.
+
+**Notes to developers:**
+
+To declare the necessary libraries to `reticulate`, the `py_require`
+command is used. Its documentation can be found
+[here](https://pkgs.rstudio.com/reticulate/reference/py_require.html).
+
+`mixedML` reads the `requirements.txt` file (standard for Python
+installation) to generate the corresponding `py_require` commands. So in
+order to add new dependencies, the `requirements.txt` file is the only
+file to change.
+
+This file can be found in the `inst/python` folder, along a
+`requirements-dev.txt` that defines the requirements… for the
+developers.
+
+## 8.1 Let `reticulate` handles the installation
+
+Nothing special is needed…
+
+In this case `reticulate` will create an “ephemeral environments”, that
+will be stored in a cache folder on your computer (as an example, on my
+Linux computer, the folder is `.cache/R/reticulate/uv/cache/`).
+
+## 8.2 Use `reticulate` with a user controlled environement
+
+In this case one needs to:
+
+1.  install the require libraries,
+2.  set up an environment variable to tell `reticulate` where to find
+    the libraries.
+
+### 8.2.1 Installation
+
+A `venv` or `conda` environment can be used. One must install the
+necessary Python packages defined in :
+
+- the `inst/python/requirements.txt` lists the packages needed to run
+  all the ML models.
+- the `inst/python/requirements-dev.txt` lists the packages needed for
+  developers.
+
+### 8.2.2 Setup of the `RETICULATE_PYTHON_ENV` environment variable
+
+Before using `reticulate` it is necessary to set up either the
+`RETICULATE_PYTHON` or the `RETICULATE_PYTHON_ENV` environment variable,
+as explained in the `reticulate`
+[documentation](https://rstudio.github.io/reticulate/articles/versions.html).
+
+To define such environment variable, one can use a R command. For
+example:
+
+``` r
+Sys.setenv(RETICULATE_PYTHON_ENV = "name of the environement")
+```
+
+A **convenient solution** is to write such command in the `.Rprofile`
+file of a project, to be executed automatically when this project is
+loaded. This allows different projects to use different variables.
+
+**Please note** that if `reticulate` has already been called, then one
+must restart the R session after changing these variables.
+
+## 8.3 Note to devs
+
+Specific helpers are available in the `R/utils.R` files.
+
+It is important to make sure that the R object are properly transfered
+to Python, with the expected classes. See [Type
+Conversions](https://cran.r-project.org/web/packages/reticulate/vignettes/calling_python.html)
+in `reticulate` documentation. One tricky example: a user will enter `1`
+as an integer, but this is actually a `numeric` in R, which will become
+a `float` in Python. So if an `int` is expected on Python side, one
+needs to use `as.integer`.

@@ -90,53 +90,6 @@ while not converged:
 This method works with any kind of model, so far models coded in R and Python acn be easily implemented.
 
 
-# Working with Python
-
-The `reticulate` package is used to extend the choice of ML model to the one available in Python packages.
-
-## Installation of the libraries
-
-One must of course install the necessary Python packages before running the corresponding models:
-
-- the `requirements.txt` lists the packages needed to run all the ML models.
-- the `requirements-dev.txt` lists the packages needed for developpers.
-
-The recommended practice is to use a specific environments. Tools like `venv`, `miniforge` or `uv` can be used for that
-purpose.
-
-## Setup of `reticulate`  environment variables
-
-Before using `reticulate` it is necessary to set up the RETICULATE_PYTHON or the RETICULATE_PYTHON_ENV environment
-variable, as explained in the `reticulate` [documentation](https://rstudio.github.io/reticulate/articles/versions.html).
-
-To define such environment variable, one can use a R command. For example:
-
-```R
-# if one wants to use the Python executable path (Windows example)
-Sys.setenv(RETICULATE_PYTHON = "%HOMEPATH%/python3.13/bin/python.exe")
-
-# if one wants to use a Python environment (Linux/OSX example)
-Sys.setenv(RETICULATE_PYTHON_ENV = "~/miniforge3/envs/environment_name/")
-```
-
-Such command can be written in the `.Rprofile` of a project, to be executed automatically when this project is loaded.
-This allows different projects to use different variables.
-
-
-**Please note** that if `reticulate` has already been called, then one must restart the R session after changing these
-variables.
-
-## Note to devs
-
-Specific helpers are available in the `R/utils.R` files.
-
-It is important to make sure that the R object are propperly transfered to Python, with the expected classes.
-See [Type Conversions](https://cran.r-project.org/web/packages/reticulate/vignettes/calling_python.html)
-in `reticulate` documentation.
-One tricky exemple: a user will enter `1` as an integer, but this is actully a `numeric` in R,
-which will become a `float` in Python. So if an `int` is expected on Python side, one needs to use `as.integer`.
-
-
 # Example dataset
 
 The dataset `data_mixedml` is proposed. It is generated using the `R/data_gen.R` file.

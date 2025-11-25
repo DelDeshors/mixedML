@@ -1,0 +1,72 @@
+# Working with Python
+
+The `reticulate` package is used to extend the choice of ML models to the ones available in Python packages.
+
+One can either:
+
+- let `reticulate` create a specific environment,
+- use `reticulate` with a user controlled environment.
+
+
+**Notes to developers:**
+
+To declare the necessary libraries to `reticulate`, the `py_require` command is used. Its documentation can be found
+[here](https://pkgs.rstudio.com/reticulate/reference/py_require.html).
+
+`mixedML` reads the `requirements.txt` file (standard for Python installation) to generate the corresponding
+`py_require` commands. So in order to add new dependencies, the `requirements.txt` file is the only file to change.
+
+This file can be found in the `inst/python` folder, along a `requirements-dev.txt` that defines the requirements…
+for the developers.
+
+
+## Let `reticulate` handles the installation
+
+Nothing special is needed…
+
+In this case `reticulate` will create an "ephemeral environments", that will be stored in a cache folder on your
+computer (as an example, on my Linux computer, the folder is `.cache/R/reticulate/uv/cache/`).
+
+## Use `reticulate` with a user controlled environement
+
+In this case one needs to:
+
+1. install the require libraries,
+2. set up an environment variable to tell `reticulate` where to find the libraries.
+
+
+### Installation
+
+A `venv` or `conda` environment can be used. One must install the necessary Python packages defined in :
+
+- the `inst/python/requirements.txt` lists the packages needed to run all the ML models.
+- the `inst/python/requirements-dev.txt` lists the packages needed for developers.
+
+
+### Setup of the `RETICULATE_PYTHON_ENV` environment variable
+
+Before using `reticulate` it is necessary to set up either the `RETICULATE_PYTHON` or the `RETICULATE_PYTHON_ENV`
+environment variable, as explained in the `reticulate`
+[documentation](https://rstudio.github.io/reticulate/articles/versions.html).
+
+To define such environment variable, one can use a R command. For example:
+
+```R
+Sys.setenv(RETICULATE_PYTHON_ENV = "name of the environement")
+```
+
+A **convenient solution** is to write such command in the `.Rprofile` file of a project, to be executed automatically
+when this project is loaded. This allows different projects to use different variables.
+
+**Please note** that if `reticulate` has already been called, then one must restart the R session after changing these
+variables.
+
+## Note to devs
+
+Specific helpers are available in the `R/utils.R` files.
+
+It is important to make sure that the R object are properly transfered to Python, with the expected classes.
+See [Type Conversions](https://cran.r-project.org/web/packages/reticulate/vignettes/calling_python.html)
+in `reticulate` documentation.
+One tricky example: a user will enter `1` as an integer, but this is actually a `numeric` in R,
+which will become a `float` in Python. So if an `int` is expected on Python side, one needs to use `as.integer`.

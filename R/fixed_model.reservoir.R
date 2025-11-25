@@ -87,7 +87,7 @@ fit_ctrls <- function(warmup = 0) {
 
 .initiate_esn <- function(esn_controls, ensemble_controls, fit_controls) {
   .test_initiate_esn(esn_controls, ensemble_controls, fit_controls)
-  retipy <- .import_python_module("reservoir_ensemble")
+  retipy <- reticulate::import("reservoir_ensemble")
   # enforcing "stateful=TRUE" and "reset=TRUE"
   enforcement <- list(stateful = TRUE, reset = TRUE)
   fit_controls <- c(fit_controls, enforcement)

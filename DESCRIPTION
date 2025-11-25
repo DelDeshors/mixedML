@@ -17,7 +17,7 @@ Imports:
     lcmm,
     methods,
     patchwork,
-    reticulate,
+    reticulate (>= 1.44.1),
     stats
 Suggests:
     devtools,

@@ -369,7 +369,8 @@ plot_prediction_check <- function(model, subject_nb_or_list, ncols = 2) {
   #
   subject <- model$subject
   time <- model$time
-  target <- .get_y_label(model$fixed_spec)
+  x_labels <- union(.get_x_labels(model$fixed_spec), .get_x_labels(model$random_spec))
+  y_label <- .get_y_label(model$fixed_spec)
   #
   if (length(subject_nb_or_list) == 1) {
     subject_nb_or_list <- sample(unique(model$data[[subject]]), subject_nb_or_list)
@@ -379,7 +380,6 @@ plot_prediction_check <- function(model, subject_nb_or_list, ncols = 2) {
   }
   #
   data_type <- "data_type" # "random" name
-  linetype <- "linetype" #  ggplot parameter
   #
   dtype_name <- "true"
   ltype <- "solid"
@@ -388,7 +388,7 @@ plot_prediction_check <- function(model, subject_nb_or_list, ncols = 2) {
     data_tgt <- rbind(data_tgt, model$data_val)
   }
   data_tgt[[data_type]] <- dtype_name
-  data_tgt[[linetype]] <- ltype
+  data_tgt[["linetype"]] <- ltype
   data_tgt <- data_tgt[data_tgt[[subject]] %in% subject_nb_or_list, ]
   data_plot <- data_tgt
   #
@@ -396,40 +396,55 @@ plot_prediction_check <- function(model, subject_nb_or_list, ncols = 2) {
   ltype <- "blank"
   data_pred <- data_tgt
   data_pred[[data_type]] <- dtype_name
-  data_pred[[linetype]] <- ltype
-  data_pred[[target]] <- predict(model, data_pred, all_info_hlme_prediction = TRUE)
+  data_pred[["linetype"]] <- ltype
+  data_pred[[y_label]] <- predict(model, data_pred, all_info_hlme_prediction = TRUE)
   data_plot <- rbind(data_plot, data_pred)
   #
   dtype_name <- "pred. past"
   ltype <- "blank"
   data_pred <- data_tgt
   data_pred[[data_type]] <- dtype_name
-  data_pred[[linetype]] <- ltype
-  data_pred[[target]] <- predict(model, data_pred, all_info_hlme_prediction = FALSE)
+  data_pred[["linetype"]] <- ltype
+  data_pred[[y_label]] <- predict(model, data_pred, all_info_hlme_prediction = FALSE)
   data_plot <- rbind(data_plot, data_pred)
   #
-  final_plot <- NULL
+  data_plot <- data_plot[complete.cases(data_plot[x_labels]), ]
+  #
+  ind_tmin <- aggregate(data_plot[[time]], by = list(data_plot[[subject]]), FUN = function(x) min(x, na.rm = TRUE))
+  ind_tmax <- aggregate(data_plot[[time]], by = list(data_plot[[subject]]), FUN = function(x) max(x, na.rm = TRUE))
+  tmin <- min(ind_tmin$x)
+  tmax <- max(ind_tmax$x)
+  #
+  ind_ymin <- aggregate(data_plot[[y_label]], by = list(data_plot[[subject]]), FUN = function(x) min(x, na.rm = TRUE))
+  ind_ymax <- aggregate(data_plot[[y_label]], by = list(data_plot[[subject]]), FUN = function(x) max(x, na.rm = TRUE))
+  ind_yspan <- ind_ymax$x - ind_ymin$x
+  span <- max(ind_yspan)
+  #
+  list_plots <- NULL
   for (subj in subject_nb_or_list) {
     data_plot_subj <- data_plot[data_plot[[subject]] == subj, ]
+    ind_ymean <- mean(data_plot_subj[[y_label]], na.rm = TRUE)
     gleg_sub <- guide_legend(title = paste0("ID: ", subj))
     plot <- ggplot(
       data_plot_subj,
       aes(
         x = .data[[time]],
-        y = .data[[target]],
+        y = .data[[y_label]],
         color = .data[[data_type]],
         shape = .data[[data_type]],
-        linetype = .data[[linetype]]
+        linetype = .data[["linetype"]]
       )
     ) +
       geom_point(size = 3, na.rm = TRUE) +
       geom_line(na.rm = TRUE) +
       scale_linetype_manual(values = c(solid = "solid", blank = "blank")) +
-      guides(color = gleg_sub, shape = gleg_sub, linetype = "none")
+      guides(color = gleg_sub, shape = gleg_sub, linetype = "none") +
+      xlim(tmin, tmax) +
+      ylim(ind_ymean - span / 2, ind_ymean + span / 2)
 
-    final_plot <- c(final_plot, plot)
+    list_plots <- c(list_plots, plot)
   }
-  return(wrap_plots(final_plot, ncol = ncols))
+  return(wrap_plots(list_plots, ncol = ncols))
 }
 
 

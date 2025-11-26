@@ -315,6 +315,8 @@ get_loglik <- function(model, data) {
 
 # plotting ----
 
+## convergence ----
+
 .plot_train_val_metric <- function(metric_train_list, metric_val_list, metric_name, ylog) {
   stopifnot(is.logical(ylog))
   data_plot <- data.frame(iteration = seq_along(metric_train_list), METRIC = metric_train_list, group = "train")
@@ -351,16 +353,17 @@ plot_convergence <- function(model, ylog_mse = FALSE) {
 }
 
 
+## predictions ----
+
 #' Plot the predictions of a MixedML model (with all or past informations) beside the true/target values
 #'
 #' @param model Trained MixedML model.
 #' @param subject_nb_or_list Number of subjects to plot (randomly selected) or
 #' list of subjects to plot (amongst the train/val dataset).
 #' @param ncols Number of columns for the grid plot. Default: 2
-#' @param na.rm Remove the NA values for the plot (to avoid the corresponding warning messages). Default: TRUE
 #' @return Predictions plot of the model.
 #' @export
-plot_prediction_check <- function(model, subject_nb_or_list, ncols = 2, na.rm = TRUE) {
+plot_prediction_check <- function(model, subject_nb_or_list, ncols = 2) {
   stopifnot(inherits(model, MIXEDML_CLASS))
   stopifnot(is.integer(subject_nb_or_list))
   #
@@ -375,25 +378,33 @@ plot_prediction_check <- function(model, subject_nb_or_list, ncols = 2, na.rm = 
     stopifnot(all(subject_nb_or_list %in% model$data[[subject]]))
   }
   #
-  type <- "type"
-  type_name <- "true"
+  data_type <- "data_type" # "random" name
+  linetype <- "linetype" #  ggplot parameter
+  #
+  dtype_name <- "true"
+  ltype <- "solid"
   data_tgt <- model$data
   if (!is.null(model$data_val)) {
     data_tgt <- rbind(data_tgt, model$data_val)
   }
-  data_tgt[[type]] <- type_name
+  data_tgt[[data_type]] <- dtype_name
+  data_tgt[[linetype]] <- ltype
   data_tgt <- data_tgt[data_tgt[[subject]] %in% subject_nb_or_list, ]
   data_plot <- data_tgt
   #
-  type_name <- "pred. all"
+  dtype_name <- "pred. all"
+  ltype <- "blank"
   data_pred <- data_tgt
-  data_pred[[type]] <- type_name
+  data_pred[[data_type]] <- dtype_name
+  data_pred[[linetype]] <- ltype
   data_pred[[target]] <- predict(model, data_pred, all_info_hlme_prediction = TRUE)
   data_plot <- rbind(data_plot, data_pred)
   #
-  type_name <- "pred. past"
+  dtype_name <- "pred. past"
+  ltype <- "blank"
   data_pred <- data_tgt
-  data_pred[[type]] <- type_name
+  data_pred[[data_type]] <- dtype_name
+  data_pred[[linetype]] <- ltype
   data_pred[[target]] <- predict(model, data_pred, all_info_hlme_prediction = FALSE)
   data_plot <- rbind(data_plot, data_pred)
   #
@@ -403,10 +414,18 @@ plot_prediction_check <- function(model, subject_nb_or_list, ncols = 2, na.rm = 
     gleg_sub <- guide_legend(title = paste0("ID: ", subj))
     plot <- ggplot(
       data_plot_subj,
-      aes(x = .data[[time]], y = .data[[target]], color = .data[[type]], shape = .data[[type]], )
+      aes(
+        x = .data[[time]],
+        y = .data[[target]],
+        color = .data[[data_type]],
+        shape = .data[[data_type]],
+        linetype = .data[[linetype]]
+      )
     ) +
-      geom_point(size = 3, na.rm = na.rm) +
-      guides(color = gleg_sub, shape = gleg_sub)
+      geom_point(size = 3, na.rm = TRUE) +
+      geom_line(na.rm = TRUE) +
+      scale_linetype_manual(values = c(solid = "solid", blank = "blank")) +
+      guides(color = gleg_sub, shape = gleg_sub, linetype = "none")
 
     final_plot <- c(final_plot, plot)
   }

@@ -188,7 +188,7 @@ aborting_ctrls <- function(mse_value = Inf, check_iter = Inf) {
 
 #' @method summary MixedML_Model
 #' @export
-summary.MixedML_Model <- function(model) {
+summary.MixedML_Model <- function(model, ...) {
   .test_is_midexml(model)
   cat("\n\n == MixedML model ==\n")
   cat("  Type of the fixed effect model:", class(model$fixed_model)[1], "\n")

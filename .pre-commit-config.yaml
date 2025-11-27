@@ -155,7 +155,7 @@ repos:
     -   id: rcheck
         stages: [pre-push, post-merge]
         name: rcheck
-        entry: Rscript -e "devtools::check()"
+        entry: Rscript -e "devtools::check(error_on = c('error', 'warning')"
         language: system
         pass_filenames: false
 ci:

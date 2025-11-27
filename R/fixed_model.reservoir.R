@@ -108,7 +108,7 @@ fit_ctrls <- function(warmup = 0) {
 #' @method summary_fixed_model reservoir
 #' @noRd
 summary_fixed_model.reservoir <- function(model) {
-  cat("\n === Reservoir Computing model (ReservoirPy) ===\n")
+  cat("\n\n === Reservoir Computing model (ReservoirPy) ===\n")
   cat("ESN ensemble data:\n")
   cat("  Number of reservoirs in the ensemble:", length(model$model_list), "\n")
   cat("  Aggregator:", model$aggregator, "\n")

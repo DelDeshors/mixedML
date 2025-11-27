@@ -148,11 +148,12 @@ Here is an example using the `reservoir_mixedml` function (here is the [correspo
 
 ```{r}
 data_train <- data_mixedml[data_mixedml$ID < 9, ]
-data_val <- data_mixedml[data_mixedml$ID >= 9, ]
+data_val <- data_mixedml[data_mixedml$ID == 9, ]
+data_test <- data_mixedml[data_mixedml$ID == 10, ]
 
 model_reservoir <- reservoir_mixedml(
   fixed_spec = ym ~ x1 + x2 + x3,
-  random_spec = ~ x1 + x2,
+  random_spec = ~ 1 + x1 + x2,
   data = data_train,
   data_val = data_val,
   subject = "ID",
@@ -205,14 +206,6 @@ summary(model_reservoir)
 ```
 
 
-## `predict`
-
-
-```{r}
-predict(model = model_reservoir, data = data_mixedml, all_info_hlme_prediction = FALSE, nproc_hlme_past = 1)
-```
-
-
 ## `plot_convergence`
 
 ```{r, fig.width=10}
@@ -222,8 +215,59 @@ plot_convergence(model = model_reservoir, ylog = TRUE)
 ## `plot_prediction_check`
 
 
-```{r, fig.width=10, fig.height=10}
-plot_prediction_check(model = model_reservoir, subject_nb_or_list = c(1, 2, 3, 4, 5), ncols = 2, na.rm = TRUE)
+```{r, fig.width=10, fig.height=20}
+plot_predictions_check(model = model_reservoir)
+```
+
+
+
+## `predict`
+
+```{r}
+pred_test_past <- predict(
+  model = model_reservoir,
+  data = data_test,
+  all_info_hlme_prediction = FALSE,
+  nproc_hlme_past = 1
+)
+pred_test_past
+```
+
+
+```{r}
+pred_test_all <- predict(
+  model = model_reservoir,
+  data = data_test,
+  all_info_hlme_prediction = TRUE,
+  nproc_hlme_past = 1
+)
+pred_test_all
+```
+
+
+## `plot_predictions`
+
+```{r}
+hlme_model <- lcmm::hlme(
+  fixed = ym ~ x1 + x2 + x3,
+  random = ~ x1 + x2,
+  data = data_train,
+  subject = "ID",
+  var.time = "time"
+)
+hlme_preds <- lcmm::predictY(hlme_model, newdata = data_test)
+hlme_preds_all <- hlme_preds$pred
+names(hlme_preds_all) <- rownames(hlme_preds$times)
+
+plot_predictions(
+  model = model_reservoir,
+  data_pred = data_test,
+  list_preds = list(
+    mixedml_all_info = pred_test_all,
+    mixedml_past_info = pred_test_past,
+    hlme_all_info = hlme_preds_all
+  )
+)
 ```
 
 

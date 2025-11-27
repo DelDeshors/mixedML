@@ -60,7 +60,7 @@ check_predict_fixed_model <- function(pred, data) {
 # these functions catch errors during fitting/prediction and return NULL in that case
 # the training loop can then handle the NULL value accordingly (e.g., aborting the training loop)
 try_fit_fixed_model <- function(fixed_model, data_fixed, fixed_spec, subject) {
-  fitted_fixed_model <- try(fit_fixed_model(fixed_model, data_fixed, fixed_spec, subject), silent = TRUE)
+  fitted_fixed_model <- try(fit_fixed_model(fixed_model, data_fixed, fixed_spec, subject), silent = FALSE)
   if (inherits(fitted_fixed_model, "try-error")) {
     warning("Training of the the ML model failed: aborting the training loop!")
     return(NULL)
@@ -71,7 +71,7 @@ try_fit_fixed_model <- function(fixed_model, data_fixed, fixed_spec, subject) {
 
 
 try_predict_fixed_model <- function(fixed_model, data_fixed, fixed_spec, subject) {
-  pred_fixed <- try(predict_fixed_model(fixed_model, data_fixed, fixed_spec, subject), silent = TRUE)
+  pred_fixed <- try(predict_fixed_model(fixed_model, data_fixed, fixed_spec, subject), silent = FALSE)
   if (inherits(pred_fixed, "try-error")) {
     warning("Prediction with the ML model failed: aborting the training loop!")
     return(NULL)

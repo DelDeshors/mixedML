@@ -1,5 +1,6 @@
 data_ <- data_mixedml
 fixed_spec <- ym ~ 1 + x1 + x2 + time
+x_labels <- .get_x_labels(fixed_spec)
 subject <- "ID"
 time <- "time"
 
@@ -17,9 +18,15 @@ time <- "time"
   summary_fixed_model(model)
   model <- fit_fixed_model(model, data_, fixed_spec, subject)
   stopifnot(inherits(model, "reservoir_ensemble.JoblibReservoirEnsemble"))
+  #
   pred <- predict_fixed_model(model, data_, fixed_spec, subject)
   expect_vector(pred)
-  x_labels <- .get_x_labels(fixed_spec)
+  stopifnot(nrow(pred) == nrow(data_))
+  stopifnot(sum(is.na(pred)) == sum(!complete.cases(data_[x_labels])))
+  # extra test with a single individual because reservoirpy does not have the same output
+  data_ <- data_[data_[subject] == 1, ]
+  pred <- predict_fixed_model(model, data_, fixed_spec, subject)
+  expect_vector(pred)
   stopifnot(nrow(pred) == nrow(data_))
   stopifnot(sum(is.na(pred)) == sum(!complete.cases(data_[x_labels])))
   return()

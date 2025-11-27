@@ -2,8 +2,9 @@
 
 #' @importFrom lcmm hlme
 #' @importFrom stats complete.cases terms update
-#' @importFrom ggplot2 ggplot aes geom_line geom_point scale_y_log10 .data guides scale_shape_manual guide_legend
+#' @importFrom ggplot2 ggplot aes geom_line geom_point scale_y_log10 .data guides scale_shape_manual
+#' guide_legend ggtitle
 #' @import patchwork
-#' @importFrom patchwork wrap_plots
+#' @importFrom patchwork wrap_plots plot_spacer
 #' @importFrom methods formalArgs
 NULL  # will not work without this line !

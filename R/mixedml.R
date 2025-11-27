@@ -186,9 +186,11 @@ aborting_ctrls <- function(mse_value = Inf, check_iter = Inf) {
 
 # summary ----
 
+#' @method summary MixedML_Model
+#' @export
 summary.MixedML_Model <- function(model) {
   .test_is_midexml(model)
-  cat(" == MixedML model ==", "\n")
+  cat("\n\n == MixedML model ==\n")
   cat("  Type of the fixed effect model:", class(model$fixed_model)[1], "\n")
   cat("  Number of iterations:", length(model$mse_train_list), "\n")
   iter <- match(model$mse_train, model$mse_train_list)
@@ -203,7 +205,7 @@ summary.MixedML_Model <- function(model) {
   }
   #
   summary_fixed_model(model$fixed_model)
-  cat(" == Random HLME model ==")
+  cat("\n\n == Random HLME model ==\n")
   summary(model$random_model)
   return()
 }
@@ -355,83 +357,77 @@ plot_convergence <- function(model, ylog_mse = FALSE) {
 
 ## predictions ----
 
-#' Plot the predictions of a MixedML model (with all or past informations) beside the true/target values
+#' Plot individual predictions beside the corresponding true/target values
 #'
 #' @param model Trained MixedML model.
-#' @param subject_nb_or_list Number of subjects to plot (randomly selected) or
-#' list of subjects to plot (amongst the train/val dataset).
-#' @param ncols Number of columns for the grid plot. Default: 2
-#' @return Predictions plot of the model.
+#' @param data_pred Dataframe used to compute the predictions. It will be used to get the true/target value.
+#' @param list_preds Named list of predictions to plot beside the true/target value. The names will be used in the
+#' legend. Each prediction must be either a named vector or a single column dataframe, whose name/rowname must
+#' correspond to the rownames of data_pred
+#' @param ncols Numbre of columns to use for the grid plot. Default: 2
 #' @export
-plot_prediction_check <- function(model, subject_nb_or_list, ncols = 2) {
+plot_predictions <- function(model, data_pred, list_preds, ncols = 2) {
   stopifnot(inherits(model, MIXEDML_CLASS))
-  stopifnot(is.integer(subject_nb_or_list))
+  stopifnot(is.data.frame(data_pred))
+  stopifnot(is.named.list(list_preds) || is.data.frame(list_preds) && ncols(list_preds) == 1)
+  stopifnot(all(is.named.vector(list_preds)))
+  stopifnot(is.single.integer(ncols))
+  #
+  if (is.data.frame(list_preds)) {
+    new_preds <- list_preds[, 1]
+    names(new_preds) <- rownames(list_preds)
+    list_preds <- new_preds
+  }
   #
   subject <- model$subject
   time <- model$time
   x_labels <- union(.get_x_labels(model$fixed_spec), .get_x_labels(model$random_spec))
   y_label <- .get_y_label(model$fixed_spec)
   #
-  if (length(subject_nb_or_list) == 1) {
-    subject_nb_or_list <- sample(unique(model$data[[subject]]), subject_nb_or_list)
-    message("Subjects selected randomly: use set.seed to change the selection.")
-  } else {
-    stopifnot(all(subject_nb_or_list %in% model$data[[subject]]))
+  pred_type <- "pred_type" # "random" column name
+  #
+  data_tmp <- data_pred
+  data_tmp[[pred_type]] <- "true"
+  data_tmp[["linetype"]] <- "solid"
+  data_plot <- data_tmp
+  #
+  for (i in seq_along(list_preds)) {
+    name_pred <- names(list_preds)[[i]]
+    pred <- list_preds[[i]]
+    data_tmp <- data_pred
+    data_tmp[[pred_type]] <- name_pred
+    data_tmp[["linetype"]] <- "blank"
+    data_tmp[y_label] <- NA
+    data_tmp[names(pred), y_label] <- pred
+    data_plot <- rbind(data_plot, data_tmp)
   }
-  #
-  data_type <- "data_type" # "random" name
-  #
-  dtype_name <- "true"
-  ltype <- "solid"
-  data_tgt <- model$data
-  if (!is.null(model$data_val)) {
-    data_tgt <- rbind(data_tgt, model$data_val)
-  }
-  data_tgt[[data_type]] <- dtype_name
-  data_tgt[["linetype"]] <- ltype
-  data_tgt <- data_tgt[data_tgt[[subject]] %in% subject_nb_or_list, ]
-  data_plot <- data_tgt
-  #
-  dtype_name <- "pred. all"
-  ltype <- "blank"
-  data_pred <- data_tgt
-  data_pred[[data_type]] <- dtype_name
-  data_pred[["linetype"]] <- ltype
-  data_pred[[y_label]] <- predict(model, data_pred, all_info_hlme_prediction = TRUE)
-  data_plot <- rbind(data_plot, data_pred)
-  #
-  dtype_name <- "pred. past"
-  ltype <- "blank"
-  data_pred <- data_tgt
-  data_pred[[data_type]] <- dtype_name
-  data_pred[["linetype"]] <- ltype
-  data_pred[[y_label]] <- predict(model, data_pred, all_info_hlme_prediction = FALSE)
-  data_plot <- rbind(data_plot, data_pred)
   #
   data_plot <- data_plot[complete.cases(data_plot[x_labels]), ]
   #
-  ind_tmin <- aggregate(data_plot[[time]], by = list(data_plot[[subject]]), FUN = function(x) min(x, na.rm = TRUE))
-  ind_tmax <- aggregate(data_plot[[time]], by = list(data_plot[[subject]]), FUN = function(x) max(x, na.rm = TRUE))
-  tmin <- min(ind_tmin$x)
-  tmax <- max(ind_tmax$x)
+  subj_tmin <- aggregate(data_plot[[time]], by = list(data_plot[[subject]]), FUN = function(x) min(x, na.rm = TRUE))
+  subj_tmax <- aggregate(data_plot[[time]], by = list(data_plot[[subject]]), FUN = function(x) max(x, na.rm = TRUE))
+  tmin <- min(subj_tmin$x)
+  tmax <- max(subj_tmax$x)
   #
-  ind_ymin <- aggregate(data_plot[[y_label]], by = list(data_plot[[subject]]), FUN = function(x) min(x, na.rm = TRUE))
-  ind_ymax <- aggregate(data_plot[[y_label]], by = list(data_plot[[subject]]), FUN = function(x) max(x, na.rm = TRUE))
-  ind_yspan <- ind_ymax$x - ind_ymin$x
-  span <- max(ind_yspan)
+  subj_ymin <- aggregate(data_plot[[y_label]], by = list(data_plot[[subject]]), FUN = function(x) min(x, na.rm = TRUE))
+  subj_ymax <- aggregate(data_plot[[y_label]], by = list(data_plot[[subject]]), FUN = function(x) max(x, na.rm = TRUE))
+  subj_yspan <- subj_ymax$x - subj_ymin$x
+  span <- max(subj_yspan)
   #
   list_plots <- NULL
-  for (subj in subject_nb_or_list) {
+  for (subj in unique(data_pred[[subject]])) {
     data_plot_subj <- data_plot[data_plot[[subject]] == subj, ]
-    ind_ymean <- mean(data_plot_subj[[y_label]], na.rm = TRUE)
+    subj_ymin <- min(data_plot_subj[[y_label]], na.rm = TRUE)
+    subj_ymax <- max(data_plot_subj[[y_label]], na.rm = TRUE)
+    subj_center <- (subj_ymin + subj_ymax) / 2
     gleg_sub <- guide_legend(title = paste0("ID: ", subj))
     plot <- ggplot(
       data_plot_subj,
       aes(
         x = .data[[time]],
         y = .data[[y_label]],
-        color = .data[[data_type]],
-        shape = .data[[data_type]],
+        color = .data[[pred_type]],
+        shape = .data[[pred_type]],
         linetype = .data[["linetype"]]
       )
     ) +
@@ -440,9 +436,67 @@ plot_prediction_check <- function(model, subject_nb_or_list, ncols = 2) {
       scale_linetype_manual(values = c(solid = "solid", blank = "blank")) +
       guides(color = gleg_sub, shape = gleg_sub, linetype = "none") +
       xlim(tmin, tmax) +
-      ylim(ind_ymean - span / 2, ind_ymean + span / 2)
+      ylim(subj_center - span / 1.9, subj_center + span / 1.9)
 
     list_plots <- c(list_plots, plot)
+  }
+  return(wrap_plots(list_plots, ncol = ncols))
+}
+
+
+#' Plot the predictions of a MixedML model (with all or past informations) beside the corresponding true/target values.
+#'
+#' @param model Trained MixedML model.
+#' @param subject_list List of subjects to plot (amongst the train/val dataset). If NULL, the predictions of all
+#' individuals will be printed. Default: NULL
+#' @param ncols Number of columns for the grid plot. Default: 2
+#' @return Predictions plot of the model.
+#' @export
+plot_predictions_check <- function(model, subject_list = NULL, ncols = 2) {
+  stopifnot(inherits(model, MIXEDML_CLASS))
+  stopifnot(is.null(subject_list) || is.vector(subject_list) && is.integer(subject_list))
+  stopifnot(is.single.integer(ncols))
+  #
+  subject <- model$subject
+  #
+  if (is.null(subject_list)) {
+    data_ <- rbind(model$data, model$data_val)
+    subject_list <- unique(data_[[subject]])
+  }
+
+  data <- model$data
+  data <- data[data[[subject]] %in% subject_list, ]
+
+  patchwrk <- plot_predictions(
+    model,
+    data,
+    list(
+      preds_all_info = predict(model, data, all_info_hlme_prediction = TRUE),
+      preds_past_info = predict(model, data, all_info_hlme_prediction = FALSE)
+    ),
+    ncols = 2
+  )
+  patchwrk_plots <- as.list(patchwrk)
+  patchwrk_plots[[1]] <- patchwrk_plots[[1]] + ggtitle("Training Set")
+  list_plots <- c(patchwrk_plots)
+  if (!is.null(model$data_val)) {
+    data <- model$data_val
+    data <- data[data[[subject]] %in% subject_list, ]
+    patchwrk <- plot_predictions(
+      model,
+      data,
+      list(
+        preds_all_info = predict(model, data, all_info_hlme_prediction = TRUE),
+        preds_past_info = predict(model, data, all_info_hlme_prediction = FALSE)
+      ),
+      ncols = 2
+    )
+    patchwrk_plots <- as.list(patchwrk)
+    patchwrk_plots[[1]] <- patchwrk_plots[[1]] + ggtitle("Validation Set")
+    if (length(list_plots) %% 2 == 1) {
+      list_plots <- c(list_plots, plot_spacer())
+    }
+    list_plots <- c(list_plots, patchwrk_plots)
   }
   return(wrap_plots(list_plots, ncol = ncols))
 }

@@ -68,6 +68,11 @@ is.named.vector <- function(x) {
   return(is.vector(x) & ((length(x) == 0) | is.character(names(x))))
 }
 
+is.named.list <- function(x) {
+  return(is.list(x) & ((length(x) == 0) | is.character(names(x))))
+}
+
+
 .check_controls_with_function <- function(controls, controls_function) {
   names_controls <- names(controls)
   params_function <- formalArgs(controls_function)

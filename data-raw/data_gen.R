@@ -1,11 +1,3 @@
-#' Synthetic mixed effects dataset
-#'
-#' This dataset is used to test and study the mixedML package
-#' The fixed effects, random effects and corresponding mixed effects (with
-#' and without noise) are given.
-#' NAs are added in the independent variables and the response
-"data_mixedml"
-
 #' @importFrom stats sd
 #' @importFrom stats rnorm
 .generate_data <- function() {

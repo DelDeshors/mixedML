@@ -55,7 +55,7 @@ jobs:
       - uses: r-lib/actions/setup-r@v2
         if: steps.changes.outputs.R == 'true' || env.ACT_SKIP_FILTERS == 'true'
         with:
-          r-version: '3.5.3'
+          r-version: '4.1'
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         if: steps.changes.outputs.R == 'true' || env.ACT_SKIP_FILTERS == 'true'

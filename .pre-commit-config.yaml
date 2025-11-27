@@ -107,14 +107,14 @@ repos:
     -   id: flake8
         stages: [pre-commit]
 # R testing
--   repo: local
-    hooks:
-    -   id: Rtesting
-        name: Rtesting
-        stages: [pre-push, post-merge]
-        entry: Rscript pre-commit-utils/precommit_testthat.R_
-        language: system
-        pass_filenames: false
+#-   repo: local
+#    hooks:
+#    -   id: Rtesting
+#        name: Rtesting
+#        stages: [pre-push, post-merge]
+#        entry: Rscript pre-commit-utils/precommit_testthat.R_
+#        language: system
+#        pass_filenames: false
 # README.md check
 -   repo: local
     hooks:
@@ -132,6 +132,15 @@ repos:
         stages: [pre-push, post-merge]
         name: pytest
         entry: python -m pytest  # python -m changes PYTHONPATH
+        language: system
+        pass_filenames: false
+# R check
+-   repo: local
+    hooks:
+    -   id: rcheck
+        stages: [pre-push, post-merge]
+        name: rcheck
+        entry: Rscript -e "devtools::check()"
         language: system
         pass_filenames: false
 ci:

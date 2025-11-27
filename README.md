@@ -495,9 +495,24 @@ model_reservoir$random_model
 ```
 
 ``` r
-# (this model uses reticulate so it not very convenient as an example…)
 model_reservoir$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x70e812dfe990>
+#> 
+#> 
+#>  === Reservoir Computing model (ReservoirPy) ===
+#> ESN ensemble data:
+#>   Number of reservoirs in the ensemble: 5 
+#>   Aggregator: median 
+#>   Data scaler: standard 
+#> ESN data:
+#>   Feedback connection: FALSE 
+#>   Input-to-Readout: FALSE 
+#> Reservoirs data:
+#>   Number of reservoir units: 20 
+#>   Leak rate: 1 
+#>   Spectral radius: 0.1 
+#>   Input Scaling: 1 
+#> Readout data:
+#>   Ridge regression parameter: 1e-05
 ```
 
 Also a `call` attribute exists, meaning one can trained the model with
@@ -594,7 +609,6 @@ summary(model_reservoir)
 #> 
 #>  * coefficient fixed by the user 
 #> 
-#> NULL
 ```
 
 ## 6.2 `plot_convergence`
@@ -689,7 +703,23 @@ mixedml_model <- load_mixedml("model_reservoir.Rds")
 
 ``` r
 mixedml_model$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x70e812dffed0>
+#> 
+#> 
+#>  === Reservoir Computing model (ReservoirPy) ===
+#> ESN ensemble data:
+#>   Number of reservoirs in the ensemble: 5 
+#>   Aggregator: median 
+#>   Data scaler: standard 
+#> ESN data:
+#>   Feedback connection: FALSE 
+#>   Input-to-Readout: FALSE 
+#> Reservoirs data:
+#>   Number of reservoir units: 20 
+#>   Leak rate: 1 
+#>   Spectral radius: 0.1 
+#>   Input Scaling: 1 
+#> Readout data:
+#>   Ridge regression parameter: 1e-05
 ```
 
 ``` r

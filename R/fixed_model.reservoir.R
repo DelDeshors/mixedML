@@ -133,6 +133,13 @@ summary_fixed_model.reservoir <- function(model) {
   return(invisible())
 }
 
+#' @method print reservoir
+#' @noRd
+#' @export
+print.reservoir <- function(model) {
+  summary_fixed_model.reservoir(model)
+  return(invisible())
+}
 
 # fitting/training ----
 

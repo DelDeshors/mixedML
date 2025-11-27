@@ -207,7 +207,7 @@ summary.MixedML_Model <- function(model) {
   summary_fixed_model(model$fixed_model)
   cat("\n\n == Random HLME model ==\n")
   summary(model$random_model)
-  return()
+  return(invisible())
 }
 
 

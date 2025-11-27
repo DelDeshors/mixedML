@@ -184,7 +184,6 @@ model_reservoir$random_model
 ```
 
 ```{r}
-# (this model uses reticulate so it not very convenient as an example…)
 model_reservoir$fixed_model
 ```
 
@@ -311,9 +310,6 @@ call it from the terminal, redirecting both stdout and stderr to a log file:
 ```bash
 Rscript name_of_script.R > log_file.log 2>&1
 ```
-
-
-
 
 
 

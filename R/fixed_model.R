@@ -20,7 +20,7 @@ predict_fixed_model <- function(model, data, fixed_spec, subject) {
   # Will not be executed"
 }
 
-summary_fixed_model <- function(model) {
+summary_fixed_model <- function(object, ...) {
   UseMethod("summary_fixed_model")
   # Will not be executed"
 }

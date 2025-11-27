@@ -107,7 +107,8 @@ fit_ctrls <- function(warmup = 0) {
 
 #' @method summary_fixed_model reservoir
 #' @noRd
-summary_fixed_model.reservoir <- function(model) {
+summary_fixed_model.reservoir <- function(object, ...) {
+  model <- object
   cat("\n\n === Reservoir Computing model (ReservoirPy) ===\n")
   cat("ESN ensemble data:\n")
   cat("  Number of reservoirs in the ensemble:", length(model$model_list), "\n")
@@ -133,6 +134,13 @@ summary_fixed_model.reservoir <- function(model) {
   return(invisible())
 }
 
+#' @method print reservoir
+#' @noRd
+#' @export
+print.reservoir <- function(x, ...) {
+  summary_fixed_model.reservoir(x)
+  return(invisible())
+}
 
 # fitting/training ----
 

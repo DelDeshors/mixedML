@@ -454,7 +454,7 @@ plot_predictions <- function(model, data_pred, list_preds, ncols = 2) {
 #' @export
 plot_predictions_check <- function(model, subject_list = NULL, ncols = 2) {
   stopifnot(inherits(model, MIXEDML_CLASS))
-  stopifnot(is.null(subject_list) || is.vector(subject_list) && is.integer(subject_list))
+  stopifnot(is.null(subject_list) || is.vector(subject_list) && all(is.integer(subject_list)))
   stopifnot(is.single.integer(ncols))
   #
   subject <- model$subject
@@ -464,24 +464,11 @@ plot_predictions_check <- function(model, subject_list = NULL, ncols = 2) {
     subject_list <- unique(data_[[subject]])
   }
 
+  list_plots <- NULL
+  #
   data <- model$data
   data <- data[data[[subject]] %in% subject_list, ]
-
-  patchwrk <- plot_predictions(
-    model,
-    data,
-    list(
-      preds_all_info = predict(model, data, all_info_hlme_prediction = TRUE),
-      preds_past_info = predict(model, data, all_info_hlme_prediction = FALSE)
-    ),
-    ncols = 2
-  )
-  patchwrk_plots <- as.list(patchwrk)
-  patchwrk_plots[[1]] <- patchwrk_plots[[1]] + ggtitle("Training Set")
-  list_plots <- c(patchwrk_plots)
-  if (!is.null(model$data_val)) {
-    data <- model$data_val
-    data <- data[data[[subject]] %in% subject_list, ]
+  if (nrow(data) != 0) {
     patchwrk <- plot_predictions(
       model,
       data,
@@ -492,11 +479,29 @@ plot_predictions_check <- function(model, subject_list = NULL, ncols = 2) {
       ncols = 2
     )
     patchwrk_plots <- as.list(patchwrk)
-    patchwrk_plots[[1]] <- patchwrk_plots[[1]] + ggtitle("Validation Set")
-    if (length(list_plots) %% 2 == 1) {
-      list_plots <- c(list_plots, plot_spacer())
-    }
+    patchwrk_plots[[1]] <- patchwrk_plots[[1]] + ggtitle("Training Set")
     list_plots <- c(list_plots, patchwrk_plots)
+  }
+  if (!is.null(model$data_val)) {
+    data <- model$data_val
+    data <- data[data[[subject]] %in% subject_list, ]
+    if (nrow(data) != 0) {
+      patchwrk <- plot_predictions(
+        model,
+        data,
+        list(
+          preds_all_info = predict(model, data, all_info_hlme_prediction = TRUE),
+          preds_past_info = predict(model, data, all_info_hlme_prediction = FALSE)
+        ),
+        ncols = 2
+      )
+      patchwrk_plots <- as.list(patchwrk)
+      patchwrk_plots[[1]] <- patchwrk_plots[[1]] + ggtitle("Validation Set")
+      if (length(list_plots) %% 2 == 1) {
+        list_plots <- c(list_plots, plot_spacer())
+      }
+      list_plots <- c(list_plots, patchwrk_plots)
+    }
   }
   return(wrap_plots(list_plots, ncol = ncols))
 }

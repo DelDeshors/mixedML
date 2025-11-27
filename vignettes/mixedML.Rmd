@@ -152,7 +152,7 @@ data_val <- data_mixedml[data_mixedml$ID == 9, ]
 data_test <- data_mixedml[data_mixedml$ID == 10, ]
 
 model_reservoir <- reservoir_mixedml(
-  fixed_spec = ym ~ x1 + x2 + x3,
+  fixed_spec = ym ~ 1 + x1 + x2 + x3,
   random_spec = ~ 1 + x1 + x2,
   data = data_train,
   data_val = data_val,
@@ -209,7 +209,7 @@ summary(model_reservoir)
 ## `plot_convergence`
 
 ```{r, fig.width=10}
-plot_convergence(model = model_reservoir, ylog = TRUE)
+plot_convergence(model = model_reservoir, ylog_mse = TRUE)
 ```
 
 ## `plot_prediction_check`
@@ -249,8 +249,8 @@ pred_test_all
 
 ```{r}
 hlme_model <- lcmm::hlme(
-  fixed = ym ~ x1 + x2 + x3,
-  random = ~ x1 + x2,
+  fixed = ym ~ 1 + x1 + x2 + x3,
+  random = ~ 1 + x1 + x2,
   data = data_train,
   subject = "ID",
   var.time = "time"
@@ -266,7 +266,8 @@ plot_predictions(
     mixedml_all_info = pred_test_all,
     mixedml_past_info = pred_test_past,
     hlme_all_info = hlme_preds_all
-  )
+  ),
+  ncols = 1
 )
 ```
 

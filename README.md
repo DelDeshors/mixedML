@@ -224,7 +224,7 @@ data_val <- data_mixedml[data_mixedml$ID == 9, ]
 data_test <- data_mixedml[data_mixedml$ID == 10, ]
 
 model_reservoir <- reservoir_mixedml(
-  fixed_spec = ym ~ x1 + x2 + x3,
+  fixed_spec = ym ~ 1 + x1 + x2 + x3,
   random_spec = ~ 1 + x1 + x2,
   data = data_train,
   data_val = data_val,
@@ -497,7 +497,7 @@ model_reservoir$random_model
 ``` r
 # (this model uses reticulate so it not very convenient as an example…)
 model_reservoir$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7b1b4f7da990>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x78d97c756990>
 ```
 
 Also a `call` attribute exists, meaning one can trained the model with
@@ -600,7 +600,7 @@ summary(model_reservoir)
 ## 6.2 `plot_convergence`
 
 ``` r
-plot_convergence(model = model_reservoir, ylog = TRUE)
+plot_convergence(model = model_reservoir, ylog_mse = TRUE)
 ```
 
 <img src="man/figures/README-unnamed-chunk-14-1.png" width="100%" />
@@ -643,8 +643,8 @@ pred_test_all
 
 ``` r
 hlme_model <- lcmm::hlme(
-  fixed = ym ~ x1 + x2 + x3,
-  random = ~ x1 + x2,
+  fixed = ym ~ 1 + x1 + x2 + x3,
+  random = ~ 1 + x1 + x2,
   data = data_train,
   subject = "ID",
   var.time = "time"
@@ -660,7 +660,8 @@ plot_predictions(
     mixedml_all_info = pred_test_all,
     mixedml_past_info = pred_test_past,
     hlme_all_info = hlme_preds_all
-  )
+  ),
+  ncols = 1
 )
 ```
 
@@ -688,7 +689,7 @@ mixedml_model <- load_mixedml("model_reservoir.Rds")
 
 ``` r
 mixedml_model$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7b1b4f7dbed0>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x78d97c757ed0>
 ```
 
 ``` r

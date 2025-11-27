@@ -30,7 +30,7 @@ def pred_same_shape(a, b) -> bool:
     raise UserWarning()
 
 
-def test_train_predict_joblib_reservoir_ensemble(data_2D_x, data_2D_y, subject):
+def run_test_train_predict_joblib_reservoir_ensemble(data_x, data_y, subj):
     resmod = JoblibReservoirEnsemble(
         seed_list=seed_list,
         esn_controls=esn_controls,
@@ -40,9 +40,27 @@ def test_train_predict_joblib_reservoir_ensemble(data_2D_x, data_2D_y, subject):
         scaler=scaler,
         aggregator=aggregator,
     )
-    resmod.fit(X=data_2D_x, y=data_2D_y, subject_col=subject)
-    ypred = resmod.predict(data_2D_x, subject_col=subject)
-    assert ypred.shape == data_2D_y.shape
+    resmod.fit(X=data_x, y=data_y, subject_col=subj)
+    ypred = resmod.predict(data_x, subject_col=subj)
+    assert isinstance(ypred, ndarray)
+    assert ypred.shape == data_y.shape
+
+
+def test_train_predict_joblib_reservoir_ensemble(data_2D_x, data_2D_y, subject):
+    run_test_train_predict_joblib_reservoir_ensemble(data_2D_x, data_2D_y, subject)
+
+
+def test_train_predict_joblib_reservoir_ensemble_single_indiv(
+    data_2D_x, data_2D_y, subject
+):
+    # this case is problematic since reservoir has a "funny" (haha) output
+    SUBJ = 10
+    match = subject == SUBJ
+    data_2D_x = data_2D_x[match, :]
+    data_2D_y = data_2D_y[match, :]
+    subject = subject[match]
+
+    run_test_train_predict_joblib_reservoir_ensemble(data_2D_x, data_2D_y, subject)
 
 
 def test_create_backup(tmp_path):

@@ -1,5 +1,5 @@
 from typing import Callable, Union
-from numpy import unique, zeros, all as npall, mean, median
+from numpy import unique, zeros, all as npall, mean, median, stack
 from numpy.typing import NDArray
 from sklearn.preprocessing import (  # type: ignore
     StandardScaler,
@@ -76,3 +76,13 @@ def aggregate_predict_output(
         for serie in range(N_series)
     ]
     return agg_pred
+
+
+def fix_single_subject_predictions(
+    models_preds: list[list[Array2D]], subject_col: Array1D
+) -> list[list[Array2D]]:
+    if len(unique(subject_col)) == 1:
+        # this case is problematic since reservoir has a "funny" (haha) output
+        for i, mpred in enumerate(models_preds):
+            models_preds[i] = [stack(mpred)]
+    return models_preds

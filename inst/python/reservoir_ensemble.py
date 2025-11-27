@@ -22,6 +22,7 @@ try:
         get_aggregator,
         get_scaler,
         aggregate_predict_output,
+        fix_single_subject_predictions,
     )
 except ImportError:
     # Pour import via reticulate (ajout au sys.path)
@@ -33,6 +34,7 @@ except ImportError:
         get_aggregator,
         get_scaler,
         aggregate_predict_output,
+        fix_single_subject_predictions,
     )
 
 
@@ -144,6 +146,8 @@ class JoblibReservoirEnsemble(_CommonReservoirEnsemble):
                 delayed(_predict_single)(m, X_list, self.predict_controls)
                 for m in self.model_list
             )
+
+        models_preds = fix_single_subject_predictions(models_preds, subject_col)
         agg_pred = aggregate_predict_output(models_preds, self._aggregator)
         return data_list_to_2D(agg_pred, subject_col)
 

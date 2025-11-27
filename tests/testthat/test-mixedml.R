@@ -1,3 +1,4 @@
+# !!! changing these implies modifying the test-hlme-past-pred.Rds
 fixed_spec <- ym ~ 1 + x1 + x2 + time
 random_spec <- ~ 1 + x1 + x2 + time
 subject <- "ID"
@@ -13,14 +14,14 @@ full_pipeline <- function(mixed_ml_model) {
   #
   loglik_train <- get_loglik(mixed_ml_model, data_train)
   stopifnot(loglik_train == mixed_ml_model$random_model$loglik)
-  # could be cahnge to  a stric equality test once the loglik are updated after the fine-tuing of HLME
+  # could be change to  a strict equality test once the loglik are updated after the fine-tuning of HLME
   stopifnot(abs((loglik_train - mixed_ml_model$loglik_train) / loglik_train) < 1e-2)
   #
   loglik_val <- get_loglik(mixed_ml_model, data_val)
   stopifnot(abs((loglik_val == mixed_ml_model$loglik_val) / loglik_val) < 1e-2)
   #
   plot_convergence(mixed_ml_model)
-  plot_prediction_check(mixed_ml_model, subject_nb_or_list = 3)
+  plot_predictions_check(mixed_ml_model, subject_list = c(1, 2))
   return()
 }
 
@@ -98,7 +99,7 @@ training_with_early_stopping <- function() {
 
 
 test_that("mixedml works", {
-  training_with_abort()
+  model <- training_with_abort()
   model <- training_with_early_stopping()
   full_pipeline(model)
 })

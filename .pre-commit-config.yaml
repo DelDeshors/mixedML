@@ -118,12 +118,27 @@ repos:
 # README.md check
 -   repo: local
     hooks:
-    -   id: readme-md-rendered
-        name: readme-md-rendered
+    -   id: readme-md-rendered-1
+        name: readme-md-rendered-1
         stages: [pre-push, post-merge]
-        entry: Rscript pre-commit-utils/check_readme_update.R_
+        entry: test README.md -nt README.Rmd
         language: system
-        files: '(README.*|vignettes/mixedML.Rmd)'
+        pass_filenames: false
+-   repo: local
+    hooks:
+    -   id: readme-md-rendered-2
+        name: readme-md-rendered-2
+        stages: [pre-push, post-merge]
+        entry: test README.md -nt vignettes/mixedML.Rmd
+        language: system
+        pass_filenames: false
+-   repo: local
+    hooks:
+    -   id: readme-md-rendered-3
+        name: readme-md-rendered-3
+        stages: [pre-push, post-merge]
+        entry: test README.md -nt vignettes/work_with_Python.Rmd
+        language: system
         pass_filenames: false
 # Python testing
 -   repo: local

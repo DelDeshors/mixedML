@@ -9,11 +9,12 @@
 - [5 Model attributes](#5-model-attributes)
 - [6 Post-fit functions](#6-post-fit-functions)
   - [6.1 `summary`](#61-summary)
-  - [6.2 `predict`](#62-predict)
-  - [6.3 `plot_convergence`](#63-plot_convergence)
-  - [6.4 `plot_prediction_check`](#64-plot_prediction_check)
-  - [6.5 `save_mixedml`](#65-save_mixedml)
-  - [6.6 `load_mixedml`](#66-load_mixedml)
+  - [6.2 `plot_convergence`](#62-plot_convergence)
+  - [6.3 `plot_prediction_check`](#63-plot_prediction_check)
+  - [6.4 `predict`](#64-predict)
+  - [6.5 `plot_predictions`](#65-plot_predictions)
+  - [6.6 `save_mixedml`](#66-save_mixedml)
+  - [6.7 `load_mixedml`](#67-load_mixedml)
 - [7 Remark on logging](#7-remark-on-logging)
 - [8 Working with Python](#8-working-with-python)
   - [8.1 Let `reticulate` handles the
@@ -219,11 +220,12 @@ Here is an example using the `reservoir_mixedml` function (here is the
 
 ``` r
 data_train <- data_mixedml[data_mixedml$ID < 9, ]
-data_val <- data_mixedml[data_mixedml$ID >= 9, ]
+data_val <- data_mixedml[data_mixedml$ID == 9, ]
+data_test <- data_mixedml[data_mixedml$ID == 10, ]
 
 model_reservoir <- reservoir_mixedml(
   fixed_spec = ym ~ x1 + x2 + x3,
-  random_spec = ~ x1 + x2,
+  random_spec = ~ 1 + x1 + x2,
   data = data_train,
   data_val = data_val,
   subject = "ID",
@@ -249,208 +251,203 @@ model_reservoir <- reservoir_mixedml(
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 85.38
-#>  MSE-val = 296.1
+#>  MSE-val = 48.3
 #>  (saving best model)
 #>  (improvement)
 #> step#2
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 77.51
-#>  MSE-val = 183.1
+#>  MSE-val = 30.28
 #>  (saving best model)
 #>  (improvement)
 #> step#3
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 70.84
-#>  MSE-val = 116.2
+#>  MSE-val = 20.54
 #>  (saving best model)
 #>  (improvement)
 #> step#4
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 59.75
-#>  MSE-val = 71.43
+#>  MSE-val = 17.4
 #>  (saving best model)
 #>  (improvement)
 #> step#5
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 49
-#>  MSE-val = 45.37
+#>  MSE-val = 15.6
 #>  (saving best model)
 #>  (improvement)
 #> step#6
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 44.6
-#>  MSE-val = 32.97
+#>  MSE-val = 14.93
 #>  (saving best model)
 #>  (improvement)
 #> step#7
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 40.23
-#>  MSE-val = 24.51
+#>  MSE-val = 14.17
 #>  (saving best model)
 #>  (improvement)
 #> step#8
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 37.03
-#>  MSE-val = 18.62
+#>  MSE-val = 13.54
 #>  (saving best model)
 #>  (improvement)
 #> step#9
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 33.69
-#>  MSE-val = 14.39
+#>  MSE-val = 12.65
 #>  (saving best model)
 #>  (improvement)
 #> step#10
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 30.91
-#>  MSE-val = 11.56
+#>  MSE-val = 11.87
 #>  (saving best model)
 #>  (improvement)
 #> step#11
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 27.85
-#>  MSE-val = 9.402
+#>  MSE-val = 10.86
 #>  (saving best model)
 #>  (improvement)
 #> step#12
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 25.07
-#>  MSE-val = 7.859
+#>  MSE-val = 9.83
 #>  (saving best model)
 #>  (improvement)
 #> step#13
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 22.28
-#>  MSE-val = 6.621
+#>  MSE-val = 8.725
 #>  (saving best model)
 #>  (improvement)
 #> step#14
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 19.3
-#>  MSE-val = 5.57
+#>  MSE-val = 7.703
 #>  (saving best model)
 #>  (improvement)
 #> step#15
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 16.74
-#>  MSE-val = 4.915
+#>  MSE-val = 6.637
 #>  (saving best model)
 #>  (improvement)
 #> step#16
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 14.05
-#>  MSE-val = 4.331
+#>  MSE-val = 5.449
 #>  (saving best model)
 #>  (improvement)
 #> step#17
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 11.5
-#>  MSE-val = 3.83
+#>  MSE-val = 4.302
 #>  (saving best model)
 #>  (improvement)
 #> step#18
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 8.912
-#>  MSE-val = 3.315
+#>  MSE-val = 3.117
 #>  (saving best model)
 #>  (improvement)
 #> step#19
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 6.313
-#>  MSE-val = 2.91
+#>  MSE-val = 1.937
 #>  (saving best model)
 #>  (improvement)
 #> step#20
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 3.57
-#>  MSE-val = 2.241
+#>  MSE-val = 1.103
 #>  (saving best model)
 #>  (improvement)
 #> step#21
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 2.736
-#>  MSE-val = 1.274
+#>  MSE-val = 1.096
 #>  (saving best model)
-#>  (improvement)
+#>  (no improvement #1)
 #> step#22
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 4.699
-#>  MSE-val = 2.361
-#>  (no improvement #1)
+#>  MSE-val = 1.207
+#>  (no improvement #2)
 #> step#23
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 6.087
-#>  MSE-val = 3.373
-#>  (no improvement #2)
+#>  MSE-val = 1.101
+#>  (no improvement #3)
 #> step#24
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 7.583
-#>  MSE-val = 4.677
-#>  (no improvement #3)
+#>  MSE-val = 1.051
+#>  (saving best model)
+#>  (no improvement #4)
 #> step#25
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 8.396
-#>  MSE-val = 5.886
-#>  (no improvement #4)
+#>  MSE-val = 1.102
+#>  (no improvement #5)
 #> step#26
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 7.41
-#>  MSE-val = 5.855
-#>  (no improvement #5)
+#>  MSE-val = 1.254
+#>  (no improvement #6)
 #> step#27
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 5.943
-#>  MSE-val = 4.325
-#>  (no improvement #6)
+#>  MSE-val = 1.45
+#>  (no improvement #7)
 #> step#28
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 5.273
-#>  MSE-val = 3.688
-#>  (no improvement #7)
+#>  MSE-val = 1.72
+#>  (no improvement #8)
 #> step#29
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 5.097
-#>  MSE-val = 4.091
-#>  (no improvement #8)
+#>  MSE-val = 1.903
+#>  (no improvement #9)
 #> step#30
 #>  fitting fixed effects...
 #>  fitting random effects...
 #>  MSE-train = 4.891
-#>  MSE-val = 3.9
-#>  (no improvement #9)
-#> step#31
-#>  fitting fixed effects...
-#>  fitting random effects...
-#>  MSE-train = 4.465
-#>  MSE-val = 3.738
+#>  MSE-val = 2.022
 #>  (no improvement #10)
 #> Warning in mixedml_training_loop(fixed_model, fixed_spec, random_spec, data, :
 #> Conditions defined in early_stopping: aborting training loop!
@@ -468,7 +465,7 @@ model_reservoir$random_model
 #> Heterogenous linear mixed model 
 #>      fitted by maximum likelihood method 
 #>  
-#> hlme(fixed = ym ~ 1, random = ~x1 + x2, subject = "ID", idiag = TRUE, 
+#> hlme(fixed = ym ~ 1, random = ~1 + x1 + x2, subject = "ID", idiag = TRUE, 
 #>     cor = NULL, data = data, convB = 1e-04, convL = 1e-04, convG = 1e-04, 
 #>     maxiter = 50, na.action = 1, posfix = 1, verbose = FALSE, 
 #>     var.time = "time", nproc = 1)
@@ -484,15 +481,15 @@ model_reservoir$random_model
 #>  
 #> Iteration process: 
 #>      Convergence criteria satisfied 
-#>      Number of iterations:  2 
-#>      Convergence criteria: parameters= 8.6e-05 
-#>                          : likelihood= 7.9e-07 
-#>                          : second derivatives= 3.9e-10 
+#>      Number of iterations:  1 
+#>      Convergence criteria: parameters= 1.3e-09 
+#>                          : likelihood= 7.4e-09 
+#>                          : second derivatives= 1.7e-10 
 #>  
 #> Goodness-of-fit statistics: 
-#>      maximum log-likelihood: -103.19  
-#>      AIC: 214.37  
-#>      BIC: 214.69  
+#>      maximum log-likelihood: -113.25  
+#>      AIC: 234.5  
+#>      BIC: 234.81  
 #>  
 #> 
 ```
@@ -500,7 +497,7 @@ model_reservoir$random_model
 ``` r
 # (this model uses reticulate so it not very convenient as an example…)
 model_reservoir$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x72a825a59bd0>
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7b1b4f7da990>
 ```
 
 Also a `call` attribute exists, meaning one can trained the model with
@@ -518,87 +515,40 @@ The following functions are common to all fitted MixedML models.
 
 ``` r
 summary(model_reservoir)
-#>                   Length Class      Mode       
-#> data               9     data.frame list       
-#> data_val           9     data.frame list       
-#> subject            1     -none-     character  
-#> time               1     -none-     character  
-#> fixed_spec         3     formula    call       
-#> random_spec        2     formula    call       
-#> random_model      32     hlme       list       
-#> mse_train          1     -none-     numeric    
-#> mse_val            1     -none-     numeric    
-#> loglik_train       1     -none-     numeric    
-#> loglik_val         1     -none-     numeric    
-#> mse_train_list    31     -none-     numeric    
-#> mse_val_list      31     -none-     numeric    
-#> loglik_train_list 31     -none-     numeric    
-#> loglik_val_list   31     -none-     numeric    
-#> call              12     -none-     call       
-#> fixed_model        1     reservoir  environment
-```
-
-## 6.2 `predict`
-
-``` r
-predict(model = model_reservoir, data = data_mixedml, all_info_hlme_prediction = FALSE, nproc_hlme_past = 1)
-#>    39    35    10     1    42    49    19    43     6    18    25    33    37 
-#>    NA    NA 188.1 200.7 178.0    NA    NA  99.5 107.8 113.1    NA    NA 216.2 
-#>     2    31    16    15    26    13    34    23    22    11    50    46     7 
-#> 204.4 214.2    NA 101.8 101.4 102.3 106.3    NA 206.4 194.2 195.5    NA 107.0 
-#>    40    44    28    38     4    14    24     9    17    32    45    30    12 
-#> 110.3 111.6    NA 191.8 203.3 188.6 197.1    NA  91.9  90.5  93.9  94.2    NA 
-#>    48    36    29     5    47     8    20     3    41 
-#> 198.5 200.2 215.5 207.0    NA  75.7  77.6  80.6  79.2
-```
-
-## 6.3 `plot_convergence`
-
-``` r
-plot_convergence(model = model_reservoir, ylog = TRUE)
-```
-
-<img src="man/figures/README-unnamed-chunk-15-1.png" width="100%" />
-
-## 6.4 `plot_prediction_check`
-
-``` r
-plot_prediction_check(model = model_reservoir, subject_nb_or_list = c(1, 2, 3, 4, 5), ncols = 2, na.rm = TRUE)
-```
-
-<img src="man/figures/README-unnamed-chunk-16-1.png" width="100%" />
-
-## 6.5 `save_mixedml`
-
-This function is used to save a mixedML model. It is **mandatory** when
-using a model based on a Python package, since we need to save both R
-and Python objects.
-
-``` r
-save_mixedml(model_reservoir, mixedml_model_rds = "model_reservoir.Rds")
-```
-
-## 6.6 `load_mixedml`
-
-This function is used to load a mixedML model. It is **mandatory** when
-using a model based on a Python package, since we need to load both R
-and Python objects.
-
-``` r
-mixedml_model <- load_mixedml("model_reservoir.Rds")
-```
-
-``` r
-mixedml_model$fixed_model
-#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x72a825a58f50>
-```
-
-``` r
-mixedml_model$random_model
+#> 
+#> 
+#>  == MixedML model ==
+#>   Type of the fixed effect model: reservoir 
+#>   Number of iterations: 30 
+#>   Best iteration: 24 
+#>     MSE-train: 7.58 
+#>     MSE-val: 1.05 
+#>     loglik-train: -113 
+#>     loglik-val: -29.1 
+#> 
+#> 
+#>  === Reservoir Computing model (ReservoirPy) ===
+#> ESN ensemble data:
+#>   Number of reservoirs in the ensemble: 5 
+#>   Aggregator: median 
+#>   Data scaler: standard 
+#> ESN data:
+#>   Feedback connection: FALSE 
+#>   Input-to-Readout: FALSE 
+#> Reservoirs data:
+#>   Number of reservoir units: 20 
+#>   Leak rate: 1 
+#>   Spectral radius: 0.1 
+#>   Input Scaling: 1 
+#> Readout data:
+#>   Ridge regression parameter: 1e-05 
+#> 
+#> 
+#>  == Random HLME model ==
 #> Heterogenous linear mixed model 
 #>      fitted by maximum likelihood method 
 #>  
-#> hlme(fixed = ym ~ 1, random = ~x1 + x2, subject = "ID", idiag = TRUE, 
+#> hlme(fixed = ym ~ 1, random = ~1 + x1 + x2, subject = "ID", idiag = TRUE, 
 #>     cor = NULL, data = data, convB = 1e-04, convL = 1e-04, convG = 1e-04, 
 #>     maxiter = 50, na.action = 1, posfix = 1, verbose = FALSE, 
 #>     var.time = "time", nproc = 1)
@@ -614,15 +564,163 @@ mixedml_model$random_model
 #>  
 #> Iteration process: 
 #>      Convergence criteria satisfied 
-#>      Number of iterations:  2 
-#>      Convergence criteria: parameters= 8.6e-05 
-#>                          : likelihood= 7.9e-07 
-#>                          : second derivatives= 3.9e-10 
+#>      Number of iterations:  1 
+#>      Convergence criteria: parameters= 1.3e-09 
+#>                          : likelihood= 7.4e-09 
+#>                          : second derivatives= 1.7e-10 
 #>  
 #> Goodness-of-fit statistics: 
-#>      maximum log-likelihood: -103.19  
-#>      AIC: 214.37  
-#>      BIC: 214.69  
+#>      maximum log-likelihood: -113.25  
+#>      AIC: 234.5  
+#>      BIC: 234.81  
+#>  
+#>  
+#> Maximum Likelihood Estimates: 
+#>  
+#> Fixed effects in the longitudinal model:
+#> 
+#>               coef  Se Wald p-value
+#> intercept  0.00000*                
+#> 
+#> 
+#> Variance-covariance matrix of the random-effects:
+#>           intercept   x1 x2
+#> intercept      52.2        
+#> x1              0.0 13.8   
+#> x2              0.0  0.0  0
+#> 
+#>                              coef      Se
+#> Residual standard error:  3.17282 0.48942
+#> 
+#>  * coefficient fixed by the user 
+#> 
+#> NULL
+```
+
+## 6.2 `plot_convergence`
+
+``` r
+plot_convergence(model = model_reservoir, ylog = TRUE)
+```
+
+<img src="man/figures/README-unnamed-chunk-14-1.png" width="100%" />
+
+## 6.3 `plot_prediction_check`
+
+``` r
+plot_predictions_check(model = model_reservoir)
+```
+
+<img src="man/figures/README-unnamed-chunk-15-1.png" width="100%" />
+
+## 6.4 `predict`
+
+``` r
+pred_test_past <- predict(
+  model = model_reservoir,
+  data = data_test,
+  all_info_hlme_prediction = FALSE,
+  nproc_hlme_past = 1
+)
+pred_test_past
+#>   47    8   20    3   41 
+#>   NA 72.2 75.8 79.5 78.3
+```
+
+``` r
+pred_test_all <- predict(
+  model = model_reservoir,
+  data = data_test,
+  all_info_hlme_prediction = TRUE,
+  nproc_hlme_past = 1
+)
+pred_test_all
+#>   47    8   20    3   41 
+#> 82.6 77.4 77.3 80.4 78.7
+```
+
+## 6.5 `plot_predictions`
+
+``` r
+hlme_model <- lcmm::hlme(
+  fixed = ym ~ x1 + x2 + x3,
+  random = ~ x1 + x2,
+  data = data_train,
+  subject = "ID",
+  var.time = "time"
+)
+hlme_preds <- lcmm::predictY(hlme_model, newdata = data_test)
+hlme_preds_all <- hlme_preds$pred
+names(hlme_preds_all) <- rownames(hlme_preds$times)
+
+plot_predictions(
+  model = model_reservoir,
+  data_pred = data_test,
+  list_preds = list(
+    mixedml_all_info = pred_test_all,
+    mixedml_past_info = pred_test_past,
+    hlme_all_info = hlme_preds_all
+  )
+)
+```
+
+<img src="man/figures/README-unnamed-chunk-18-1.png" width="100%" />
+
+## 6.6 `save_mixedml`
+
+This function is used to save a mixedML model. It is **mandatory** when
+using a model based on a Python package, since we need to save both R
+and Python objects.
+
+``` r
+save_mixedml(model_reservoir, mixedml_model_rds = "model_reservoir.Rds")
+```
+
+## 6.7 `load_mixedml`
+
+This function is used to load a mixedML model. It is **mandatory** when
+using a model based on a Python package, since we need to load both R
+and Python objects.
+
+``` r
+mixedml_model <- load_mixedml("model_reservoir.Rds")
+```
+
+``` r
+mixedml_model$fixed_model
+#> <reservoir_ensemble.JoblibReservoirEnsemble object at 0x7b1b4f7dbed0>
+```
+
+``` r
+mixedml_model$random_model
+#> Heterogenous linear mixed model 
+#>      fitted by maximum likelihood method 
+#>  
+#> hlme(fixed = ym ~ 1, random = ~1 + x1 + x2, subject = "ID", idiag = TRUE, 
+#>     cor = NULL, data = data, convB = 1e-04, convL = 1e-04, convG = 1e-04, 
+#>     maxiter = 50, na.action = 1, posfix = 1, verbose = FALSE, 
+#>     var.time = "time", nproc = 1)
+#>  
+#> Statistical Model: 
+#>      Dataset: data 
+#>      Number of subjects: 8 
+#>      Number of observations: 34 
+#>      Number of observations deleted: 4 
+#>      Number of latent classes: 1 
+#>      Number of parameters: 5  
+#>      Number of estimated parameters: 4  
+#>  
+#> Iteration process: 
+#>      Convergence criteria satisfied 
+#>      Number of iterations:  1 
+#>      Convergence criteria: parameters= 1.3e-09 
+#>                          : likelihood= 7.4e-09 
+#>                          : second derivatives= 1.7e-10 
+#>  
+#> Goodness-of-fit statistics: 
+#>      maximum log-likelihood: -113.25  
+#>      AIC: 234.5  
+#>      BIC: 234.81  
 #>  
 #> 
 ```

@@ -81,7 +81,7 @@ MIXEDML_COMPONENTS <- c(
 #' By default, convL=0.01.
 #' @param convG optional threshold for the convergence criterion based on the
 #' derivatives. Used during the MixedML iterations to speed up the HLME model training.
-#' By default, convG=0.10.
+#' By default, convG=0.01.
 #' @return mixedml_controls
 #' @export
 mixedml_ctrls <- function(
@@ -208,7 +208,7 @@ summary.MixedML_Model <- function(object, ...) {
   summary_fixed_model(model$fixed_model)
   cat("\n\n == Random HLME model ==\n")
   summary(model$random_model)
-  return(invisible())
+  return()
 }
 
 
@@ -260,7 +260,6 @@ load_mixedml <- function(mixedml_model_rds) {
 # prediction ----
 .test_predict <- function(model, data, all_info_hlme_prediction, nproc_hlme_past) {
   .test_is_midexml(model)
-  stopifnot(names(data) == names(model$random_model$data))
   .check_sorted_data(data, model$subject, model$time)
   stopifnot(is.logical(all_info_hlme_prediction))
   stopifnot(is.single.integer(nproc_hlme_past) && nproc_hlme_past > 0)

@@ -232,7 +232,7 @@ model_reservoir <- reservoir_mixedml(
   time = "time",
   # parameters for MixedML method
   mixedml_controls = mixedml_ctrls(
-    earlystopping_controls = earlystopping_ctrls(min_mse_gain = 0.1, patience = 10),
+    earlystopping_controls = earlystopping_ctrls(min_mse_gain = 0.1, patience = 3),
     all_info_hlme_prediction = TRUE
   ),
   # controls (extra-parameters) for the hlme model
@@ -406,49 +406,6 @@ model_reservoir <- reservoir_mixedml(
 #>  MSE-train = 6.087
 #>  MSE-val = 1.101
 #>  (no improvement #3)
-#> step#24
-#>  fitting fixed effects...
-#>  fitting random effects...
-#>  MSE-train = 7.583
-#>  MSE-val = 1.051
-#>  (saving best model)
-#>  (no improvement #4)
-#> step#25
-#>  fitting fixed effects...
-#>  fitting random effects...
-#>  MSE-train = 8.396
-#>  MSE-val = 1.102
-#>  (no improvement #5)
-#> step#26
-#>  fitting fixed effects...
-#>  fitting random effects...
-#>  MSE-train = 7.41
-#>  MSE-val = 1.254
-#>  (no improvement #6)
-#> step#27
-#>  fitting fixed effects...
-#>  fitting random effects...
-#>  MSE-train = 5.943
-#>  MSE-val = 1.45
-#>  (no improvement #7)
-#> step#28
-#>  fitting fixed effects...
-#>  fitting random effects...
-#>  MSE-train = 5.273
-#>  MSE-val = 1.72
-#>  (no improvement #8)
-#> step#29
-#>  fitting fixed effects...
-#>  fitting random effects...
-#>  MSE-train = 5.097
-#>  MSE-val = 1.903
-#>  (no improvement #9)
-#> step#30
-#>  fitting fixed effects...
-#>  fitting random effects...
-#>  MSE-train = 4.891
-#>  MSE-val = 2.022
-#>  (no improvement #10)
 #> Warning in mixedml_training_loop(fixed_model, fixed_spec, random_spec, data, :
 #> Conditions defined in early_stopping: aborting training loop!
 #> Final convergence of HLME with strict convergence criterions.
@@ -481,15 +438,15 @@ model_reservoir$random_model
 #>  
 #> Iteration process: 
 #>      Convergence criteria satisfied 
-#>      Number of iterations:  1 
-#>      Convergence criteria: parameters= 1.3e-09 
-#>                          : likelihood= 7.4e-09 
-#>                          : second derivatives= 1.7e-10 
+#>      Number of iterations:  2 
+#>      Convergence criteria: parameters= 8.6e-05 
+#>                          : likelihood= 7.9e-07 
+#>                          : second derivatives= 3.9e-10 
 #>  
 #> Goodness-of-fit statistics: 
-#>      maximum log-likelihood: -113.25  
-#>      AIC: 234.5  
-#>      BIC: 234.81  
+#>      maximum log-likelihood: -103.19  
+#>      AIC: 214.37  
+#>      BIC: 214.69  
 #>  
 #> 
 ```
@@ -534,12 +491,12 @@ summary(model_reservoir)
 #> 
 #>  == MixedML model ==
 #>   Type of the fixed effect model: reservoir 
-#>   Number of iterations: 30 
-#>   Best iteration: 24 
-#>     MSE-train: 7.58 
-#>     MSE-val: 1.05 
-#>     loglik-train: -113 
-#>     loglik-val: -29.1 
+#>   Number of iterations: 23 
+#>   Best iteration: 21 
+#>     MSE-train: 2.74 
+#>     MSE-val: 1.1 
+#>     loglik-train: -103 
+#>     loglik-val: -25.6 
 #> 
 #> 
 #>  === Reservoir Computing model (ReservoirPy) ===
@@ -579,36 +536,37 @@ summary(model_reservoir)
 #>  
 #> Iteration process: 
 #>      Convergence criteria satisfied 
-#>      Number of iterations:  1 
-#>      Convergence criteria: parameters= 1.3e-09 
-#>                          : likelihood= 7.4e-09 
-#>                          : second derivatives= 1.7e-10 
+#>      Number of iterations:  2 
+#>      Convergence criteria: parameters= 8.6e-05 
+#>                          : likelihood= 7.9e-07 
+#>                          : second derivatives= 3.9e-10 
 #>  
 #> Goodness-of-fit statistics: 
-#>      maximum log-likelihood: -113.25  
-#>      AIC: 234.5  
-#>      BIC: 234.81  
+#>      maximum log-likelihood: -103.19  
+#>      AIC: 214.37  
+#>      BIC: 214.69  
 #>  
 #>  
 #> Maximum Likelihood Estimates: 
 #>  
 #> Fixed effects in the longitudinal model:
 #> 
-#>               coef  Se Wald p-value
-#> intercept  0.00000*                
+#>                coef  Se Wald p-value
+#> intercept   0.00000*                
 #> 
 #> 
 #> Variance-covariance matrix of the random-effects:
 #>           intercept   x1 x2
-#> intercept      52.2        
-#> x1              0.0 13.8   
-#> x2              0.0  0.0  0
+#> intercept       235        
+#> x1                0 14.4   
+#> x2                0  0.0  0
 #> 
-#>                              coef      Se
-#> Residual standard error:  3.17282 0.48942
+#>                               coef      Se
+#> Residual standard error:   1.99135 0.32776
 #> 
 #>  * coefficient fixed by the user 
 #> 
+#> NULL
 ```
 
 ## 6.2 `plot_convergence`
@@ -638,7 +596,7 @@ pred_test_past <- predict(
 )
 pred_test_past
 #>   47    8   20    3   41 
-#>   NA 72.2 75.8 79.5 78.3
+#>   NA 75.7 77.6 80.6 79.2
 ```
 
 ``` r
@@ -650,7 +608,7 @@ pred_test_all <- predict(
 )
 pred_test_all
 #>   47    8   20    3   41 
-#> 82.6 77.4 77.3 80.4 78.7
+#> 79.3 78.0 78.0 81.2 79.4
 ```
 
 ## 6.5 `plot_predictions`
@@ -743,15 +701,15 @@ mixedml_model$random_model
 #>  
 #> Iteration process: 
 #>      Convergence criteria satisfied 
-#>      Number of iterations:  1 
-#>      Convergence criteria: parameters= 1.3e-09 
-#>                          : likelihood= 7.4e-09 
-#>                          : second derivatives= 1.7e-10 
+#>      Number of iterations:  2 
+#>      Convergence criteria: parameters= 8.6e-05 
+#>                          : likelihood= 7.9e-07 
+#>                          : second derivatives= 3.9e-10 
 #>  
 #> Goodness-of-fit statistics: 
-#>      maximum log-likelihood: -113.25  
-#>      AIC: 234.5  
-#>      BIC: 234.81  
+#>      maximum log-likelihood: -103.19  
+#>      AIC: 214.37  
+#>      BIC: 214.69  
 #>  
 #> 
 ```

@@ -2,8 +2,8 @@ data_train <- data_mixedml[data_mixedml$ID < 9, ]
 data_val <- data_mixedml[data_mixedml$ID >= 9, ]
 
 model_reservoir <- reservoir_mixedml(
-  fixed_spec = ym ~ x1 + x2 + x3,
-  random_spec = ~ x1 + x2,
+  fixed_spec = ym ~ 1 + x1 + x2 + x3,
+  random_spec = ~ 1 + x1 + x2,
   data = data_train,
   data_val = data_val,
   subject = "ID",
@@ -11,7 +11,7 @@ model_reservoir <- reservoir_mixedml(
   # parameters for MixedML method
   mixedml_controls = mixedml_ctrls(
     earlystopping_controls = earlystopping_ctrls(min_mse_gain = 5, patience = 1),
-    aborting_controls = aborting_ctrls(check_iter = 5, mse_value = 10),
+    aborting_controls = aborting_ctrls(check_iter = 2, mse_value = 10),
     all_info_hlme_prediction = TRUE
   ),
   # controls (extra-parameters) for the hlme model

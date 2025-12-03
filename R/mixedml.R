@@ -321,7 +321,7 @@ get_loglik <- function(model, data) {
 
 .plot_train_val_metric <- function(metric_train_list, metric_val_list, metric_name, ylog) {
   stopifnot(is.logical(ylog))
-  data_plot <- data.frame(iteration = seq_along(metric_train_list), METRIC = metric_train_list, group = "train")
+  data_plot <- data.frame("iteration" = seq_along(metric_train_list), METRIC = metric_train_list, "group" = "train")
   if (!is.null(metric_val_list)) {
     data_plot <- rbind(
       data_plot,
@@ -329,7 +329,7 @@ get_loglik <- function(model, data) {
     )
   }
   colnames(data_plot)[2] <- metric_name
-  plt <- ggplot(data = data_plot, aes(x = iteration, y = .data[[metric_name]], color = group)) +
+  plt <- ggplot(data = data_plot, aes(x = .data[["iteration"]], y = .data[[metric_name]], color = .data[["group"]])) +
     geom_line() +
     geom_point()
   if (ylog) {

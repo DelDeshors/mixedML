@@ -32,7 +32,7 @@ By default, convL=0.01.}
 
 \item{convG}{optional threshold for the convergence criterion based on the
 derivatives. Used during the MixedML iterations to speed up the HLME model training.
-By default, convG=0.10.}
+By default, convG=0.01.}
 }
 \value{
 mixedml_controls

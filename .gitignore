@@ -1,7 +1,10 @@
+# Python stuff
 **/__pycache__/
-.Rbuildignore
 .spyproject/
+*mypy_cache
 
+.vscode
+.github/copilot-instructions.md
 
 # History files
 .Rhistory

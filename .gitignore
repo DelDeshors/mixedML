@@ -6,6 +6,8 @@
 .vscode
 .github/copilot-instructions.md
 
+
+
 # History files
 .Rhistory
 .Rapp.history
@@ -31,7 +33,7 @@
 
 # produced vignettes
 vignettes/*.html
-# vignettes/*.pdf
+vignettes/*.pdf
 
 # OAuth2 token, see https://github.com/hadley/httr/releases/tag/v0.3
 .httr-oauth

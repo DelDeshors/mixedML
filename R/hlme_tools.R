@@ -326,6 +326,7 @@ hlme_ctrls <- function(
   predict_y_fn <- .predict_y
   #
   .set_future_plan(nproc)
+  i_time <- NULL # only for `devtool::check`
   times_preds <- foreach(i_time = sample(time_unq[-1])) %dofuture%
     {
       actual_data <- data[data[var.time] == i_time, ]

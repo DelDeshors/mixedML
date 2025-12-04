@@ -106,15 +106,15 @@ repos:
     hooks:
     -   id: flake8
         stages: [pre-commit]
-# R testing
-#-   repo: local
-#    hooks:
-#    -   id: Rtesting
-#        name: Rtesting
-#        stages: [pre-push, post-merge]
-#        entry: Rscript pre-commit-utils/precommit_testthat.R_
-#        language: system
-#        pass_filenames: false
+# r testing
+-   repo: local
+    hooks:
+    -   id: rtesting
+        name: rtesting
+        stages: [pre-push, post-merge]
+        entry: Rscript pre-commit-utils/precommit_testthat.R_
+        language: system
+        pass_filenames: false
 # README.md check
 -   repo: local
     hooks:
@@ -149,15 +149,18 @@ repos:
         entry: python -m pytest  # python -m changes PYTHONPATH
         language: system
         pass_filenames: false
-# R check
--   repo: local
-    hooks:
-    -   id: rcheck
-        stages: [pre-push, post-merge]
-        name: rcheck
-        entry: Rscript -e "devtools::check(error_on = 'warning')"
-        language: system
-        pass_filenames: false
+        files: '\.py$'
+# # R check
+# # too slow…
+# -   repo: local
+#     hooks:
+#     -   id: rcheck
+#         stages: [pre-push, post-merge]
+#         name: rcheck
+#         entry: Rscript -e "devtools::check(error_on = 'warning')"
+#         language: system
+#         pass_filenames: false
+#         files: '\.(py|R|Rmd)$'
 ci:
     autoupdate_schedule: weekly
     skip: [pkgdown]

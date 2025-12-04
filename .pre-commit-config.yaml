@@ -116,6 +116,7 @@ repos:
     -   id: flake8
         stages: [pre-commit]
 # R testing
+# => done in the R check
 #-   repo: local
 #    hooks:
 #    -   id: Rtesting
@@ -158,6 +159,7 @@ repos:
         entry: python -m pytest  # python -m changes PYTHONPATH
         language: system
         pass_filenames: false
+        files: '\.py$'
 # R check
 -   repo: local
     hooks:
@@ -167,6 +169,7 @@ repos:
         entry: Rscript -e "devtools::check(error_on = 'warning')"
         language: system
         pass_filenames: false
+        files: '\.(py|R|Rmd)$'
 ci:
     autoupdate_schedule: weekly
     skip: [pkgdown]

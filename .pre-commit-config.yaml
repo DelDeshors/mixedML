@@ -1,12 +1,3 @@
-#
-# IMPORTANT !!!
-#
-# R check is called in the hooks
-# it takes so long that one can get `Connection to github.com closed by remote host.` when git pushing
-# meaning theconnection is lost before the hooks end, and the push was not actually performed
-# the solution is given here: https://stackoverflow.com/a/75955453/10848871
-
-
 # All available hooks: https://pre-commit.com/hooks.html
 # R specific hooks: https://github.com/lorenzwalthert/precommit
 fail_fast: true
@@ -115,16 +106,15 @@ repos:
     hooks:
     -   id: flake8
         stages: [pre-commit]
-# R testing
-# => done in the R check
-#-   repo: local
-#    hooks:
-#    -   id: Rtesting
-#        name: Rtesting
-#        stages: [pre-push, post-merge]
-#        entry: Rscript pre-commit-utils/precommit_testthat.R_
-#        language: system
-#        pass_filenames: false
+# r testing
+-   repo: local
+    hooks:
+    -   id: rtesting
+        name: rtesting
+        stages: [pre-push, post-merge]
+        entry: rscript pre-commit-utils/precommit_testthat.R
+        language: system
+        pass_filenames: false
 # README.md check
 -   repo: local
     hooks:
@@ -160,16 +150,17 @@ repos:
         language: system
         pass_filenames: false
         files: '\.py$'
-# R check
--   repo: local
-    hooks:
-    -   id: rcheck
-        stages: [pre-push, post-merge]
-        name: rcheck
-        entry: Rscript -e "devtools::check(error_on = 'warning')"
-        language: system
-        pass_filenames: false
-        files: '\.(py|R|Rmd)$'
+# # R check
+# # too slow…
+# -   repo: local
+#     hooks:
+#     -   id: rcheck
+#         stages: [pre-push, post-merge]
+#         name: rcheck
+#         entry: Rscript -e "devtools::check(error_on = 'warning')"
+#         language: system
+#         pass_filenames: false
+#         files: '\.(py|R|Rmd)$'
 ci:
     autoupdate_schedule: weekly
     skip: [pkgdown]

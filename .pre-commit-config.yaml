@@ -1,3 +1,12 @@
+#
+# IMPORTANT !!!
+#
+# R check is called in the hooks
+# it takes so long that one can get `Connection to github.com closed by remote host.` when git pushing
+# meaning theconnection is lost before the hooks end, and the push was not actually performed
+# the solution is given here: https://stackoverflow.com/a/75955453/10848871
+
+
 # All available hooks: https://pre-commit.com/hooks.html
 # R specific hooks: https://github.com/lorenzwalthert/precommit
 fail_fast: true

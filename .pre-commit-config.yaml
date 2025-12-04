@@ -112,7 +112,7 @@ repos:
     -   id: rtesting
         name: rtesting
         stages: [pre-push, post-merge]
-        entry: Rscript pre-commit-utils/precommit_testthat.R
+        entry: Rscript pre-commit-utils/precommit_testthat.R_
         language: system
         pass_filenames: false
 # README.md check

@@ -36,7 +36,18 @@
   stopifnot(length(pred) == nrow(data_mixedml))
   stopifnot(sum(is.na(pred)) == sum(!ccases))
 
+
   # prediction with past info ----
+  pred <- .predict_with_past_info(hlme_model = model, data = data_mixedml, nproc = 1)
+  stopifnot(length(pred) == nrow(data_mixedml))
+  expect_vector(pred, ptype = NULL, size = nrow(data_mixedml))
+  expect_type(pred, "double")
+  stopifnot(length(pred) == nrow(data_mixedml))
+  pred_comp <- readRDS("test-hlme-past-pred.Rds")
+  stopifnot(max(abs(pred - pred_comp), na.rm = TRUE) < 1e-8)
+
+
+  # prediction with past info + multiprocessing----
   pred <- .predict_with_past_info(hlme_model = model, data = data_mixedml, nproc = 2)
   stopifnot(length(pred) == nrow(data_mixedml))
   expect_vector(pred, ptype = NULL, size = nrow(data_mixedml))

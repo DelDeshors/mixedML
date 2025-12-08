@@ -325,30 +325,45 @@ hlme_ctrls <- function(
   predict_cor_fn <- .predict_cor
   predict_y_fn <- .predict_y
   #
-  .set_future_plan(nproc)
-  i_time <- NULL # only for `devtool::check`
-  times_preds <- foreach(i_time = sample(time_unq[-1])) %dofuture%
-    {
+  if (nproc > 1) {
+    .set_future_plan(nproc)
+    i_time <- NULL # only for `devtool::check`
+    times_preds <- foreach(i_time = sample(time_unq[-1])) %dofuture%
+      {
+        actual_data <- data[data[var.time] == i_time, ]
+        prev_data <- data[data[var.time] < i_time, ]
+        return(list(
+          rownames = rownames(actual_data),
+          pred = predict_newdata_ss_fn(
+            hlme_model,
+            data = actual_data,
+            data_info = prev_data,
+            initiate_full_preds_fn = initiate_full_preds_fn,
+            get_y_label_fn = get_y_label_fn,
+            predict_cor_fn = predict_cor_fn,
+            predict_y_fn = predict_y_fn
+          )
+        ))
+      }
+    for (time_pred in times_preds) {
+      full_preds[time_pred$rownames] <- time_pred$pred
+    }
+  } else {
+    for (i_time in time_unq[-1]) {
       actual_data <- data[data[var.time] == i_time, ]
       prev_data <- data[data[var.time] < i_time, ]
-      return(list(
-        rownames = rownames(actual_data),
-        pred = predict_newdata_ss_fn(
-          hlme_model,
-          data = actual_data,
-          data_info = prev_data,
-          initiate_full_preds_fn = initiate_full_preds_fn,
-          get_y_label_fn = get_y_label_fn,
-          predict_cor_fn = predict_cor_fn,
-          predict_y_fn = predict_y_fn
-        )
-      ))
+      times_preds <- predict_newdata_ss_fn(
+        hlme_model,
+        data = actual_data,
+        data_info = prev_data,
+        initiate_full_preds_fn = initiate_full_preds_fn,
+        get_y_label_fn = get_y_label_fn,
+        predict_cor_fn = predict_cor_fn,
+        predict_y_fn = predict_y_fn
+      )
+      full_preds[rownames(actual_data)] <- times_preds
     }
-
-  for (time_pred in times_preds) {
-    full_preds[time_pred$rownames] <- time_pred$pred
   }
-
   return(full_preds)
 }
 

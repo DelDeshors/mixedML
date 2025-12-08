@@ -23,13 +23,10 @@
 # multiprocessing
 
 .set_future_plan <- function(nproc) {
-  if (nproc == future::nbrOfWorkers()) {
-    return()
-  }
   if (nproc > 1) {
     future::plan(future::multisession, workers = nproc)
   } else {
-    future::plan(future::sequential)
+    stop("Please implement a simple for loop which will be more efficient")
   }
   return()
 }

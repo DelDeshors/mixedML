@@ -24,6 +24,7 @@ esn_ctrls <- function(
   input_scaling = 1.0,
   feedback = FALSE,
   input_to_readout = FALSE
+  #use_raw_inputs = TRUE
 ) {
   stopifnot(is.single.integer(units))
   units <- as.integer(units)
@@ -89,7 +90,9 @@ fit_ctrls <- function(warmup = 0) {
   .test_initiate_esn(esn_controls, ensemble_controls, fit_controls)
   retipy <- reticulate::import("reservoir_ensemble")
   # enforcing "stateful=TRUE" and "reset=TRUE"
-  enforcement <- list(stateful = TRUE, reset = TRUE)
+  #enforcement <- list(stateful = TRUE, reset = TRUE)
+
+  enforcement <- list(stateful = FALSE, reset = TRUE)#moi
   fit_controls <- c(fit_controls, enforcement)
   predict_controls <- enforcement
 

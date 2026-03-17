@@ -1,0 +1,458 @@
+---
+title: "Application of mixedml on vaso data"
+output: html_notebook
+---
+
+
+
+```{r import package}
+install.packages("remotes")
+remotes::install_github("FrankwaP/mixedML")
+library(mixedML)
+
+#to get the package version
+#library(reticulate)
+#pour connaitre les librairies installées
+#py_config()
+#pour en connaitre une en particulier 
+#reticulate::py_run_string("import numpy; print(numpy.__version__)")
+
+# désinstaller une librairie, numpy par ex
+#py_install("numpy", pip = TRUE, action = "remove")
+
+# installer versions compatibles avec reservoirpy 0.3.5
+#py_install("numpy==1.23.5", pip = TRUE)
+```
+
+
+```{r load data}
+
+load("C:/Users/dd9/Documents/ProgR_FrancoisP/mixedML_copy/data/vpLong_agg24.RData")
+load("C:/Users/dd9/Documents/ProgR_FrancoisP/mixedML_copy/data/vpLong_agg6.RData")
+```
+
+```{r remove non necessary var}
+varsuppr = c("delai_rea.max_","delai_rea.min_","delai_rea.diff_", "delai_rea.median_", "time.mean_", "time.max_", "time.min_", "time.diff_", "time.median_", "clairance_mes.max_", "clairance_mes.min_", "clairance_mes.diff_", "clairance_mes.median_")
+data_24h <- data_24h_off[, !names(data_24h_off) %in% varsuppr]
+#data_6h <- data_6h_off[, !names(data_6h_off) %in% varsuppr]
+
+```
+
+```{r check number of data}
+#nombre de mesures par sujet
+list_mesures = data_24h %>%
+  group_by(ID) %>%
+  summarise(n_mesures = sum(!is.na(clairance_mes.mean_)))
+
+few_mesures = list_mesures[list_mesures$n_mesures <3, ]
+few_mesures
+# 1  2  3  4  5  6  7  8  9 10 11 12 13 
+# 3  6  8  7 13 20 23 16 33 20 20 24 12 
+ 
+#suppression des sujets avec 1 ou 2 mesures de clairance
+#data_24h <- data_24h[!(data_24h$ID %in% few_mesures$ID), ]
+
+#nombre de sujet par nombre d'obs de clairance
+table(list_mesures$n_mesures)
+```
+
+```{r check regularity of time step}
+library(dplyr)
+
+# regularity of the time step for each individual.
+dt_stats <- data_24h %>%
+  arrange(ID, delai_rea.mean_) %>%              # trier par individu puis temps
+  group_by(ID) %>%
+  mutate(dt = delai_rea.mean_ - lag(delai_rea.mean_)) %>%  # équivalent de diff(time)
+  summarise(
+    mean_dt = mean(dt, na.rm = TRUE),
+    sd_dt   = sd(dt, na.rm = TRUE),
+    n_obs   = n()
+  )
+
+dt_stats
+
+# global variability
+dt_stats <- data_24h %>%
+  arrange(ID, jour) %>%
+  group_by(ID) %>%
+  mutate(dt2 = jour - lag(jour)) %>%
+  ungroup() %>%
+  summarise(
+    mean_dt = mean(dt2, na.rm = TRUE),
+    sd_dt   = sd(dt2, na.rm = TRUE)
+  )
+dt_stats
+
+# distribution des pas de temps
+library(ggplot2)
+hist(dt, breaks = 30)
+```
+
+```{r variable selection and dataset construction}
+
+#We select variables which have sensitive effect
+vars_means <- c("temp.median_", "natremie.median_", "glycemie.max_", "PP.max_")
+data_mixedml_vaso <- data_24h[c("ID", "jour", "delai_rea.mean_", "clairance_mes.mean_", vars_means)]
+#data_mixedml_vaso <- data_mixedml_vaso[complete.cases(data_mixedml_vaso), ]
+
+#We select 1 subject per class of nb of obs clearance
+# + 1 more for class with more than 16 measures of clearance
+# to get a dataset of 20 subjects
+
+# #174 has 1 obs
+# #123 has 2 obs
+# #150 has 3 obs
+# #31 has 4 obs
+# #9 has 5 obs
+# #20 and #22 have 6 obs
+# #1 and #2 have 7 obs
+# #25 and #48 have 8 obs
+# #12 and #17 have 9 obs
+# #3 and #21 have 10 obs
+# #5 and #19 have 11 obs
+# #7 and #8 have 12 obs
+# #41 has 13 obs
+val_ID = c(1, 2, 3, 5, 7, 8, 9, 12, 17, 19, 20, 21, 22, 25, 31, 41, 48, 123, 150, 174)
+data_val <- data_mixedml_vaso[(data_mixedml_vaso$ID %in% val_ID), ]
+data_train <- data_mixedml_vaso[!(data_mixedml_vaso$ID %in% val_ID), ]
+```
+
+```{r selected data and run mixedml}
+
+# ===============================
+# Data preparation
+# ===============================
+#dim = length(unique(data_mixedml_vaso$ID))
+#train_test_split = floor(0.9 * dim)
+#train_val_split = floor(0.9 * train_test_split)
+#data_train <- data_mixedml_vaso#[data_mixedml_vaso$ID < train_val_split, ]
+#remove the last recorded value
+#for (idx in unique(data_train$ID)){
+#  df = data_train[data_train$ID==idx,]
+#  df <- df[complete.cases(df$clairance_mes.mean_), ]
+#  nrow = dim(df[1])
+#  df = df[-nrow,]
+#}
+
+#data_val <- data_mixedml_vaso[data_mixedml_vaso$ID >= train_val_split & data_mixedml_vaso$ID < train_test_split,]
+#data_test <- data_mixedml_vaso[data_mixedml_vaso$ID > train_test_split, ]
+
+# ===============================
+# Model running
+# ===============================
+model_reservoir <- reservoir_mixedml(
+  fixed_spec = clairance_mes.mean_ ~ 1 + delai_rea.mean_ + temp.median_ + natremie.median_,# + PP.max_,
+  random_spec = ~ 1 + delai_rea.mean_,# + glycemie.max_,
+  data = data_train,
+  data_val = data_val,
+  subject = "ID",
+  time = "jour",
+  # parameters for MixedML method
+  mixedml_controls = mixedml_ctrls(
+    earlystopping_controls = earlystopping_ctrls(min_mse_gain = 0.1, patience = 3),
+    all_info_hlme_prediction = TRUE
+  ),
+  # controls (extra-parameters) for the hlme model
+  hlme_controls = hlme_ctrls(cor = NULL, idiag = TRUE, maxiter = 50, nproc = 1, B_rand = NULL, # nolint
+                  convB = 0.0001, convL = 0.0001, convG = 0.0001, verbose = FALSE),
+  # controls (extra-parameters) for the ML model
+  esn_controls = esn_ctrls(units = 100, lr = 0.6, sr = 0.8, ridge = 1e-3, input_scaling = 1.0, input_to_readout = FALSE), #feedback = TRUE),
+  ensemble_controls = ensemble_ctrls(seed_list = c(1, 2, 3), aggregator = "median", scaler = "standard", n_procs = 1),
+  fit_controls = fit_ctrls(warmup = 0)
+)
+```
+
+
+```{r selected data and mixedml application}
+# ===============================
+# model summary
+# ===============================
+model_reservoir$random_model
+model_reservoir$fixed_model
+summary(model_reservoir)
+plot_convergence(model = model_reservoir, ylog_mse = TRUE)
+plot_predictions_check(model = model_reservoir)
+```
+
+
+
+
+#Appel à la main
+
+```{r}
+source("C:/Users/dd9/Documents/ProgR_FrancoisP/mixedML_copy/R/mixedml.reservoir.R")
+source("C:/Users/dd9/Documents/ProgR_FrancoisP/mixedML_copy/R/fixed_model.reservoir.R")
+source("C:/Users/dd9/Documents/ProgR_FrancoisP/mixedML_copy/R/mixedml.R")
+source("C:/Users/dd9/Documents/ProgR_FrancoisP/mixedML_copy/R/hlme_tools.R")
+source("C:/Users/dd9/Documents/ProgR_FrancoisP/mixedML_copy/R/fixed_model.R")
+source("C:/Users/dd9/Documents/ProgR_FrancoisP/mixedML_copy/R/utils.R")
+library(lcmm)
+```
+
+```{r}
+#values
+fixed_spec = clairance_mes.mean_ ~ 1 + temp.median_ # fixed effects
+random_spec = ~ 1             # individual random effects
+data = data_train
+data_val = data_val
+subject = "ID"
+time = "jour"
+
+earlystopping_ctrl = earlystopping_ctrls(min_mse_gain = 0.05, patience = 3)
+aborting_ctrl = aborting_ctrls(check_iter = 1, mse_value = 0.)
+                    
+mixedml_controls = mixedml_ctrls(earlystopping_controls=earlystopping_ctrl,
+                    aborting_controls=aborting_ctrl,
+                    all_info_hlme_prediction = TRUE,
+                    convB = 0.01, # nolint
+                    convL = 0.01, # nolint
+                    convG = 0.01) # nolint
+hlme_controls = hlme_ctrls(cor = NULL, idiag = TRUE, maxiter = 50, nproc = 1, B_rand = NULL, # nolint
+                  convB = 0.0001, convL = 0.0001, convG = 0.0001, verbose = FALSE)
+
+esn_controls = esn_ctrls(units = 500, lr = 0.9, sr = 0.1, ridge = 1e-5,
+                 input_scaling = 1.0, feedback = FALSE, input_to_readout = FALSE)
+
+ensemble_controls = ensemble_ctrls(seed_list = c(1, 2, 3), aggregator = "median", scaler = "standard", 
+                                   n_procs = 1)
+
+fit_controls = fit_ctrls(warmup = 1)
+
+```
+
+
+```{r}
+#appel
+model_reservoir <- reservoir_mixedml(
+  fixed_spec,
+  random_spec,
+  data,
+  data_val,
+  subject,
+  time,
+  mixedml_controls,
+  hlme_controls,
+  esn_controls,
+  ensemble_controls,
+  fit_controls
+)
+```
+
+## Exemple du github
+
+```{r}
+source("C:/Users/dd9/Documents/ProgR_FrancoisP/mixedML_copy/data-raw/data_gen.R")
+load("~/ProgR_FrancoisP/mixedML_copy/data/data_mixedml.rda")
+```
+
+
+```{r}
+#library(ggplot2)
+
+ggplot(
+  data_mixedml,
+  aes(
+    x = .data[['time']],
+    y = .data[['x3']],
+    group = .data[['ID']],
+    color = .data[['ID']]
+  )
+) +
+  geom_point() +
+  geom_line() +
+  labs(color = "ID") +
+  theme_classic(base_size = 14)
+```
+
+
+```{r}
+set.seed(123)
+
+# ===============================
+# Data preparation
+# ===============================
+
+data_train <- data_mixedml[data_mixedml$ID < 9, ]
+data_val <- data_mixedml[data_mixedml$ID == 9, ]
+data_test <- data_mixedml[data_mixedml$ID == 10, ]
+
+# ===============================
+# Model running
+# ===============================
+model_reservoir <- reservoir_mixedml(
+  fixed_spec = ym ~ 1 + x1 + x2,
+  random_spec = ~ 1,
+  data = data_train,
+  data_val = data_val,
+  subject = "ID",
+  time = "time",
+  # parameters for MixedML method
+  mixedml_controls = mixedml_ctrls(
+    earlystopping_controls = earlystopping_ctrls(min_mse_gain = 0.1, patience = 3),
+    all_info_hlme_prediction = TRUE
+  ),
+  # controls (extra-parameters) for the hlme model
+  hlme_controls = hlme_ctrls(maxiter = 50, idiag = TRUE),
+  # controls (extra-parameters) for the ML model
+  esn_controls = esn_ctrls(units = 20, ridge = 1e-5),
+  ensemble_controls = ensemble_ctrls(seed_list = c(1, 2, 3, 4, 5)),
+  fit_controls = fit_ctrls(warmup = 1)
+)
+
+# ===============================
+# model summary
+# ===============================
+model_reservoir$random_model
+model_reservoir$fixed_model
+summary(model_reservoir)
+plot_convergence(model = model_reservoir, ylog_mse = TRUE)
+plot_predictions_check(model = model_reservoir)
+
+```
+
+
+```{r}
+pred_mixedml <- predict(
+  model = model_reservoir,
+  data = data_val,
+  all_info_hlme_prediction = TRUE,
+  nproc_hlme_past = 1
+)
+
+
+# ===============================
+# Ma comparaison
+# ===============================
+
+#library(lcmm)
+
+hlme_model <- hlme(
+  fixed  = clairance_mes.mean_ ~ 1 + delai_rea.mean_ + temp.median_ + natremie.median_,
+  random = ~ 1 + delai_rea.mean_,
+  subject = "ID",
+  data = data_train,
+  ng = 1
+)
+#summary(hlme_model)
+#pred_hlme <- predictY(hlme_model, newdata = data_train)
+#pred = as.array((pred_hlme$pred))
+#mse_hlme_train     <- mean((data_train$clairance_mes.mean_ - pred)^2)
+pred_hlme <- predictY(hlme_model, newdata = data_val)
+
+```
+
+```{r}
+#library(ggplot2)
+#library(dplyr)
+
+# Ajouter les prédictions
+#data_val$pred_hlme    <- as.numeric(pred_hlme$pred)
+data_val$pred_mixedml <- pred_mixedml
+
+data_plot <- data_val %>%
+  mutate(
+   #pred_hlme    = as.numeric(pred_hlme),
+    pred_mixedml = as.numeric(pred_mixedml)
+  )
+
+#erreur quadratique
+#mse_hlme     <- mean((data_plot$clairance_mes.mean_ - data_plot$pred_hlme)^2, na.rm = TRUE)
+mse_mixedml  <- mean((data_plot$clairance_mes.mean_ - data_plot$pred_mixedml)^2, na.rm = TRUE)
+
+#rmse_hlme    <- sqrt(mse_hlme)
+#rmse_mixedml <- sqrt(mse_mixedml)
+
+# Passage en format long pour ggplot
+data_long <- data_plot %>%
+  select(ID, delai_rea.mean_, clairance_mes.mean_, pred_mixedml) %>% #, pred_hlme
+  tidyr::pivot_longer(
+    cols = c(clairance_mes.mean_, pred_mixedml), #, pred_hlme
+    names_to = "type",
+    values_to = "value"
+  )
+
+# Graphique unique
+ggplot(data_long, aes(x = delai_rea.mean_, y = value, group = interaction(ID, type))) +
+  geom_line(aes(color = type), alpha = 0.7) +
+  geom_point(aes(color = type), size = 1.5) +
+  facet_wrap(~ ID) +
+  labs(
+    title = paste0(
+      #"Comparaison hlme vs mixedml\n",
+      #"MSE hlme = ", round(mse_hlme,2),
+      #" | loglik hlme = ", hlme_model$loglik,
+      "\nMSE mixedml = ", round(mse_mixedml,2),#model_reservoir$mse_train,
+      " | loglik mixedml = ", model_reservoir$loglik_train
+    ),
+    color = "Type",
+    x = "delai_rea.mean_",
+    y = "Valeur"
+  ) +
+  scale_color_manual(
+    values = c(
+      ym = "black",
+      #pred_hlme = "blue",
+      pred_mixedml = "red"
+    ),
+    labels = c(
+      ym = "Valeur réelle",
+      #pred_hlme = "Prédiction hlme",
+      pred_mixedml = "Prédiction mixedml"
+    )
+  ) +
+  theme_minimal()
+```
+
+
+```{r}
+# ===============================
+# Faire des prédictions sur les données test
+# ===============================
+
+pred_test_past <- predict(
+  model = model_reservoir,
+  data = data_test,
+  all_info_hlme_prediction = FALSE,
+  nproc_hlme_past = 1
+)
+
+pred_test_all <- predict(
+  model = model_reservoir,
+  data = data_test,
+  all_info_hlme_prediction = TRUE,
+  nproc_hlme_past = 1
+)
+
+# ===============================
+# Comparer y réel vs y prédit
+# ===============================
+#hlme_model <- lcmm::hlme(#francois version
+#  fixed = ym ~ 1 + x1 + x2,
+#  random = ~ 1 + x1,
+#  data = data_train,
+#  subject = "ID",
+#  var.time = "time"
+#)
+hlme_preds <- lcmm::predictY(hlme_model, newdata = data_test)
+hlme_preds_all <- hlme_preds$pred
+names(hlme_preds_all) <- rownames(hlme_preds$times)
+
+plot_predictions(
+  model = model_reservoir,
+  data_pred = data_test,
+  list_preds = list(
+    mixedml_all_info = pred_test_all,
+    mixedml_past_info = pred_test_past,
+    hlme_all_info = hlme_preds_all
+  ),
+  ncols = 1
+)
+
+plot(data_test$ym, pred_test_past,
+     xlab = "Valeur réelle",
+     ylab = "Valeur prédite",
+     main = "MixedML : prédiction vs réalité",
+     pch = 16, col = "blue")
+abline(0, 1, col = "red", lwd = 2)  # ligne y=x
+```

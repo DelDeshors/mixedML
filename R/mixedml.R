@@ -579,9 +579,15 @@ mixedml_training_loop <- function(
   hlme_controls_iter$convG <- mixedml_controls$convG
   random_model <- .initiate_random_hlme(target_name, random_spec, data_train, subject, time, hlme_controls_iter)
 
+  #
+  #mse_eps <- mixedml_controls$convergence_controls$mse_eps
+  #loglik_eps <- mixedml_controls$convergence_controls$loglik_eps
+  #
   eastop_gain <- mixedml_controls$earlystopping_controls$min_mse_gain
   eastop_patience <- mixedml_controls$earlystopping_controls$patience
   eastop_mse <- Inf
+  eastop_loglik <- -Inf
+  loglik_gain <- 1e-2
   #
   abort_mse <- mixedml_controls$aborting_controls$mse_value
   abort_iter <- mixedml_controls$aborting_controls$check_iter
@@ -596,7 +602,11 @@ mixedml_training_loop <- function(
   loglik_train_list <- c()
   loglik_val <- NULL
   loglik_val_list <- c()
-  mse_min <- Inf
+  mse_min <- Inf #improvment test
+  loglik_max <- -Inf #me
+  mse_prev <- Inf #me
+  loglik_prev <- -Inf #me
+  count_loglik <- 0
   # confusing name, might need to change:
   n_na_full <- .check_na_combinaison(data_train, fixed_spec, random_spec, target_name)
   backup <- tempfile(fileext = ".Rds")
@@ -616,6 +626,7 @@ mixedml_training_loop <- function(
     if (is.null(pred_fixed)) {
       break() # the "break" must stay in the loop
     }
+    #browser()
     # fitting random effects -----
     message("\tfitting random effects...")
     data_rand[[target_name]] <- data_train[[target_name]] - pred_fixed
@@ -642,12 +653,14 @@ mixedml_training_loop <- function(
     mse_train_list <- c(mse_train_list, mse_train)
     #
     loglik_train <- random_model$loglik
+    message(sprintf("\tloglik-train = %.4g", loglik_train))
     loglik_train_list <- c(loglik_train_list, loglik_train)
     # val residuals/mse and loglik ----
     if (do_val) {
       tmp_model <- .get_model_snapshot()
       pred_val <- predict(tmp_model, data_val, mixedml_controls$all_info_hlme_prediction)
       residuals_val <- data_val[, target_name] - pred_val
+      ccases_resid <- complete.cases(residuals_val)#added
       mse_val <- mean(residuals_val[ccases_resid]**2, na.rm = TRUE)
       message(sprintf("\tMSE-val = %.4g", mse_val))
       mse_val_list <- c(mse_val_list, mse_val)
@@ -656,16 +669,37 @@ mixedml_training_loop <- function(
       loglik_val <- hlme_val$loglik
       loglik_val_list <- c(loglik_val_list, loglik_val)
     }
+
     # convergence tests ----
+    # if (do_val) {
+    #   mse_conv <- mse_val
+    # } else {
+    #   mse_conv <- mse_train
+    # }
     if (do_val) {
       mse_conv <- mse_val
+      loglik_conv <- loglik_val
     } else {
       mse_conv <- mse_train
+      loglik_conv <- loglik_train
     }
+
+    delta_mse <- abs(mse_prev - mse_conv)
+    delta_loglik <- abs(loglik_conv - loglik_prev)
+    message(sprintf("\tΔMSE = %.4g", delta_mse))
+    message(sprintf("\tΔlogLik = %.4g", delta_loglik))
+    if (delta_mse < 1e-2 && delta_loglik < 1e-2) {
+      message("Convergence reached (MSE and logLik stabilized)")
+      break
+    }
+    mse_prev <- mse_conv
+    loglik_prev <- loglik_conv
+
     ## improvement test ----
-    if (mse_conv < mse_min) {
+    if (mse_conv < mse_min && loglik_conv > loglik_max) {
       message("\t(saving best model)")
       mse_min <- mse_conv
+      loglik_max <- loglik_conv
       # must save it since we have a reference to the Python model
       # so we cannot use `best_fixed_model <- fixed_model`
       # (`best_fixed_model` points to the model that keeps being updated)
@@ -678,19 +712,34 @@ mixedml_training_loop <- function(
       # best_data_fixed <- data_fixed
       # nolint end ----
     }
+
+
     ## improving / early stopping test ----
-    if (mse_conv < eastop_mse - eastop_gain) {
+    # early stopping on MSE ----
+    if (mse_conv < eastop_mse - 0.1) {
       message("\t(improvement)")
       eastop_mse <- mse_conv
       count_conv <- 0
     } else {
       count_conv <- count_conv + 1
-      message(sprintf("\t(no improvement #%d)", count_conv))
-      if (count_conv == eastop_patience) {
-        warning("Conditions defined in early_stopping: aborting training loop!")
-        break()
-      }
+      message(sprintf("\t(no improvement MSE #%d)", count_conv))
     }
+
+    ## stagnation test on loglik ----
+    if (loglik_conv > eastop_loglik + 0.1) {
+      eastop_loglik <- loglik_conv
+      count_loglik <- 0
+    } else {
+      count_loglik <- count_loglik + 1
+      message(sprintf("\t(no improvement loglik #%d)", count_loglik))
+    }
+
+    if (count_conv >= eastop_patience && count_loglik >= eastop_patience) {
+      warning("Conditions defined in early_stopping: aborting training loop!")
+      break()
+    }
+
+
     ## aborting test ----
     if (istep == abort_iter) {
       if (mse_conv > abort_mse) {

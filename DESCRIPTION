@@ -2,7 +2,7 @@ Type: Package
 Package: mixedML
 Encoding: UTF-8
 Title: Implementing Machine Learning models in the mixed effect modeling
-Version: 0.1.0
+Version: 0.1.1
 Authors@R:
     person("François", "Plessier",
            email = "francois.plessier@gmail.com",

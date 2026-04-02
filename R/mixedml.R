@@ -580,9 +580,6 @@ mixedml_training_loop <- function(
   random_model <- .initiate_random_hlme(target_name, random_spec, data_train, subject, time, hlme_controls_iter)
 
   #
-  #mse_eps <- mixedml_controls$convergence_controls$mse_eps
-  #loglik_eps <- mixedml_controls$convergence_controls$loglik_eps
-  #
   eastop_gain <- mixedml_controls$earlystopping_controls$min_mse_gain
   eastop_patience <- mixedml_controls$earlystopping_controls$patience
   eastop_mse <- Inf
@@ -594,6 +591,7 @@ mixedml_training_loop <- function(
   #
   data_fixed <- data_train
   data_rand <- data_train
+  data_val_rand <- data_val
   pred_rand <- rep(0, nrow(data_train))
   istep <- 1
   mse_train_list <- c()
@@ -604,8 +602,8 @@ mixedml_training_loop <- function(
   loglik_val_list <- c()
   mse_min <- Inf #improvment test
   loglik_max <- -Inf #me
-  mse_prev <- Inf #me
-  loglik_prev <- -Inf #me
+  # mse_prev <- Inf #me
+  # loglik_prev <- -Inf #me
   count_loglik <- 0
   # confusing name, might need to change:
   n_na_full <- .check_na_combinaison(data_train, fixed_spec, random_spec, target_name)
@@ -655,6 +653,7 @@ mixedml_training_loop <- function(
     loglik_train <- random_model$loglik
     message(sprintf("\tloglik-train = %.4g", loglik_train))
     loglik_train_list <- c(loglik_train_list, loglik_train)
+
     # val residuals/mse and loglik ----
     if (do_val) {
       tmp_model <- .get_model_snapshot()
@@ -665,17 +664,20 @@ mixedml_training_loop <- function(
       message(sprintf("\tMSE-val = %.4g", mse_val))
       mse_val_list <- c(mse_val_list, mse_val)
       #
-      hlme_val <- stats::update(random_model, data = data_val, B = random_model$best, maxiter = 0)
+      pred_val_fixed <- predict_fixed_model(fixed_model, data_val, fixed_spec, subject)
+      data_val_rand[[target_name]] <- data_val[[target_name]] - pred_val_fixed
+      hlme_val <- stats::update(random_model, data = data_val_rand, B = random_model$best, maxiter = 0)
       loglik_val <- hlme_val$loglik
+      message(sprintf("\tloglik-val = %.4g", loglik_val))
       loglik_val_list <- c(loglik_val_list, loglik_val)
+
+      # #test
+      # residuals_hlme_val = hlme_val$pred$resid_ss
+      # ccases_resid_val <- complete.cases(residuals_hlme_val)#added
+      # mse_val_tchek = mean(residuals_hlme_val[ccases_resid_val]**2, na.rm = TRUE)
     }
 
     # convergence tests ----
-    # if (do_val) {
-    #   mse_conv <- mse_val
-    # } else {
-    #   mse_conv <- mse_train
-    # }
     if (do_val) {
       mse_conv <- mse_val
       loglik_conv <- loglik_val
@@ -684,16 +686,16 @@ mixedml_training_loop <- function(
       loglik_conv <- loglik_train
     }
 
-    delta_mse <- abs(mse_prev - mse_conv)
-    delta_loglik <- abs(loglik_conv - loglik_prev)
-    message(sprintf("\tΔMSE = %.4g", delta_mse))
-    message(sprintf("\tΔlogLik = %.4g", delta_loglik))
-    if (delta_mse < 1e-2 && delta_loglik < 1e-2) {
-      message("Convergence reached (MSE and logLik stabilized)")
-      break
-    }
-    mse_prev <- mse_conv
-    loglik_prev <- loglik_conv
+    # delta_mse <- abs(mse_prev - mse_conv)
+    # delta_loglik <- abs(loglik_conv - loglik_prev)
+    # message(sprintf("\tΔMSE = %.4g", delta_mse))
+    # message(sprintf("\tΔlogLik = %.4g", delta_loglik))
+    # if (delta_mse < 1e-2 && delta_loglik < 1e-2) {
+    #   message("Convergence reached (MSE and logLik stabilized)")
+    #   break
+    # }
+    # mse_prev <- mse_conv
+    # loglik_prev <- loglik_conv
 
     ## improvement test ----
     if (mse_conv < mse_min && loglik_conv > loglik_max) {
@@ -715,23 +717,22 @@ mixedml_training_loop <- function(
 
 
     ## improving / early stopping test ----
-    # early stopping on MSE ----
-    if (mse_conv < eastop_mse - 0.1) {
+    if (mse_conv < eastop_mse - eastop_gain) {
       message("\t(improvement)")
       eastop_mse <- mse_conv
       count_conv <- 0
     } else {
       count_conv <- count_conv + 1
-      message(sprintf("\t(no improvement MSE #%d)", count_conv))
+      message(sprintf("\t(no MSE improvement #%d)", count_conv))
     }
 
     ## stagnation test on loglik ----
-    if (loglik_conv > eastop_loglik + 0.1) {
+    if (loglik_conv > eastop_loglik + eastop_gain) {
       eastop_loglik <- loglik_conv
       count_loglik <- 0
     } else {
       count_loglik <- count_loglik + 1
-      message(sprintf("\t(no improvement loglik #%d)", count_loglik))
+      message(sprintf("\t(no loglik improvement #%d)", count_loglik))
     }
 
     if (count_conv >= eastop_patience && count_loglik >= eastop_patience) {
@@ -799,5 +800,9 @@ mixedml_training_loop <- function(
   # A2 <- best_data_rand[[target_name]]
   # stopifnot(identical(A1, A2))
   # nolint end ----
+
+  # best_model$residuals_val = residuals_val
+  # best_model$hlme_val = hlme_val
+  # best_model$mse_val_tchek = mse_val_tchek
   return(best_model)
 }

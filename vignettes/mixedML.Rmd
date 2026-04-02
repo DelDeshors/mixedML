@@ -70,7 +70,7 @@ In such case, fitting on the residuals is equivalent to fitting using the predic
 
 
 The pseudo-code is as follow (`fe`/`re` stands for fixed/random effects):
-```
+```{r, eval=FALSE}
 ml_model_fe <- initiate_ml_model_fe()
 hlme_model_re <- initiate_hlme_model_re()
 

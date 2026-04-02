@@ -24,7 +24,7 @@ esn_ctrls <- function(
   input_scaling = 1.0,
   feedback = FALSE,
   input_to_readout = FALSE
-  #use_raw_inputs = TRUE
+  #use_raw_inputs = FALSE
 ) {
   stopifnot(is.single.integer(units))
   units <- as.integer(units)
@@ -90,10 +90,8 @@ fit_ctrls <- function(warmup = 0) {
   .test_initiate_esn(esn_controls, ensemble_controls, fit_controls)
   retipy <- reticulate::import("reservoir_ensemble")
   # enforcing "stateful=TRUE" and "reset=TRUE"
-  #enforcement <- list(stateful = TRUE, reset = TRUE)
-
-  enforcement <- list(stateful = FALSE, reset = TRUE)#moi
-  fit_controls <- c(fit_controls, enforcement)
+  enforcement <- list(stateful = TRUE, reset = TRUE)
+  fit_controls <- c(fit_controls)#, enforcement)
   predict_controls <- enforcement
 
   controls <- c(
@@ -120,20 +118,19 @@ summary_fixed_model.reservoir <- function(object, ...) {
 
   esn <- model$model_list[[1]]
   cat("ESN data:\n")
-  cat("  Feedback connection:", esn$has_feedback, "\n")
-  stopifnot(length(esn$edges) == 1 || length(esn$edges) == 2)
-  cat("  Input-to-Readout:", length(esn$edges) == 2, "\n")
+  cat("  Feedback connection:", esn$feedback, "\n")
+  cat("  Input-to-Readout:", esn$input_to_readout, "\n")
 
-  rsrvr <- esn$params$reservoir
+  rsrvr <- esn$reservoir
   cat("Reservoirs data:\n")
-  cat("  Number of reservoir units:", rsrvr$hypers$units, "\n")
-  cat("  Leak rate:", rsrvr$hypers$lr, "\n")
-  cat("  Spectral radius:", rsrvr$hypers$sr, "\n")
-  cat("  Input Scaling:", rsrvr$hypers$input_scaling, "\n")
+  cat("  Number of reservoir units:", rsrvr$units, "\n")
+  cat("  Leak rate:", rsrvr$lr, "\n")
+  cat("  Spectral radius:", rsrvr$sr, "\n")
+  cat("  Input Scaling:", rsrvr$input_scaling, "\n")
 
-  rout <- esn$params$readout
+  rout <- esn$readout
   cat("Readout data:\n")
-  cat("  Ridge regression parameter:", rout$hypers$ridge, "\n")
+  cat("  Ridge regression parameter:", rout$ridge, "\n")
   return(invisible())
 }
 

@@ -5,8 +5,8 @@ from abc import ABC
 
 # Imports de base de ReservoirPy
 from reservoirpy import Model, Node  # type: ignore
-from reservoirpy.nodes import ESN  # type: ignore
-from reservoirpy import verbosity  # type: ignore
+from reservoirpy import ESN  # type: ignore
+#from reservoirpy import verbosity  # type: ignore
 
 # joblib permet de faire tourner du code sur plusieurs coeurs du processeur en meme temps
 from joblib import Parallel, delayed, cpu_count  # type: ignore
@@ -38,7 +38,7 @@ except ImportError:
     )
 
 # Désactive les messages d'information de ReservoirPy dans la console pour ne pas la polluer
-verbosity(0)
+#verbosity(0)
 
 
 class _CommonReservoirEnsemble(ABC):
@@ -86,15 +86,15 @@ def _fix_copy_name(model: Model):
 
 def _predict_single(model: Model, X: list[Array2D], predict_controls: dict[str, Any]) -> list[Array2D]:
     """ Fonction qui sera exécutée en parallèle par chaque coeur pour faire des prédictions """
-    _fix_copy_name(model )# On répare le nom cassé par joblib
+    # _fix_copy_name(model )# On répare le nom cassé par joblib
     # model.run(X) est la fonction standard de ReservoirPy pour faire une prédiction.
     # X DOIT être une liste de tableaux numpy 2D.
-    return model.run(X, **predict_controls)
+    return model.run(X)#, **predict_controls)
 
 
 def _fit_single(model: Model, X: list[Array2D], y: list[Array2D], fit_controls: dict[str, Any]) -> Model:
     """ Fonction qui sera exécutée en parallèle par chaque coeur pour l'entrainement """
-    _fix_copy_name(model)
+    # _fix_copy_name(model)
     # model.fit(X, y) est la fonction standard pour entrainer le Readout.
     # X et y DOIVENT avoir exactement le même nombre de séquences, et les mêmes pas de temps.
     model.fit(X, y, **fit_controls)
@@ -122,14 +122,14 @@ class JoblibReservoirEnsemble(_CommonReservoirEnsemble):
         # est un raccourci qui connecte automatiquement un noeud "Reservoir" à un noeud "Ridge" (le readout).
         # esn_controls contient les paramètres (nombre de neurones, fuite, etc.).
         self.model_list = [ESN(**dict(**esn_controls, seed=s)) for s in seed_list]
-        self._model_names = [m.name for m in self.model_list]
-        self._nodes_names = [m.node_names for m in self.model_list]
+        # self._model_names = [m.name for m in self.model_list]
+        # self._nodes_names = [m.node_names for m in self.model_list]
         self.fit_controls = fit_controls
         self.predict_controls = predict_controls
         
-    def _fix_copy_names(self):
-        for model in self.model_list:
-            _fix_copy_name(model)
+    # def _fix_copy_names(self):
+    #     for model in self.model_list:
+    #         _fix_copy_name(model)
 
     def _get_pool(self):
         # Initialise le moteur de parallèlisation (joblib)
@@ -153,12 +153,13 @@ class JoblibReservoirEnsemble(_CommonReservoirEnsemble):
                 for m in self.model_list
             )
 
-        self._fix_copy_names()
+        # self._fix_copy_names()
 
     def predict(self, X: Array2D, subject_col: Array1D) -> Array2D:
         """ Phase de prédiction """
         X_scal = self._scaler.transform(X)
         X_list = data_2D_to_list(X_scal, subject_col) # Transformation en liste de séquences
+        
         with self._get_pool() as pool:
             # Chaque modèle fait sa propre prédiction
             models_preds = pool(
@@ -169,8 +170,9 @@ class JoblibReservoirEnsemble(_CommonReservoirEnsemble):
         # On répare la structure et on fait la moyenne (ou médiane) des prédictions de tous les modèles
         models_preds = fix_single_subject_predictions(models_preds, subject_col)
         agg_pred = aggregate_predict_output(models_preds, self._aggregator)
-
+        
         # On remet les prédictions sous forme de tableau 2D standard
+        res = data_list_to_2D(agg_pred, subject_col)
         return data_list_to_2D(agg_pred, subject_col)
 
 

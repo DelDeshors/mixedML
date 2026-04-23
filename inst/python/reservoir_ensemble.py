@@ -57,11 +57,15 @@ class _CommonReservoirEnsemble(ABC):
     @staticmethod
     def _correct_n_procs(seed_list: list[int], n_procs: Optional[int] = None) -> int:
         # Sécurité : s'assure qu'on ne demande pas plus de coeurs de processeur que l'ordinateur n'en a.
-        if n_procs is None:
+        
+        if (type(seed_list) == int):
+          _nprocs = 1
+        else:
+          if n_procs is None:
             n_procs = len(seed_list)
-        _nprocs = min(n_procs, len(seed_list), cpu_count() - 1)
-        if _nprocs != n_procs:
-            log.info("n_procs has been corrected to %d", _nprocs)
+          _nprocs = min(n_procs, len(seed_list), cpu_count() - 1)
+          if _nprocs != n_procs:
+              log.info("n_procs has been corrected to %d", _nprocs)
         return _nprocs
 
 # --- LES DEUX FONCTIONS SUIVANTES SONT DES "HACKS" ---
@@ -121,15 +125,14 @@ class JoblibReservoirEnsemble(_CommonReservoirEnsemble):
         # C'est ici qu'on crée les modèles. Un ESN (Echo State Network) dans ReservoirPy 
         # est un raccourci qui connecte automatiquement un noeud "Reservoir" à un noeud "Ridge" (le readout).
         # esn_controls contient les paramètres (nombre de neurones, fuite, etc.).
-        self.model_list = [ESN(**dict(**esn_controls, seed=s)) for s in seed_list]
-        # self._model_names = [m.name for m in self.model_list]
-        # self._nodes_names = [m.node_names for m in self.model_list]
+        if (type(seed_list) == int):
+          self.model_list = ESN(**dict(**esn_controls, seed=seed_list))
+        else:
+          self.model_list = [ESN(**dict(**esn_controls, seed=s)) for s in seed_list]
+
         self.fit_controls = fit_controls
         self.predict_controls = predict_controls
         
-    # def _fix_copy_names(self):
-    #     for model in self.model_list:
-    #         _fix_copy_name(model)
 
     def _get_pool(self):
         # Initialise le moteur de parallèlisation (joblib)
@@ -147,29 +150,37 @@ class JoblibReservoirEnsemble(_CommonReservoirEnsemble):
         y_list = data_2D_to_list(y, subject_col)
         
         # 3. Lancement de l'entrainement en parallèle sur plusieurs processeurs
-        with self._get_pool() as pool:
-            self.model_list = pool(
-                delayed(_fit_single)(m, X_list, y_list, self.fit_controls)
-                for m in self.model_list
-            )
+        if (type(self.model_list) == list):
+          with self._get_pool() as pool:
+              self.model_list = pool(
+                  delayed(_fit_single)(m, X_list, y_list, self.fit_controls)
+                  for m in self.model_list
+              )
+        else:
+          self.model_list = _fit_single(self.model_list, X_list, y_list, self.fit_controls)
 
-        # self._fix_copy_names()
 
     def predict(self, X: Array2D, subject_col: Array1D) -> Array2D:
         """ Phase de prédiction """
         X_scal = self._scaler.transform(X)
         X_list = data_2D_to_list(X_scal, subject_col) # Transformation en liste de séquences
         
-        with self._get_pool() as pool:
-            # Chaque modèle fait sa propre prédiction
-            models_preds = pool(
-                delayed(_predict_single)(m, X_list, self.predict_controls)
-                for m in self.model_list
-            )
+        if (type(self.model_list) == list):
+          with self._get_pool() as pool:
+              # Chaque modèle fait sa propre prédiction
+              models_preds = pool(
+                  delayed(_predict_single)(m, X_list, self.predict_controls)
+                  for m in self.model_list
+              )
+        else:
+          models_preds = _predict_single(self.model_list, X_list, self.predict_controls)
 
         # On répare la structure et on fait la moyenne (ou médiane) des prédictions de tous les modèles
         models_preds = fix_single_subject_predictions(models_preds, subject_col)
-        agg_pred = aggregate_predict_output(models_preds, self._aggregator)
+        if (type(self.model_list) == list):
+          agg_pred = aggregate_predict_output(models_preds, self._aggregator)
+        else:
+          agg_pred = models_preds
         
         # On remet les prédictions sous forme de tableau 2D standard
         res = data_list_to_2D(agg_pred, subject_col)

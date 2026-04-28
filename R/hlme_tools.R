@@ -124,10 +124,14 @@ hlme_ctrls <- function(
   if (!is.null(b_backup)) {
     idx_varcov <- grepl("^varcov ", names(random_hlme$best))
     n_rand_var <- sum(idx_varcov)
-    if (length(b_backup) != n_rand_var) {
+    idx_b_backup <- grepl("^varcov ", names(b_backup))
+    n_backup_var <- sum(idx_b_backup)
+    if (n_backup_var != n_rand_var) {
       stop(sprintf("B should only contains %d random-effects \"varcov\" values.", n_rand_var))
+    }else{
+      random_hlme$best[idx_varcov] <- b_backup[idx_b_backup]
+      random_hlme$best[["stderr"]] <- b_backup[["stderr"]]
     }
-    random_hlme$best[idx_varcov] <- b_backup
   }
   # forcing the fixed intercept to 0  ( "$" does not work: conversion to list)
   random_hlme$best[["intercept"]] <- 0.

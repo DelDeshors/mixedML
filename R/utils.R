@@ -10,14 +10,39 @@
   return(y_label)
 }
 
-.get_x_labels <- function(spec, allow_interactions = FALSE) {
+# .get_x_labels <- function(spec, allow_interactions = FALSE) {
+#   stopifnot(inherits(spec, "formula"))
+#   orders <- attr(terms(spec), "order")
+#   if ((!allow_interactions) && max(orders) > 1) {
+#     stop("Formula with interactions are not allowed for this model.")
+#   }
+#   x_labels <- attr(terms(spec), "term.labels")
+#   return(x_labels)
+# }
+
+.get_x_labels <- function(spec, data = NULL, allow_interactions = FALSE) {
   stopifnot(inherits(spec, "formula"))
-  orders <- attr(terms(spec), "order")
+
+  # Check the interactions if needed
+  terms_obj <- terms(spec)
+  orders <- attr(terms_obj, "order")
   if ((!allow_interactions) && max(orders) > 1) {
     stop("Formula with interactions are not allowed for this model.")
   }
-  x_labels <- attr(terms(spec), "term.labels")
-  return(x_labels)
+
+  # Extract all the "raw" variables from the formula
+  vars <- all.vars(spec)
+
+  # Remove the response variable
+  response <- as.character(spec[[2]])
+  vars <- setdiff(vars, response)
+
+  # If data is provided, keep only the existing columns
+  if (!is.null(data)) {
+    vars <- intersect(vars, colnames(data))
+  }
+
+  return(vars)
 }
 
 # multiprocessing

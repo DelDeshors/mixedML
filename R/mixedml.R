@@ -608,6 +608,25 @@ mixedml_training_loop <- function(
   n_na_full <- .check_na_combinaison(data_train, fixed_spec, random_spec, target_name)
   backup <- tempfile(fileext = ".Rds")
   do_val <- !is.null(data_val)
+
+  # # fitting Naive random effects -----
+  # message("\tfitting Naive random effects...")
+  # data_rand[[target_name]] <- data_train[[target_name]]
+  # random_model <- try(.fit_random_hlme(random_model, data_rand), silent = FALSE)
+  # if (inherits(random_model, "try-error")) {
+  #   warning("Training of the HLME model failed: aborting the training loop!")
+  #   break()
+  # }
+  # .check_convergence_hlme(random_model)
+  # pred_rand <- try(
+  #   .predict_random_hlme(random_model, data_rand, mixedml_controls$all_info_hlme_prediction),
+  #   silent = FALSE
+  # )
+  # if (inherits(pred_rand, "try-error")) {
+  #   warning("Prediction with the HLME model failed: aborting the training loop!")
+  #   break()
+  # }
+
   # convergence loop ----
   while (TRUE) {
     start <- format(Sys.time(), "%H:%M:%S")
@@ -615,19 +634,38 @@ mixedml_training_loop <- function(
     # fitting fixed effects -----
     message("\tfitting fixed effects...")
     data_fixed[[target_name]] <- data_train[[target_name]] - pred_rand
+    # print(head(data_fixed$Y_sim))
     fitted_fixed_model <- try_fit_fixed_model(fixed_model, data_fixed, fixed_spec, subject)
     if (is.null(fitted_fixed_model)) {
       break() # the "break" must stay in the loop
     }
-    pred_fixed <- try_predict_fixed_model(fixed_model, data_fixed, fixed_spec, subject)
+    # print("Win:")
+    # print(fitted_fixed_model$model_list$reservoir$Win$data)
+    # print("W:")
+    # print(fitted_fixed_model$model_list$reservoir$W$data)
+    # print("S out:")
+    # print(fitted_fixed_model$model_list$reservoir$state[["out"]])
+    # print("bias output:")
+    # print(fitted_fixed_model$model_list$readout$bias)
+    # print("Wout:")
+    # print(t(fitted_fixed_model$model_list$readout$Wout))
+
+    #mise a zero des etats dans le reservoir
+    fixed_model$model_list$reservoir$reset
+    fitted_fixed_model$model_list$reservoir$reset
+    pred_fixed <- try_predict_fixed_model(fixed_model, data_fixed=data_fixed, fixed_spec, subject)
     if (is.null(pred_fixed)) {
       break() # the "break" must stay in the loop
     }
-    #browser()
+    # print("Pred fixed:")
+    # print(head(pred_fixed))
     # fitting random effects -----
     message("\tfitting random effects...")
     data_rand[[target_name]] <- data_train[[target_name]] - pred_fixed
+    #print("data_rand")
+    #print(head(data_rand$Y_sim))
     random_model <- try(.fit_random_hlme(random_model, data_rand), silent = FALSE)
+    # print(random_model$best)
     if (inherits(random_model, "try-error")) {
       warning("Training of the HLME model failed: aborting the training loop!")
       break()
@@ -641,6 +679,8 @@ mixedml_training_loop <- function(
       warning("Prediction with the HLME model failed: aborting the training loop!")
       break()
     }
+    # print("Pred rand:")
+    # print(head(pred_rand))
     # train residuals/mse and loglik----
     residuals_train <- data_train[, target_name] - (pred_fixed + pred_rand)
     ccases_resid <- complete.cases(residuals_train)
@@ -669,7 +709,8 @@ mixedml_training_loop <- function(
       mse_val_list <- c(mse_val_list, mse_val)
 
       # loglik
-      pred_val_fixed <- predict_fixed_model(fixed_model, data_val, fixed_spec, subject)
+      pred_val_fixed <- try_predict_fixed_model(tmp_model$fixed_model, data_fixed=data_val, tmp_model$fixed_spec, tmp_model$subject)
+      #pred_val_fixed <- predict_fixed_model(tmp_model$fixed_model, data_val, tmp_model$fixed_spec, tmp_model$subject)
       data_val_rand <- data_val
       data_val_rand[[target_name]] <- data_val[[target_name]] - pred_val_fixed
       hlme_val <- stats::update(random_model, data = data_val_rand, B = random_model$best, maxiter = 0)

@@ -49,6 +49,9 @@ reservoir_mixedml <- function(
     time,
     mixedml_controls,
     hlme_controls,
+    esn_controls,
+    ensemble_controls,
+    fit_controls,
     call
   )
   return(model)

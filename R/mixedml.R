@@ -551,6 +551,9 @@ mixedml_training_loop <- function(
   time,
   mixedml_controls,
   hlme_controls,
+  esn_controls,
+  ensemble_controls,
+  fit_controls,
   call
 ) {
   data_train <- data
@@ -633,8 +636,9 @@ mixedml_training_loop <- function(
     message(sprintf("step#%d", istep))
     # fitting fixed effects -----
     message("\tfitting fixed effects...")
+    fixed_model <- .initiate_esn(esn_controls, ensemble_controls, fit_controls)
     data_fixed[[target_name]] <- data_train[[target_name]] - pred_rand
-    # print(head(data_fixed$Y_sim))
+    #print(head(data_fixed$Y_sim))
     fitted_fixed_model <- try_fit_fixed_model(fixed_model, data_fixed, fixed_spec, subject)
     if (is.null(fitted_fixed_model)) {
       break() # the "break" must stay in the loop
@@ -657,15 +661,15 @@ mixedml_training_loop <- function(
     if (is.null(pred_fixed)) {
       break() # the "break" must stay in the loop
     }
-    # print("Pred fixed:")
-    # print(head(pred_fixed))
+    #print("Pred fixed:")
+    #print(head(pred_fixed))
     # fitting random effects -----
     message("\tfitting random effects...")
     data_rand[[target_name]] <- data_train[[target_name]] - pred_fixed
     #print("data_rand")
     #print(head(data_rand$Y_sim))
     random_model <- try(.fit_random_hlme(random_model, data_rand), silent = FALSE)
-    # print(random_model$best)
+    #print(random_model$best)
     if (inherits(random_model, "try-error")) {
       warning("Training of the HLME model failed: aborting the training loop!")
       break()

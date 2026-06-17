@@ -636,9 +636,8 @@ mixedml_training_loop <- function(
     message(sprintf("step#%d", istep))
     # fitting fixed effects -----
     message("\tfitting fixed effects...")
-    fixed_model <- .initiate_esn(esn_controls, ensemble_controls, fit_controls)
     data_fixed[[target_name]] <- data_train[[target_name]] - pred_rand
-    #print(head(data_fixed$Y_sim))
+    #print(head(data_fixed))
     fitted_fixed_model <- try_fit_fixed_model(fixed_model, data_fixed, fixed_spec, subject)
     if (is.null(fitted_fixed_model)) {
       break() # the "break" must stay in the loop
@@ -654,22 +653,34 @@ mixedml_training_loop <- function(
     # print("Wout:")
     # print(t(fitted_fixed_model$model_list$readout$Wout))
 
-    #mise a zero des etats dans le reservoir
-    fixed_model$model_list$reservoir$reset
-    fitted_fixed_model$model_list$reservoir$reset
     pred_fixed <- try_predict_fixed_model(fixed_model, data_fixed=data_fixed, fixed_spec, subject)
     if (is.null(pred_fixed)) {
       break() # the "break" must stay in the loop
     }
     #print("Pred fixed:")
     #print(head(pred_fixed))
+
+    # #resetting the states in the reservoir
+    # Nbres = length(seq_along(fitted_fixed_model$model_list))
+    # if (Nbres == 1){
+    #   fitted_fixed_model$model_list$reservoir$reset()
+    # }
+    # else
+    #   lapply(fitted_fixed_model$model_list, function(m) m$reservoir$reset())
+
+
     # fitting random effects -----
     message("\tfitting random effects...")
     data_rand[[target_name]] <- data_train[[target_name]] - pred_fixed
     #print("data_rand")
-    #print(head(data_rand$Y_sim))
+    #print(head(data_rand))
     random_model <- try(.fit_random_hlme(random_model, data_rand), silent = FALSE)
     #print(random_model$best)
+    # cat("B =", random_model$best["varcov 1"], "\n")
+    #
+    # if (random_model$best["varcov 1"] <= 0) {
+    #   stop("Variance aléatoire non positive")
+    # }
     if (inherits(random_model, "try-error")) {
       warning("Training of the HLME model failed: aborting the training loop!")
       break()
@@ -686,6 +697,9 @@ mixedml_training_loop <- function(
     # print("Pred rand:")
     # print(head(pred_rand))
     # train residuals/mse and loglik----
+    # pred_mixedml <- pred_fixed + pred_rand
+    # print("pred_mixedml:")
+    # print(head(pred_mixedml))
     residuals_train <- data_train[, target_name] - (pred_fixed + pred_rand)
     ccases_resid <- complete.cases(residuals_train)
     stopifnot(n_na_full == sum(!ccases_resid))
@@ -696,12 +710,14 @@ mixedml_training_loop <- function(
     loglik_train <- random_model$loglik
     message(sprintf("\tloglik-train = %.4g", loglik_train))
     loglik_train_list <- c(loglik_train_list, loglik_train)
+
     ## convergence test ---
     if (abs(loglik_train - loglik_prev) < tol) {
       message("Convergence reached (loglik train)")
       break()
     }
     loglik_prev <- loglik_train
+
     # val residuals/mse and loglik ----
     if (do_val) {
       tmp_model <- .get_model_snapshot()
@@ -714,13 +730,19 @@ mixedml_training_loop <- function(
 
       # loglik
       pred_val_fixed <- try_predict_fixed_model(tmp_model$fixed_model, data_fixed=data_val, tmp_model$fixed_spec, tmp_model$subject)
-      #pred_val_fixed <- predict_fixed_model(tmp_model$fixed_model, data_val, tmp_model$fixed_spec, tmp_model$subject)
       data_val_rand <- data_val
       data_val_rand[[target_name]] <- data_val[[target_name]] - pred_val_fixed
       hlme_val <- stats::update(random_model, data = data_val_rand, B = random_model$best, maxiter = 0)
       loglik_val <- hlme_val$loglik
       message(sprintf("\tloglik-val = %.4g", loglik_val))
       loglik_val_list <- c(loglik_val_list, loglik_val)
+
+      # #resetting the states in the reservoir
+      # if (Nbres == 1){
+      #   tmp_model$fixed_model$model_list$reservoir$reset()
+      # }
+      # else
+      #   lapply(tmp_model$fixed_model$model_list, function(m) m$reservoir$reset())
 
       # #test
       # residuals_hlme_val = hlme_val$pred$resid_ss

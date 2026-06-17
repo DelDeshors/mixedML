@@ -112,14 +112,25 @@ summary_fixed_model.reservoir <- function(object, ...) {
   model <- object
   cat("\n\n === Reservoir Computing model (ReservoirPy) ===\n")
   cat("ESN ensemble data:\n")
-  cat("  Number of reservoirs in the ensemble:", length(model$model_list), "\n")
-  cat("  Aggregator:", model$aggregator, "\n")
-  cat("  Data scaler:", model$scaler, "\n")
-
-  esn <- model$model_list[[1]]
-  cat("ESN data:\n")
-  cat("  Feedback connection:", esn$feedback, "\n")
-  cat("  Input-to-Readout:", esn$input_to_readout, "\n")
+  Nbres = length(seq_along(model$model_list))
+  if (Nbres > 1){
+    cat("  Number of reservoirs in the ensemble:", Nbres, "\n")
+    cat("  Aggregator:", model$aggregator, "\n")
+    cat("  Data scaler:", model$scaler, "\n")
+    esn <- model$model_list[[1]]
+    cat("ESN data:\n")
+    cat("  Feedback connection:", esn$feedback, "\n")
+    cat("  Input-to-Readout:", esn$input_to_readout, "\n")
+  }
+  else{
+    cat("  Number of reservoirs in the ensemble:", Nbres, "\n")
+    cat("  Aggregator:", model$aggregator, "\n")
+    cat("  Data scaler:", model$scaler, "\n")
+    esn <- model$model_list
+    cat("ESN data:\n")
+    cat("  Feedback connection:", esn$feedback, "\n")
+    cat("  Input-to-Readout:", esn$input_to_readout, "\n")
+  }
 
   rsrvr <- esn$reservoir
   cat("Reservoirs data:\n")

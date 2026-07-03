@@ -612,24 +612,6 @@ mixedml_training_loop <- function(
   backup <- tempfile(fileext = ".Rds")
   do_val <- !is.null(data_val)
 
-  # # fitting Naive random effects -----
-  # message("\tfitting Naive random effects...")
-  # data_rand[[target_name]] <- data_train[[target_name]]
-  # random_model <- try(.fit_random_hlme(random_model, data_rand), silent = FALSE)
-  # if (inherits(random_model, "try-error")) {
-  #   warning("Training of the HLME model failed: aborting the training loop!")
-  #   break()
-  # }
-  # .check_convergence_hlme(random_model)
-  # pred_rand <- try(
-  #   .predict_random_hlme(random_model, data_rand, mixedml_controls$all_info_hlme_prediction),
-  #   silent = FALSE
-  # )
-  # if (inherits(pred_rand, "try-error")) {
-  #   warning("Prediction with the HLME model failed: aborting the training loop!")
-  #   break()
-  # }
-
   # convergence loop ----
   while (TRUE) {
     start <- format(Sys.time(), "%H:%M:%S")
@@ -657,17 +639,8 @@ mixedml_training_loop <- function(
     if (is.null(pred_fixed)) {
       break() # the "break" must stay in the loop
     }
-    #print("Pred fixed:")
-    #print(head(pred_fixed))
-
-    # #resetting the states in the reservoir
-    # Nbres = length(seq_along(fitted_fixed_model$model_list))
-    # if (Nbres == 1){
-    #   fitted_fixed_model$model_list$reservoir$reset()
-    # }
-    # else
-    #   lapply(fitted_fixed_model$model_list, function(m) m$reservoir$reset())
-
+    # print("Pred fixed:")
+    # print(head(pred_fixed))
 
     # fitting random effects -----
     message("\tfitting random effects...")
@@ -675,12 +648,8 @@ mixedml_training_loop <- function(
     #print("data_rand")
     #print(head(data_rand))
     random_model <- try(.fit_random_hlme(random_model, data_rand), silent = FALSE)
-    #print(random_model$best)
-    # cat("B =", random_model$best["varcov 1"], "\n")
-    #
-    # if (random_model$best["varcov 1"] <= 0) {
-    #   stop("Variance aléatoire non positive")
-    # }
+    # print(random_model$best)
+
     if (inherits(random_model, "try-error")) {
       warning("Training of the HLME model failed: aborting the training loop!")
       break()
@@ -804,6 +773,15 @@ mixedml_training_loop <- function(
         break()
       }
     }
+
+    #resetting the states in the reservoir
+    Nbres = length(seq_along(fitted_fixed_model$model_list))
+    if (Nbres == 1){
+      fitted_fixed_model$model_list$reservoir$reset()
+    }
+    else
+      lapply(fitted_fixed_model$model_list, function(m) m$reservoir$reset())
+
     istep <- istep + 1
   }
   #

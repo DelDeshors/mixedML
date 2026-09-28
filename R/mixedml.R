@@ -625,16 +625,16 @@ mixedml_training_loop <- function(
     if (is.null(fitted_fixed_model)) {
       break() # the "break" must stay in the loop
     }
-    print("Win:")
-    print(fitted_fixed_model$model_list[[1]]$reservoir$Win$data)
-    print("W:")
-    print(fitted_fixed_model$model_list[[1]]$reservoir$W$data)
-    print("S out:")
-    print(fitted_fixed_model$model_list[[1]]$reservoir$state[["out"]])
-    print("bias output:")
-    print(fitted_fixed_model$model_list[[1]]$readout$bias)
-    print("Wout:")
-    print(t(fitted_fixed_model$model_list[[1]]$readout$Wout))
+    # print("Win:")
+    # print(fitted_fixed_model$model_list[[1]]$reservoir$Win$data)
+    # print("W:")
+    # print(fitted_fixed_model$model_list[[1]]$reservoir$W$data)
+    # print("S out:")
+    # print(fitted_fixed_model$model_list[[1]]$reservoir$state[["out"]])
+    # print("bias output:")
+    # print(fitted_fixed_model$model_list[[1]]$readout$bias)
+    # print("Wout:")
+    # print(t(fitted_fixed_model$model_list[[1]]$readout$Wout))
 
     pred_fixed <- try_predict_fixed_model(fixed_model, data_fixed=data_fixed, fixed_spec, subject)
     if (is.null(pred_fixed)) {
@@ -646,8 +646,8 @@ mixedml_training_loop <- function(
     # fitting random effects -----
     message("\tfitting random effects...")
     data_rand[[target_name]] <- data_train[[target_name]] - pred_fixed
-    #print("data_rand")
-    #print(head(data_rand))
+    print("data_rand")
+    print(head(data_rand))
     random_model <- try(.fit_random_hlme(random_model, data_rand), silent = FALSE)
     # print(random_model$best)
 
@@ -664,12 +664,12 @@ mixedml_training_loop <- function(
       warning("Prediction with the HLME model failed: aborting the training loop!")
       break()
     }
-    # print("Pred rand:")
-    # print(head(pred_rand))
+    print("Pred rand:")
+    print(head(pred_rand))
     # train residuals/mse and loglik----
-    # pred_mixedml <- pred_fixed + pred_rand
-    # print("pred_mixedml:")
-    # print(head(pred_mixedml))
+    pred_mixedml <- pred_fixed + pred_rand
+    print("pred_mixedml:")
+    print(head(pred_mixedml))
     residuals_train <- data_train[, target_name] - (pred_fixed + pred_rand)
     ccases_resid <- complete.cases(residuals_train)
     stopifnot(n_na_full == sum(!ccases_resid))

@@ -84,14 +84,14 @@ fit_ctrls <- function(warmup = 0) {
   return()
 }
 
-## initialiaztion ----
+## initialization ----
 
 .initiate_esn <- function(esn_controls, ensemble_controls, fit_controls) {
   .test_initiate_esn(esn_controls, ensemble_controls, fit_controls)
   retipy <- reticulate::import("reservoir_ensemble")
   # enforcing "stateful=TRUE" and "reset=TRUE"
   enforcement <- list(stateful = TRUE, reset = TRUE)
-  fit_controls <- c(fit_controls)#, enforcement)
+  fit_controls <- c(fit_controls)#, enforcement) #to remove if it does not exist in reservoirPy
   predict_controls <- enforcement
 
   controls <- c(

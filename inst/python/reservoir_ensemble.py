@@ -108,7 +108,7 @@ def _fit_single(model: Model, X: list[Array2D], y: list[Array2D], fit_controls: 
 class JoblibReservoirEnsemble(_CommonReservoirEnsemble):
     """
     La classe principale. Elle crée plusieurs réseaux de neurones (ESN) avec des initialisations
-    diffèrentes (seeds), les entraine en même temps, et fait la moyenne de leurs prédictions.
+    différentes (seeds), les entraine en même temps, et fait la moyenne de leurs prédictions.
     """
     def __init__(
         self,
@@ -142,7 +142,7 @@ class JoblibReservoirEnsemble(_CommonReservoirEnsemble):
         """ Phase d'entrainement de tous les modèles """
         # 1. Mise à  l'échelle des données (ex: entre 0 et 1)
         X_scal = self._scaler.fit_transform(X)
-
+        
         # 2. C'EST SOUVENT ICI QUE ca CASSE. 
         # data_2D_to_list doit transformer tes grosses tables de données en une LISTE de séquences.
         # Si la forme n'est pas [temps, features], ReservoirPy plantera au niveau du Readout.
@@ -174,7 +174,7 @@ class JoblibReservoirEnsemble(_CommonReservoirEnsemble):
               )
         else:
           models_preds = _predict_single(self.model_list, X_list, self.predict_controls)
-
+          
         # On répare la structure et on fait la moyenne (ou médiane) des prédictions de tous les modèles
         models_preds = fix_single_subject_predictions(models_preds, subject_col)
         if (type(self.model_list) == list):

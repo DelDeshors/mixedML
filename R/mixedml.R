@@ -585,7 +585,7 @@ mixedml_training_loop <- function(
   #
   eastop_gain <- mixedml_controls$earlystopping_controls$min_mse_gain
   eastop_patience <- mixedml_controls$earlystopping_controls$patience
-  loglik_prev <- -Inf
+  # loglik_prev <- -Inf
   eastop_mse <- Inf
   eastop_loglik <- -Inf
   tol <- 1e-6
@@ -619,28 +619,29 @@ mixedml_training_loop <- function(
     # fitting fixed effects -----
     message("\tfitting fixed effects...")
     data_fixed[[target_name]] <- data_train[[target_name]] - pred_rand
-    #print(head(data_fixed))
+    print("Target for fixed effects (first 5):")
+    print(head(data_fixed))
     fitted_fixed_model <- try_fit_fixed_model(fixed_model, data_fixed, fixed_spec, subject)
     if (is.null(fitted_fixed_model)) {
       break() # the "break" must stay in the loop
     }
-    # print("Win:")
-    # print(fitted_fixed_model$model_list$reservoir$Win$data)
-    # print("W:")
-    # print(fitted_fixed_model$model_list$reservoir$W$data)
-    # print("S out:")
-    # print(fitted_fixed_model$model_list$reservoir$state[["out"]])
-    # print("bias output:")
-    # print(fitted_fixed_model$model_list$readout$bias)
-    # print("Wout:")
-    # print(t(fitted_fixed_model$model_list$readout$Wout))
+    print("Win:")
+    print(fitted_fixed_model$model_list[[1]]$reservoir$Win$data)
+    print("W:")
+    print(fitted_fixed_model$model_list[[1]]$reservoir$W$data)
+    print("S out:")
+    print(fitted_fixed_model$model_list[[1]]$reservoir$state[["out"]])
+    print("bias output:")
+    print(fitted_fixed_model$model_list[[1]]$readout$bias)
+    print("Wout:")
+    print(t(fitted_fixed_model$model_list[[1]]$readout$Wout))
 
     pred_fixed <- try_predict_fixed_model(fixed_model, data_fixed=data_fixed, fixed_spec, subject)
     if (is.null(pred_fixed)) {
       break() # the "break" must stay in the loop
     }
-    # print("Pred fixed:")
-    # print(head(pred_fixed))
+    print("Pred fixed:")
+    print(head(pred_fixed))
 
     # fitting random effects -----
     message("\tfitting random effects...")
@@ -680,12 +681,12 @@ mixedml_training_loop <- function(
     message(sprintf("\tloglik-train = %.4g", loglik_train))
     loglik_train_list <- c(loglik_train_list, loglik_train)
 
-    ## convergence test ---
-    if (abs(loglik_train - loglik_prev) < tol) {
-      message("Convergence reached (loglik train)")
-      break()
-    }
-    loglik_prev <- loglik_train
+    # ## convergence test ---
+    # if (abs(loglik_train - loglik_prev) < tol) {
+    #   message("Convergence reached (loglik train)")
+    #   break()
+    # }
+    # loglik_prev <- loglik_train
 
     # val residuals/mse and loglik ----
     if (do_val) {
@@ -705,13 +706,6 @@ mixedml_training_loop <- function(
       loglik_val <- hlme_val$loglik
       message(sprintf("\tloglik-val = %.4g", loglik_val))
       loglik_val_list <- c(loglik_val_list, loglik_val)
-
-      # #resetting the states in the reservoir
-      # if (Nbres == 1){
-      #   tmp_model$fixed_model$model_list$reservoir$reset()
-      # }
-      # else
-      #   lapply(tmp_model$fixed_model$model_list, function(m) m$reservoir$reset())
 
       # #test
       # residuals_hlme_val = hlme_val$pred$resid_ss
@@ -742,7 +736,7 @@ mixedml_training_loop <- function(
       best_data_rand <- data_rand
     }
 
-    ## improving / early stopping test ----
+    ##  stagnation test on MSE ----
     if (mse_conv < eastop_mse - eastop_gain) {
       message("\t(improvement)")
       eastop_mse <- mse_conv

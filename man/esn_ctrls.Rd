@@ -2,7 +2,8 @@
 % Please edit documentation in R/fixed_model.reservoir.R
 \name{esn_ctrls}
 \alias{esn_ctrls}
-\title{Prepare the esn_controls}
+\title{Prepare the esn_controls
+esn_controls contains the hyperparameters for the reservoir model.}
 \usage{
 esn_ctrls(
   units = 100,
@@ -11,7 +12,9 @@ esn_ctrls(
   ridge = 0,
   input_scaling = 1,
   feedback = FALSE,
-  input_to_readout = FALSE
+  input_to_readout = FALSE,
+  input_connectivity = 0.2,
+  rc_connectivity = 0.2
 )
 }
 \arguments{
@@ -28,6 +31,10 @@ esn_ctrls(
 \item{feedback}{Is readout connected to reservoir through feedback?}
 
 \item{input_to_readout}{If True, the input is directly fed to the readout.}
+
+\item{input_connectivity}{Connectivity (or density) of Win}
+
+\item{rc_connectivity}{Connectivity (or density) of Wfb}
 }
 \value{
 esn_controls

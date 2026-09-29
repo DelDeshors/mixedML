@@ -1,8 +1,7 @@
 # initialization  ----
 
-## controls testing ----
-
 #' Prepare the esn_controls
+#' esn_controls contains the hyperparameters for the reservoir model.
 #'
 #' Please see the documentation of ReservoirPy for:
 #' - [Reservoir](https://reservoirpy.readthedocs.io/en/latest/api/generated/reservoirpy.nodes.Reservoir.html)
@@ -14,6 +13,9 @@
 #' @param input_scaling Input gain. (So far only a float can be used).
 #' @param feedback Is readout connected to reservoir through feedback?
 #' @param input_to_readout  If True, the input is directly fed to the readout.
+#' @param input_connectivity Connectivity (or density) of Win
+#' @param rc_connectivity Connectivity (or density) of Wfb
+#'
 #' @return esn_controls
 #' @export
 esn_ctrls <- function(
@@ -23,8 +25,9 @@ esn_ctrls <- function(
   ridge = 0.0,
   input_scaling = 1.0,
   feedback = FALSE,
-  input_to_readout = FALSE
-  #use_raw_inputs = FALSE
+  input_to_readout = FALSE,
+  input_connectivity = 0.2,
+  rc_connectivity =0.2
 ) {
   stopifnot(is.single.integer(units))
   units <- as.integer(units)
@@ -34,6 +37,8 @@ esn_ctrls <- function(
   stopifnot(is.numeric(input_scaling) && length(input_scaling) == 1 && input_scaling > 0.)
   stopifnot(is.logical(feedback))
   stopifnot(is.logical(input_to_readout))
+  stopifnot(is.single.numeric(input_connectivity))
+  stopifnot(is.single.numeric(rc_connectivity))
   return(as.list(environment()))
 }
 

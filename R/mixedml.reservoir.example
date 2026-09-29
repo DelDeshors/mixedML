@@ -1,4 +1,4 @@
-
+set.seed(123)
 data_mixedml <- data_mixedml[complete.cases(data_mixedml), ]
 data_train <- data_mixedml[data_mixedml$ID < 9, ]
 data_val <- data_mixedml[data_mixedml$ID >= 9, ]

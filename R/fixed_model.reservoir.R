@@ -108,6 +108,7 @@ fit_ctrls <- function(warmup = 0) {
 
 #' @method summary_fixed_model reservoir
 #' @noRd
+#' @export
 summary_fixed_model.reservoir <- function(object, ...) {
   model <- object
   cat("\n\n === Reservoir Computing model (ReservoirPy) ===\n")
@@ -157,6 +158,7 @@ print.reservoir <- function(x, ...) {
 
 #' @method fit_fixed_model reservoir
 #' @noRd
+#' @export
 fit_fixed_model.reservoir <- function(model, data, fixed_spec, subject) {
   # !!! offsetting is not implemented in LCMM
   # BUT for linear models, fitting "f(X)+offset" on Y is equivalent to
@@ -177,6 +179,7 @@ fit_fixed_model.reservoir <- function(model, data, fixed_spec, subject) {
 
 #' @method predict_fixed_model reservoir
 #' @noRd
+#' @export
 predict_fixed_model.reservoir <- function(model, data, fixed_spec, subject) {
   x_labels <- .get_x_labels(fixed_spec)
   ccases <- complete.cases(data[x_labels])

@@ -619,8 +619,9 @@ mixedml_training_loop <- function(
     # fitting fixed effects -----
     message("\tfitting fixed effects...")
     data_fixed[[target_name]] <- data_train[[target_name]] - pred_rand
-    print("Target for fixed effects (first 5):")
-    print(head(data_fixed))
+    # print("Target for fixed effects (first 5):")
+    # print(head(data_fixed))
+
     fitted_fixed_model <- try_fit_fixed_model(fixed_model, data_fixed, fixed_spec, subject)
     if (is.null(fitted_fixed_model)) {
       break() # the "break" must stay in the loop
@@ -640,14 +641,15 @@ mixedml_training_loop <- function(
     if (is.null(pred_fixed)) {
       break() # the "break" must stay in the loop
     }
-    print("Pred fixed:")
-    print(head(pred_fixed))
+    # print("Pred fixed:")
+    # print(head(pred_fixed))
 
     # fitting random effects -----
     message("\tfitting random effects...")
     data_rand[[target_name]] <- data_train[[target_name]] - pred_fixed
-    print("data_rand")
-    print(head(data_rand))
+    # print("data_rand")
+    # print(head(data_rand))
+
     random_model <- try(.fit_random_hlme(random_model, data_rand), silent = FALSE)
     # print(random_model$best)
 
@@ -664,12 +666,13 @@ mixedml_training_loop <- function(
       warning("Prediction with the HLME model failed: aborting the training loop!")
       break()
     }
-    print("Pred rand:")
-    print(head(pred_rand))
+    # print("Pred rand:")
+    # print(head(pred_rand))
+
     # train residuals/mse and loglik----
-    pred_mixedml <- pred_fixed + pred_rand
-    print("pred_mixedml:")
-    print(head(pred_mixedml))
+    # pred_mixedml <- pred_fixed + pred_rand
+    # print("pred_mixedml:")
+    # print(head(pred_mixedml))
     residuals_train <- data_train[, target_name] - (pred_fixed + pred_rand)
     ccases_resid <- complete.cases(residuals_train)
     stopifnot(n_na_full == sum(!ccases_resid))

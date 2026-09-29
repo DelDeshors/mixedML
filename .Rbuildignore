@@ -22,3 +22,5 @@
 ^pkgdown$
 ^pre-commit-utils$
 ^reservoirpy-temp$
+^\.positai$
+^\.claude$

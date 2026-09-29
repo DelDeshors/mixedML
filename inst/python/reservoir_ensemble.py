@@ -127,9 +127,15 @@ class JoblibReservoirEnsemble(_CommonReservoirEnsemble):
         # esn_controls contient les paramètres (nombre de neurones, fuite, etc.).
         if (type(seed_list) == int):
           self.model_list = ESN(**dict(**esn_controls, seed=seed_list))
+          self.model_list.reservoir.input_connectivity = 0.2
         else:
           self.model_list = [ESN(**dict(**esn_controls, seed=s)) for s in seed_list]
-
+        
+        if (type(self.model_list) == list):
+            for m in self.model_list:
+                m.reservoir.input_connectivity = 0.2
+                #print(m.reservoir.input_connectivity)
+                
         self.fit_controls = fit_controls
         self.predict_controls = predict_controls
         

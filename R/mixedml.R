@@ -705,7 +705,7 @@ mixedml_training_loop <- function(
         mse_val_list <- c(mse_val_list, mse_val)
 
         # loglik
-        pred_val_fixed <- try_predict_fixed_model(tmp_model$fixed_model, data_fixed=data_val, tmp_model$fixed_spec, tmp_model$subject, tmp_model$return_individual)
+        pred_val_fixed <- try_predict_fixed_model(tmp_model$fixed_model, data_fixed=data_val, tmp_model$fixed_spec, tmp_model$subject, tmp_model$fixed_model$return_individual)
         data_val_rand <- data_val
         data_val_rand[[target_name]] <- data_val[[target_name]] - pred_val_fixed
         hlme_val <- stats::update(random_model, data = data_val_rand, B = random_model$best, maxiter = 0)

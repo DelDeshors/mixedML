@@ -8,7 +8,8 @@ ensemble_ctrls(
   seed_list = c(1, 2, 3),
   aggregator = "median",
   scaler = "standard",
-  n_procs = 1
+  n_procs = 1,
+  return_individual = FALSE
 )
 }
 \arguments{
@@ -21,6 +22,8 @@ ensemble_ctrls(
 "standard", "robust", "min-max", "max-abs". Default: "standard"}
 
 \item{n_procs}{Number of processor to use. 1 means no multiprocessing. Default: 1.}
+
+\item{return_individual}{return predictions for each reservoir (seed). Usefull for random research. Default: FALSE}
 }
 \value{
 ensemble_controls

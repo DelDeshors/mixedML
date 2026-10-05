@@ -15,7 +15,7 @@ fit_fixed_model <- function(model, data, fixed_spec, subject) {
   # Will not be executed"
 }
 
-predict_fixed_model <- function(model, data, fixed_spec, subject) {
+predict_fixed_model <- function(model, data, fixed_spec, subject, return_individual = FALSE) {
   UseMethod("predict_fixed_model")
   # Will not be executed"
 }
@@ -70,12 +70,13 @@ try_fit_fixed_model <- function(fixed_model, data_fixed, fixed_spec, subject) {
 }
 
 
-try_predict_fixed_model <- function(fixed_model, data_fixed, fixed_spec, subject) {
-  pred_fixed <- try(predict_fixed_model(fixed_model, data_fixed, fixed_spec, subject), silent = FALSE)
+try_predict_fixed_model <- function(fixed_model, data_fixed, fixed_spec, subject, return_individual) {
+  pred_fixed <- try(predict_fixed_model(fixed_model, data_fixed, fixed_spec, subject, return_individual), silent = FALSE)
   if (inherits(pred_fixed, "try-error")) {
     warning("Prediction with the ML model failed: aborting the training loop!")
     return(NULL)
   }
-  check_predict_fixed_model(pred_fixed, data_fixed)
+  if (!fixed_model$return_individual)
+    check_predict_fixed_model(pred_fixed, data_fixed)
   return(pred_fixed)
 }

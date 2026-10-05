@@ -51,15 +51,17 @@ esn_ctrls <- function(
 #' @param scaler scikit-learn scaler to use on the X data.
 #' "standard", "robust", "min-max", "max-abs". Default: "standard"
 #' @param n_procs Number of processor to use. 1 means no multiprocessing. Default: 1.
+#' @param return_individual return predictions for each reservoir (seed). Usefull for random research. Default: FALSE
 #' @return ensemble_controls
 #' @export
-ensemble_ctrls <- function(seed_list = c(1, 2, 3), aggregator = "median", scaler = "standard", n_procs = 1) {
+ensemble_ctrls <- function(seed_list = c(1, 2, 3), aggregator = "median", scaler = "standard", n_procs = 1, return_individual = FALSE) {
   stopifnot(is.integer(seed_list))
   seed_list <- as.integer(seed_list) # real integer for reticulate
   stopifnot(is.character(aggregator))
   stopifnot(is.character(scaler))
   stopifnot(is.single.integer(n_procs))
   n_procs <- as.integer(n_procs) # real integer for reticulate
+  stopifnot(is.logical(return_individual))
   return(as.list(environment()))
 }
 
@@ -96,13 +98,12 @@ fit_ctrls <- function(warmup = 0) {
   retipy <- reticulate::import("reservoir_ensemble")
   # enforcing "stateful=TRUE" and "reset=TRUE"
   enforcement <- list(stateful = TRUE, reset = TRUE)
-  fit_controls <- c(fit_controls)#, enforcement) #to remove if it does not exist in reservoirPy
+  fit_controls <- c(fit_controls)
   predict_controls <- enforcement
 
-  controls <- c(
-    ensemble_controls,
-    list(esn_controls = esn_controls, fit_controls = fit_controls, predict_controls = predict_controls)
-  )
+  controls <- c(ensemble_controls,
+    list(esn_controls = esn_controls, fit_controls = fit_controls, predict_controls = predict_controls))
+
   model <- do.call(retipy$JoblibReservoirEnsemble, controls)
   # class for the S3 dispatching
   class(model) <- c("reservoir", class(model))
@@ -185,17 +186,88 @@ fit_fixed_model.reservoir <- function(model, data, fixed_spec, subject) {
 #' @method predict_fixed_model reservoir
 #' @noRd
 #' @export
-predict_fixed_model.reservoir <- function(model, data, fixed_spec, subject) {
+predict_fixed_model.reservoir <- function(model, data, fixed_spec, subject, return_individual) {
   x_labels <- .get_x_labels(fixed_spec)
   ccases <- complete.cases(data[x_labels])
   rname <- rownames(data)
   data <- data[ccases, ]
   controls <- list(X = as.matrix(data[x_labels]), subject_col = as.array(data[[subject]]))
+  if (return_individual) {
+    controls$return_individual <- TRUE
+  }
+
   pred_fixed <- do.call(model$predict, controls)
-  stopifnot(ncol(pred_fixed) == 1)
-  stopifnot(all(!is.na(pred_fixed[, 1])))
-  pred_final <- rep(NA, length(ccases))
-  pred_final[ccases] <- pred_fixed[, 1]
-  names(pred_final) <- rname
-  return(pred_final)
+
+  # ---------------------------------------------------------
+  # Cas normal : une seule prédiction agrégée
+  # ---------------------------------------------------------
+  if (!return_individual) {
+    stopifnot(ncol(pred_fixed) == 1)
+    stopifnot(all(!is.na(pred_fixed[, 1])))
+    pred_final <- rep(NA, length(ccases))
+    pred_final[ccases] <- pred_fixed[, 1]
+    names(pred_final) <- rname
+    return(pred_final)
+  }
+
+  # ---------------------------------------------------------
+  # Cas individuel : une prédiction par seed
+  # ---------------------------------------------------------
+  pred_individual <- lapply(pred_fixed, function(pred) {
+
+    stopifnot(ncol(pred) == 1)
+    stopifnot(all(!is.na(pred[, 1])))
+
+    pred_final <- rep(NA, length(ccases))
+    pred_final[ccases] <- pred[, 1]
+    names(pred_final) <- rname
+
+    return(pred_final)
+    }
+  )
+
+  names(pred_individual) <- seq_along(pred_individual)
+
+  return(pred_individual)
+}
+
+
+#' Evaluate the reservoir separately for each seed
+#'
+#' Computes the validation MSE for each reservoir initialization
+#' and the mean MSE across all reservoir initializations.
+#'
+#' @param model Trained MixedML model.
+#' @param data Validation data.
+#'
+#' @return A list containing:
+#' \itemize{
+#'   \item \code{predictions}: predictions for each reservoir;
+#'   \item \code{mse_by_seed}: MSE for each reservoir;
+#'   \item \code{mean_mse}: mean MSE across reservoirs.
+#' }
+#'
+#' @noRd
+#' @export
+evaluate_reservoir_seeds <- function(model, data, fixed_spec, subject) {
+
+  x_labels <- .get_x_labels(fixed_spec)
+  y_label <- .get_y_label(fixed_spec)
+
+  ccases <- complete.cases(data[x_labels])
+  data_cc <- data[ccases, ]
+
+  controls <- list(X = as.matrix(data_cc[x_labels]), subject_col = as.array(data_cc[[subject]]), return_individual = TRUE)
+
+  pred_list <- do.call(model$predict, controls)
+
+  mse_list <- lapply(pred_list, function(pred) {
+      pred <- pred[, 1]
+      mean((data_cc[[y_label]] - pred)^2,na.rm = TRUE)
+    }
+  )
+
+  mse <- unlist(mse_list)
+
+  list(mse_by_seed = mse, mean_mse = mean(mse), sd_mse = sd(mse))
 }

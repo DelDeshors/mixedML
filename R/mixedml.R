@@ -283,7 +283,7 @@ predict <- function(model, data, all_info_hlme_prediction = FALSE, nproc_hlme_pa
   .test_predict(model, data, all_info_hlme_prediction, nproc_hlme_past)
   target_name <- .get_y_label(model$fixed_spec)
   data_rand <- data
-  pred_fixed <- predict_fixed_model(model$fixed_model, data, model$fixed_spec, model$subject)
+  pred_fixed <- predict_fixed_model(model$fixed_model, data, model$fixed_spec, model$subject, model$fixed_model$return_individual)
   data_rand[[target_name]] <- data[[target_name]] - pred_fixed
   pred_rand <- .predict_random_hlme(model$random_model, data_rand, all_info_hlme_prediction, nproc_hlme_past)
   return(pred_fixed + pred_rand)
@@ -572,6 +572,7 @@ mixedml_training_loop <- function(
   # please see .get_model_snapshot to understand the choice of the variables names
   # since it uses parent.frame() to generate the snapshot
   target_name <- .get_y_label(fixed_spec)
+
   # hlme model initialization ----
   # we change the convergence criterions for faster iterations
   # the original criterions will be used to adjust the final model
@@ -616,11 +617,10 @@ mixedml_training_loop <- function(
   while (TRUE) {
     start <- format(Sys.time(), "%H:%M:%S")
     message(sprintf("step#%d", istep))
+
     # fitting fixed effects -----
     message("\tfitting fixed effects...")
     data_fixed[[target_name]] <- data_train[[target_name]] - pred_rand
-    # print("Target for fixed effects (first 5):")
-    # print(head(data_fixed))
 
     fitted_fixed_model <- try_fit_fixed_model(fixed_model, data_fixed, fixed_spec, subject)
     if (is.null(fitted_fixed_model)) {
@@ -637,149 +637,174 @@ mixedml_training_loop <- function(
     # print("Wout:")
     # print(t(fitted_fixed_model$model_list[[1]]$readout$Wout))
 
-    pred_fixed <- try_predict_fixed_model(fixed_model, data_fixed=data_fixed, fixed_spec, subject)
+    pred_fixed <- try_predict_fixed_model(fixed_model, data_fixed=data_fixed, fixed_spec, subject, fixed_model$return_individual)
     if (is.null(pred_fixed)) {
       break() # the "break" must stay in the loop
     }
     # print("Pred fixed:")
     # print(head(pred_fixed))
 
-    # fitting random effects -----
-    message("\tfitting random effects...")
-    data_rand[[target_name]] <- data_train[[target_name]] - pred_fixed
-    # print("data_rand")
-    # print(head(data_rand))
+    # =========================================================
+    # MODE 1 : MixedML classique
+    # =========================================================
+    if (!fixed_model$return_individual){
+      # fitting random effects -----
+      message("\tfitting random effects...")
+      data_rand[[target_name]] <- data_train[[target_name]] - pred_fixed
+      # print("data_rand")
+      # print(head(data_rand))
 
-    random_model <- try(.fit_random_hlme(random_model, data_rand), silent = FALSE)
-    # print(random_model$best)
+      random_model <- try(.fit_random_hlme(random_model, data_rand), silent = FALSE)
+      # print(random_model$best)
 
-    if (inherits(random_model, "try-error")) {
-      warning("Training of the HLME model failed: aborting the training loop!")
-      break()
-    }
-    .check_convergence_hlme(random_model)
-    pred_rand <- try(
-      .predict_random_hlme(random_model, data_rand, mixedml_controls$all_info_hlme_prediction),
-      silent = FALSE
-    )
-    if (inherits(pred_rand, "try-error")) {
-      warning("Prediction with the HLME model failed: aborting the training loop!")
-      break()
-    }
-    # print("Pred rand:")
-    # print(head(pred_rand))
-
-    # train residuals/mse and loglik----
-    # pred_mixedml <- pred_fixed + pred_rand
-    # print("pred_mixedml:")
-    # print(head(pred_mixedml))
-    residuals_train <- data_train[, target_name] - (pred_fixed + pred_rand)
-    ccases_resid <- complete.cases(residuals_train)
-    stopifnot(n_na_full == sum(!ccases_resid))
-    mse_train <- mean(residuals_train[ccases_resid]**2)
-    message(sprintf("\tMSE-train = %.4g", mse_train))
-    mse_train_list <- c(mse_train_list, mse_train)
-    #
-    loglik_train <- random_model$loglik
-    message(sprintf("\tloglik-train = %.4g", loglik_train))
-    loglik_train_list <- c(loglik_train_list, loglik_train)
-
-    # ## convergence test ---
-    # if (abs(loglik_train - loglik_prev) < tol) {
-    #   message("Convergence reached (loglik train)")
-    #   break()
-    # }
-    # loglik_prev <- loglik_train
-
-    # val residuals/mse and loglik ----
-    if (do_val) {
-      tmp_model <- .get_model_snapshot()
-      pred_val <- predict(tmp_model, data_val, mixedml_controls$all_info_hlme_prediction)
-      residuals_val <- data_val[, target_name] - pred_val
-      ccases_resid <- complete.cases(residuals_val)#added
-      mse_val <- mean(residuals_val[ccases_resid]**2, na.rm = TRUE)
-      message(sprintf("\tMSE-val = %.4g", mse_val))
-      mse_val_list <- c(mse_val_list, mse_val)
-
-      # loglik
-      pred_val_fixed <- try_predict_fixed_model(tmp_model$fixed_model, data_fixed=data_val, tmp_model$fixed_spec, tmp_model$subject)
-      data_val_rand <- data_val
-      data_val_rand[[target_name]] <- data_val[[target_name]] - pred_val_fixed
-      hlme_val <- stats::update(random_model, data = data_val_rand, B = random_model$best, maxiter = 0)
-      loglik_val <- hlme_val$loglik
-      message(sprintf("\tloglik-val = %.4g", loglik_val))
-      loglik_val_list <- c(loglik_val_list, loglik_val)
-
-      # #test
-      # residuals_hlme_val = hlme_val$pred$resid_ss
-      # ccases_resid_val <- complete.cases(residuals_hlme_val)
-      # mse_val_tchek = mean(residuals_hlme_val[ccases_resid_val]**2, na.rm = TRUE)
-    }
-
-    # convergence tests ----
-    if (do_val) {
-      mse_conv <- mse_val
-      loglik_conv <- loglik_val
-    } else {
-      mse_conv <- mse_train
-      loglik_conv <- loglik_train
-    }
-
-    ## Save best model ----
-    if (mse_conv < mse_min && loglik_conv > loglik_max) {
-      message("\t(saving best model)")
-      mse_min <- mse_conv
-      loglik_max <- loglik_conv
-      # must save it since we have a reference to the Python model
-      # so we cannot use `best_fixed_model <- fixed_model`
-      # (`best_fixed_model` points to the model that keeps being updated)
-      save_mixedml(.get_model_snapshot(), backup, overwrite = TRUE)
-      best_random_model <- random_model
-      # saving for fine tuning
-      best_data_rand <- data_rand
-    }
-
-    ##  stagnation test on MSE ----
-    if (mse_conv < eastop_mse - eastop_gain) {
-      message("\t(improvement)")
-      eastop_mse <- mse_conv
-      count_conv <- 0
-    } else {
-      count_conv <- count_conv + 1
-      message(sprintf("\t(no MSE improvement #%d)", count_conv))
-    }
-
-    ## stagnation test on loglik ----
-    if (loglik_conv > eastop_loglik + eastop_gain) {
-      eastop_loglik <- loglik_conv
-      count_loglik <- 0
-    } else {
-      count_loglik <- count_loglik + 1
-      message(sprintf("\t(no loglik improvement #%d)", count_loglik))
-    }
-
-    if (count_conv >= eastop_patience && count_loglik >= eastop_patience) {
-      warning("Conditions defined in early_stopping: aborting training loop!")
-      break()
-    }
-
-    ## aborting test ----
-    if (istep == abort_iter) {
-      if (mse_conv > abort_mse) {
-        warning("Conditions defined in aborting_controls: aborting training loop!")
+      if (inherits(random_model, "try-error")) {
+        warning("Training of the HLME model failed: aborting the training loop!")
         break()
       }
-    }
+      .check_convergence_hlme(random_model)
+      pred_rand <- try(
+        .predict_random_hlme(random_model, data_rand, mixedml_controls$all_info_hlme_prediction), silent = FALSE
+      )
+      if (inherits(pred_rand, "try-error")) {
+        warning("Prediction with the HLME model failed: aborting the training loop!")
+        break()
+      }
+      # print("Pred rand:")
+      # print(head(pred_rand))
 
-    #resetting the states in the reservoir
-    Nbres = length(seq_along(fitted_fixed_model$model_list))
-    if (Nbres == 1){
-      fitted_fixed_model$model_list$reservoir$reset()
-    }
-    else
-      lapply(fitted_fixed_model$model_list, function(m) m$reservoir$reset())
+      # train residuals/mse and loglik----
+      # pred_mixedml <- pred_fixed + pred_rand
+      # print("pred_mixedml:")
+      # print(head(pred_mixedml))
+      residuals_train <- data_train[, target_name] - (pred_fixed + pred_rand)
+      ccases_resid <- complete.cases(residuals_train)
+      stopifnot(n_na_full == sum(!ccases_resid))
+      mse_train <- mean(residuals_train[ccases_resid]**2)
+      message(sprintf("\tMSE-train = %.4g", mse_train))
+      mse_train_list <- c(mse_train_list, mse_train)
+      #
+      loglik_train <- random_model$loglik
+      message(sprintf("\tloglik-train = %.4g", loglik_train))
+      loglik_train_list <- c(loglik_train_list, loglik_train)
 
-    istep <- istep + 1
+      # ## convergence test ---
+      # if (abs(loglik_train - loglik_prev) < tol) {
+      #   message("Convergence reached (loglik train)")
+      #   break()
+      # }
+      # loglik_prev <- loglik_train
+
+      # val residuals/mse and loglik ----
+      if (do_val) {
+        tmp_model <- .get_model_snapshot()
+        pred_val <- predict(tmp_model, data_val, mixedml_controls$all_info_hlme_prediction)
+        residuals_val <- data_val[, target_name] - pred_val
+        ccases_resid <- complete.cases(residuals_val)#added
+        mse_val <- mean(residuals_val[ccases_resid]**2, na.rm = TRUE)
+        message(sprintf("\tMSE-val = %.4g", mse_val))
+        mse_val_list <- c(mse_val_list, mse_val)
+
+        # loglik
+        pred_val_fixed <- try_predict_fixed_model(tmp_model$fixed_model, data_fixed=data_val, tmp_model$fixed_spec, tmp_model$subject, tmp_model$return_individual)
+        data_val_rand <- data_val
+        data_val_rand[[target_name]] <- data_val[[target_name]] - pred_val_fixed
+        hlme_val <- stats::update(random_model, data = data_val_rand, B = random_model$best, maxiter = 0)
+        loglik_val <- hlme_val$loglik
+        message(sprintf("\tloglik-val = %.4g", loglik_val))
+        loglik_val_list <- c(loglik_val_list, loglik_val)
+
+        # #test
+        # residuals_hlme_val = hlme_val$pred$resid_ss
+        # ccases_resid_val <- complete.cases(residuals_hlme_val)
+        # mse_val_tchek = mean(residuals_hlme_val[ccases_resid_val]**2, na.rm = TRUE)
+      }
+
+      # convergence tests ----
+      if (do_val) {
+        mse_conv <- mse_val
+        loglik_conv <- loglik_val
+      } else {
+        mse_conv <- mse_train
+        loglik_conv <- loglik_train
+      }
+
+      ## Save best model ----
+      if (mse_conv < mse_min && loglik_conv > loglik_max) {
+        message("\t(saving best model)")
+        mse_min <- mse_conv
+        loglik_max <- loglik_conv
+        # must save it since we have a reference to the Python model
+        # so we cannot use `best_fixed_model <- fixed_model`
+        # (`best_fixed_model` points to the model that keeps being updated)
+        save_mixedml(.get_model_snapshot(), backup, overwrite = TRUE)
+        best_random_model <- random_model
+        # saving for fine tuning
+        best_data_rand <- data_rand
+      }
+
+      ##  stagnation test on MSE ----
+      if (mse_conv < eastop_mse - eastop_gain) {
+        message("\t(improvement)")
+        eastop_mse <- mse_conv
+        count_conv <- 0
+      } else {
+        count_conv <- count_conv + 1
+        message(sprintf("\t(no MSE improvement #%d)", count_conv))
+      }
+
+      ## stagnation test on loglik ----
+      if (loglik_conv > eastop_loglik + eastop_gain) {
+        eastop_loglik <- loglik_conv
+        count_loglik <- 0
+      } else {
+        count_loglik <- count_loglik + 1
+        message(sprintf("\t(no loglik improvement #%d)", count_loglik))
+      }
+
+      if (count_conv >= eastop_patience && count_loglik >= eastop_patience) {
+        warning("Conditions defined in early_stopping: aborting training loop!")
+        break()
+      }
+
+      ## aborting test ----
+      if (istep == abort_iter) {
+        if (mse_conv > abort_mse) {
+          warning("Conditions defined in aborting_controls: aborting training loop!")
+          break()
+        }
+      }
+
+      #resetting the states in the reservoir
+      Nbres = length(seq_along(fitted_fixed_model$model_list))
+      if (Nbres == 1){
+        fitted_fixed_model$model_list$reservoir$reset()
+      }
+      else
+        lapply(fitted_fixed_model$model_list, function(m) m$reservoir$reset())
+
+      istep <- istep + 1
+
+    }
+    else{
+      # =========================================================
+      # MODE 2 : reservoir seul
+      # =========================================================
+      message(
+        "\tIndividual reservoir predictions requested: ",
+        "skipping HLME fitting."
+      )
+
+      reservoir_model <- list(
+        fixed_model = fixed_model,
+        fixed_spec = fixed_spec,
+        subject = subject,
+        return_individual = TRUE
+      )
+
+      class(reservoir_model) <- "mixedml_reservoir_evaluation"
+
+      return(reservoir_model)
+    }
   }
   #
   if (!file.exists(backup)) {
@@ -805,35 +830,5 @@ mixedml_training_loop <- function(
   # It is likely a matter 0.01% difference but it could confuse the user (it confused me!)
   # This should not be done before a refactoring to isolate the fixed>residual>random operation in a specific function
   #
-  # nolint start ----
-  # xlab <- .get_x_labels(fixed_spec)
-  #
-  # A1 <- best_data_fixed[xlab]
-  # A2 <- data_train[xlab]
-  # stopifnot(identical(A1, A2))
-  #
-  # A1 <- best_data_fixed[xlab]
-  # A2 <- data_train[xlab]
-  # stopifnot(identical(A1, A2))
-  #
-  # PRED_FIXED <- .predict_reservoir(
-  #   best_model$fixed_model,
-  #   data_fixed,
-  #   fixed_spec,
-  #   subject
-  # )
-  #
-  # A1 <- PRED_FIXED
-  # A2 <- best_pred_fixed
-  # stopifnot(identical(A1, A2))
-  #
-  # A1 <- data_train[[target_name]] - PRED_FIXED
-  # A2 <- best_data_rand[[target_name]]
-  # stopifnot(identical(A1, A2))
-  # nolint end ----
-
-  # best_model$residuals_val = residuals_val
-  # best_model$hlme_val = hlme_val
-  # best_model$mse_val_tchek = mse_val_tchek
   return(best_model)
 }

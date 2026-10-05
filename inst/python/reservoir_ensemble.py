@@ -47,12 +47,13 @@ class _CommonReservoirEnsemble(ABC):
     combien de coeurs de processeur utiliser, comment mettre les données Ã  l'échelle (scaler), 
     et comment regrouper les prédictions (aggregator).
     """
-    def __init__(self, seed_list, aggregator, scaler, n_procs):
+    def __init__(self, seed_list, aggregator, scaler, n_procs, return_individual):
         self.aggregator = aggregator
         self._aggregator = get_aggregator(aggregator)
         self.scaler = scaler
         self._scaler = get_scaler(scaler)
         self.n_procs = self._correct_n_procs(seed_list, n_procs)
+        self.return_individual = return_individual
 
     @staticmethod
     def _correct_n_procs(seed_list: list[int], n_procs: Optional[int] = None) -> int:
@@ -119,8 +120,9 @@ class JoblibReservoirEnsemble(_CommonReservoirEnsemble):
         aggregator: Literal["mean", "median"],
         scaler: Literal["standard", "robust", "min-max", "max-abs"],
         n_procs: Optional[int] = None,
+        return_individual: Optional[bool] = None,
     ):
-        super().__init__(seed_list, aggregator, scaler, n_procs)
+        super().__init__(seed_list, aggregator, scaler, n_procs, return_individual)
 
         # C'est ici qu'on crée les modèles. Un ESN (Echo State Network) dans ReservoirPy 
         # est un raccourci qui connecte automatiquement un noeud "Reservoir" à un noeud "Ridge" (le readout).
@@ -168,99 +170,76 @@ class JoblibReservoirEnsemble(_CommonReservoirEnsemble):
           self.model_list = _fit_single(self.model_list, X_list, y_list, self.fit_controls)
 
 
-    def predict(self, X: Array2D, subject_col: Array1D) -> Array2D:
-        """ Phase de prédiction """
-        X_scal = self._scaler.transform(X)
-        X_list = data_2D_to_list(X_scal, subject_col) # Transformation en liste de séquences
-        
-        if (type(self.model_list) == list):
+    # def predict(self, X: Array2D, subject_col: Array1D) -> Array2D:
+    #     """ Phase de prédiction """
+    #     X_scal = self._scaler.transform(X)
+    #     X_list = data_2D_to_list(X_scal, subject_col) # Transformation en liste de séquences
+    #     
+    #     if (type(self.model_list) == list):
+    #       with self._get_pool() as pool:
+    #           # Chaque modèle fait sa propre prédiction
+    #           models_preds = pool(
+    #               delayed(_predict_single)(m, X_list, self.predict_controls)
+    #               for m in self.model_list
+    #           )
+    #     else:
+    #       models_preds = _predict_single(self.model_list, X_list, self.predict_controls)
+    #       
+    #     # On répare la structure et on fait la moyenne (ou médiane) des prédictions de tous les modèles
+    #     models_preds = fix_single_subject_predictions(models_preds, subject_col)
+    #     if (type(self.model_list) == list):
+    #       agg_pred = aggregate_predict_output(models_preds, self._aggregator)
+    #     else:
+    #       agg_pred = models_preds
+    #     
+    #     # On remet les prédictions sous forme de tableau 2D standard
+    #     res = data_list_to_2D(agg_pred, subject_col)
+    #     return data_list_to_2D(agg_pred, subject_col)
+    
+    
+    def predict(self, X: Array2D, subject_col: Array1D, return_individual: bool = False) -> Array2D:
+      """Phase de prédiction.
+      If return_individual=False: returns the aggregated prediction as before.
+      
+      If return_individual=True:
+        returns the prediction of each reservoir separately.
+        The result is a list, one element per reservoir.
+      """
+
+      X_scal = self._scaler.transform(X)
+      X_list = data_2D_to_list(X_scal, subject_col)
+
+      if (type(self.model_list) == list):
           with self._get_pool() as pool:
-              # Chaque modèle fait sa propre prédiction
               models_preds = pool(
                   delayed(_predict_single)(m, X_list, self.predict_controls)
                   for m in self.model_list
               )
+      else:
+          models_preds = _predict_single( self.model_list, X_list, self.predict_controls)
+
+      # Remet chaque prédiction dans le format correspondant
+      # aux sujets/observations d'origine.
+      models_preds = fix_single_subject_predictions(models_preds, subject_col)
+
+      # ---------------------------------------------------------
+      # NOUVEAU : retourner les prédictions individuelles
+      # ---------------------------------------------------------
+      if return_individual:
+        if type(self.model_list) == list:
+          return [data_list_to_2D(pred, subject_col) for pred in models_preds]
         else:
-          models_preds = _predict_single(self.model_list, X_list, self.predict_controls)
-          
-        # On répare la structure et on fait la moyenne (ou médiane) des prédictions de tous les modèles
-        models_preds = fix_single_subject_predictions(models_preds, subject_col)
-        if (type(self.model_list) == list):
-          agg_pred = aggregate_predict_output(models_preds, self._aggregator)
-        else:
-          agg_pred = models_preds
-        
-        # On remet les prédictions sous forme de tableau 2D standard
-        res = data_list_to_2D(agg_pred, subject_col)
-        return data_list_to_2D(agg_pred, subject_col)
+          return data_list_to_2D(models_preds, subject_col)
 
+      # ---------------------------------------------------------
+      # COMPORTEMENT ACTUEL : agrégation
+      # ---------------------------------------------------------
+      if (type(self.model_list) == list):
+        agg_pred = aggregate_predict_output(models_preds, self._aggregator)
+      else:
+        agg_pred = models_preds
 
-# %% ray implementation
-# !!! not updated with new rnn_utils.py module !!!
-
-
-# @ray.remote
-# class _ESN_Workers:
-
-#     def __init__(
-#         self,
-#         X_fit: Data,
-#         subject_col: NDArray,
-#         seed: int,
-#         esn_controls: dict[str, Any],
-#         fit_controls: dict[str, Any],
-#         predict_controls: dict[str, Any],
-#     ):
-#         self.model = ESN(**dict(**esn_controls, seed=seed))
-#         self.X_fit = self.scaler.fit_transform(X_fit)
-#         self.X_fit = _data_2D_to_list(self.X_fit, subject_col)
-#         self.fit_controls = fit_controls
-#         self.predict_controls = predict_controls
-
-#     def fit(self, y: NDArray, subject_col: NDArray) -> None:
-#         y = _data_2D_to_list(y, subject_col)
-#         self.model.fit(self.X_fit, y, **self.fit_controls)
-
-#     def predict(
-#         self, X_pred: NDArray = None, subject_col: NDArray = None
-#     ) -> list[NDArray]:
-#         if X_pred is None:
-#             X_pred = self.X_fit
-#         else:
-#             X_pred = self.scaler.transform(X_pred)
-#         X_pred = _data_2D_to_list(X_pred, subject_col)
-#         return self.model.run(X_pred, **self.predict_controls)
-
-
-# class RayReservoirEnsemble(_CommonReservoirEnsemble):
-
-#     def __init__(
-#         self,
-#         X_fit: Data,
-#         seed_list: list[int],
-#         esn_controls: dict[str, Any],
-#         fit_controls: dict[str, Any],
-#         predict_controls: dict[str, Any],
-#         aggregator: Literal["mean", "median"],
-#         scaler: Literal["standard", "robust", "min-max", "max-abs"],
-#         n_procs: Optional[int] = None,
-#     ):
-#         super().__init__(aggregator, scaler)
-#         _nprocs = self._correct_n_procs(seed_list, n_procs)
-#         ray.init(num_cpus=_nprocs)
-#         self.workers_list = [
-#             _ESN_Workers.remote(  # type:ignore
-#                 X_fit, s, esn_controls, fit_controls, predict_controls
-#             )
-#             for s in seed_list
-#         ]
-
-#     def fit(self, y: Data) -> None:
-#         futures = [w.fit.remote(y) for w in self.workers_list]
-#         _ = ray.get(futures)
-
-#     def predict(self, X: Data = None) -> list[Data]:
-
-#         futures = [w.predict.remote(X) for w in self.workers_list]
-#         models_preds = ray.get(futures)
-#         return self._convert_predict_output(models_preds)
+      return data_list_to_2D(agg_pred, subject_col)
+  
+  
+  

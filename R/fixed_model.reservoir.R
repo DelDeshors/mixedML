@@ -213,6 +213,10 @@ predict_fixed_model.reservoir <- function(model, data, fixed_spec, subject, retu
   # ---------------------------------------------------------
   # Cas individuel : une prédiction par seed
   # ---------------------------------------------------------
+  if (!is.list(pred_fixed)) {
+    pred_fixed <- list(pred_fixed)
+  }
+
   pred_individual <- lapply(pred_fixed, function(pred) {
 
     stopifnot(ncol(pred) == 1)

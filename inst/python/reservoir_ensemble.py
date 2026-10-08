@@ -217,7 +217,7 @@ class JoblibReservoirEnsemble(_CommonReservoirEnsemble):
               )
       else:
           models_preds = _predict_single( self.model_list, X_list, self.predict_controls)
-
+      
       # Remet chaque prédiction dans le format correspondant
       # aux sujets/observations d'origine.
       models_preds = fix_single_subject_predictions(models_preds, subject_col)
@@ -227,19 +227,20 @@ class JoblibReservoirEnsemble(_CommonReservoirEnsemble):
       # ---------------------------------------------------------
       if return_individual:
         if type(self.model_list) == list:
-          return [data_list_to_2D(pred, subject_col) for pred in models_preds]
+          preds = [data_list_to_2D(pred, subject_col) for pred in models_preds]
         else:
-          return data_list_to_2D(models_preds, subject_col)
-
-      # ---------------------------------------------------------
-      # COMPORTEMENT ACTUEL : agrégation
-      # ---------------------------------------------------------
-      if (type(self.model_list) == list):
-        agg_pred = aggregate_predict_output(models_preds, self._aggregator)
+          preds = data_list_to_2D(models_preds, subject_col)
+        return preds
       else:
-        agg_pred = models_preds
-
-      return data_list_to_2D(agg_pred, subject_col)
+        # ---------------------------------------------------------
+        # COMPORTEMENT ACTUEL : agrégation
+        # ---------------------------------------------------------
+        if (type(self.model_list) == list):
+          agg_pred = aggregate_predict_output(models_preds, self._aggregator)
+        else:
+          agg_pred = models_preds
+  
+        return data_list_to_2D(agg_pred, subject_col)
   
   
   

@@ -309,7 +309,7 @@ get_loglik <- function(model, data) {
   .test_get_loglik(model, data)
   target_name <- .get_y_label(model$fixed_spec)
   data_rand <- data
-  pred_fixed <- predict_fixed_model(model$fixed_model, data, model$fixed_spec, model$subject)
+  pred_fixed <- predict_fixed_model(model$fixed_model, data, model$fixed_spec, model$subject,model$fixed_model$return_individual)
   data_rand[[target_name]] <- data[[target_name]] - pred_fixed
   random_model <- update(model$random_model, data = data_rand, B = model$random_model$best, maxiter = 0)
   return(random_model$loglik)

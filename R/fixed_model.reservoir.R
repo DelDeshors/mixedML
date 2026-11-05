@@ -273,5 +273,5 @@ evaluate_reservoir_seeds <- function(model, data, fixed_spec, subject) {
 
   mse <- unlist(mse_list)
 
-  list(mse_by_seed = mse, mean_mse = mean(mse), sd_mse = sd(mse))
+  list(mse_by_seed = mse, mean_mse = mean(mse), sd_mse = sd(mse), median_mse = median(mse))
 }
